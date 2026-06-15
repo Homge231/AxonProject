@@ -19,10 +19,18 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+<<<<<<< HEAD
+    "@types/cors": "^2.8.19",
+=======
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.3",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6

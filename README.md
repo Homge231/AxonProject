@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+# AxonProject
+=======
 # ARENA.ENG
 
 A web-based arena game project with a Vue 3 + TypeScript frontend and an Express/Colyseus backend.
@@ -45,3 +48,4 @@ This repository contains a multiplayer game prototype built as a full-stack appl
    ```
 
 3. Open the frontend in your browser via Vite and verify the backend at `http://localhost:3000/health`.
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6
