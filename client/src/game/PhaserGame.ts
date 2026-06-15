@@ -9,6 +9,7 @@ export function createPhaserGame(parent: string): Phaser.Game {
     width: window.innerWidth,
     height: window.innerHeight,
     transparent: true,
+    backgroundColor: 'transparent',
     scene: [PreloadScene, BackgroundScene],
     scale: {
       mode: Phaser.Scale.RESIZE,

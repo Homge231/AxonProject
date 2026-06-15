@@ -11,11 +11,19 @@
 import { onMounted, onUnmounted } from 'vue'
 import Phaser from 'phaser'
 import { createPhaserGame } from './game/PhaserGame'
+import { supabase } from './lib/supabase'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 let game: Phaser.Game | null = null
 
-onMounted(() => {
+onMounted(async () => {
   game = createPhaserGame('phaser-container')
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.user) {
+    router.push('/lobby')
+  }
 })
 
 onUnmounted(() => {

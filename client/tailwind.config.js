@@ -12,12 +12,11 @@ export default {
         'on-surface': '#e1e2eb',
         'on-surface-variant': '#b9cacb',
         'secondary': '#ebb2ff',
-        'secondary-fixed': '#f8d8ff',
-        'tertiary': '#dcffe2',
         'tertiary-fixed': '#5bffa1',
         'outline-variant': '#3b494b',
         'error': '#ffb4ab',
       }
     }
-  }
+  },
+  plugins: []
 }
