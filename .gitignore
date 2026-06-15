@@ -1,1 +1,11 @@
+<<<<<<< HEAD
 node_modules
+=======
+node_modules/
+dist/
+.env
+.env.local
+client/.env
+client/.env.local
+server/.env
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6

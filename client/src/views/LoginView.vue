@@ -88,18 +88,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
 const router = useRouter()
+const auth = useAuthStore()
 const isLoading = ref<boolean>(false)
 
-// Biến lưu trữ dữ liệu form
 const email = ref<string>('')
 const password = ref<string>('')
 
 const handleTraditionalLogin = () => {
   isLoading.value = true
-  
-  // Mock API call cho Traditional Login
   console.log('Logging in with:', email.value, password.value)
   setTimeout(() => {
     isLoading.value = false
@@ -107,13 +106,13 @@ const handleTraditionalLogin = () => {
   }, 1000)
 }
 
-const handleGoogleLogin = () => {
+const handleGoogleLogin = async () => {
   isLoading.value = true
-  
-  // Mock API call cho Google Login
-  setTimeout(() => {
+  try {
+    await auth.loginWithGoogle()
+  } catch (error) {
+    console.error('Failed to sign in with Google:', error)
     isLoading.value = false
-    router.push('/lobby')
-  }, 1000)
+  }
 }
 </script>

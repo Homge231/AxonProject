@@ -16,4 +16,8 @@ app.get('/health', (_, res) => {
 
 httpServer.listen(3000, () => {
   console.log('Server running on port 3000')
+<<<<<<< HEAD
 })
+=======
+})
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6

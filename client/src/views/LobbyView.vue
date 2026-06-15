@@ -7,4 +7,8 @@
       <p class="text-on-surface-variant mt-2">Lobby — Coming Soon</p>
     </div>
   </div>
+<<<<<<< HEAD
 </template>
+=======
+</template>
+>>>>>>> d3afa7fb45e22d1f6234c2e379ffd821955514c6
