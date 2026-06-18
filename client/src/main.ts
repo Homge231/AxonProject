@@ -20,11 +20,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session?.user) {
     auth.user = session.user
     await auth.fetchProfile()
-    router.push('/lobby')
+    router.push('/home')
   }
   if (event === 'SIGNED_OUT') {
     auth.user = null
-    router.push('/')
+    router.push('/home')
   }
 })
 
@@ -32,6 +32,6 @@ supabase.auth.getSession().then(({ data: { session } }) => {
   if (session?.user) {
     auth.user = session.user
     auth.fetchProfile()
-    router.push('/lobby')
+    router.push('/home')
   }
 })

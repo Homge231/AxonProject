@@ -159,7 +159,7 @@ async function handleVerify() {
 
     localStorage.setItem('arena_token', data.token)
     auth.user = data.user
-    router.push('/lobby')
+    router.push('/home')
 
   } catch {
     error.value = 'Server error. Please try again.'

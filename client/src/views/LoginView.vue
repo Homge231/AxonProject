@@ -278,7 +278,7 @@ async function handleLogin() {
     localStorage.setItem('arena_token', data.token)
     auth.user = data.user
     
-    router.push('/lobby')
+    router.push('/home')
     
   } catch {
     errors.general = 'Server error. Please try again.'

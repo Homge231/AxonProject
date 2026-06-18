@@ -5,7 +5,7 @@ export const useGameStore = defineStore('game', () => {
   const roomCode      = ref<string>('')
   const playerName    = ref<string>('')
   const players       = ref<any[]>([])
-  const gameState     = ref<string>('lobby')
+  const gameState     = ref<string>('home')
   const myScore       = ref<number>(0)
   const opponentScore = ref<number>(0)
   const kp            = ref<number>(0)

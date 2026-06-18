@@ -288,5 +288,19 @@ router.post('/token', async (req: Request, res: Response) => {
 router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
   res.json({ user: req.user })
 })
+router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { data: profile } = await supabase
+    .from('players')
+    .select('*')
+    .eq('id', req.user!.id)
+    .single()
+
+  if (!profile) {
+    res.status(404).json({ error: 'Profile not found' })
+    return
+  }
+
+  res.json({ profile })
+})
 
 export default router

@@ -43,9 +43,9 @@ export function authMiddleware(
       error.name === 'TokenExpiredError' ||
       error.name === 'JsonWebTokenError'
     ) {
-      res.status(403).json({
-        error: 'Forbidden',
-        message: 'Token is invalid or expired'
+      res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Token is invalid or expired'
       })
       return
     }
