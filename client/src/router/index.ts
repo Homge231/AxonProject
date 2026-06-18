@@ -69,6 +69,10 @@ const router = createRouter({
 
 // Navigation guard đã sửa: dùng return thay vì next()
 router.beforeEach(async (to) => {
+  if (to.name === 'forgot-password' || to.name === 'reset-password') {
+    return true
+  }
+
   if (!to.meta.requiresAuth) {
     return true
   }

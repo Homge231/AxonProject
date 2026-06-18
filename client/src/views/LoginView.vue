@@ -119,7 +119,7 @@
           <div class="flex justify-between items-center mb-1.5 px-1">
             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Password</label>
             <button
-              type="button"
+              type="button" 
               @click="router.push('/forgot-password')"
               class="text-xs text-lightBlue hover:text-blue transition-colors font-semibold"
             >
