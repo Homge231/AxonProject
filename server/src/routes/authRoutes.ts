@@ -15,13 +15,23 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || ''
 )
 
-// Temp store pending registrations
-const pendingRegistrations = new Map<string, {
+interface PendingRegistration {
   email: string
   password: string
   hashedPassword: string
   username: string
-}>()
+  expiresAt: number
+}
+
+const pendingRegistrations = new Map<string, PendingRegistration>()
+
+// Auto-cleanup expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, val] of pendingRegistrations.entries()) {
+    if (now > val.expiresAt) pendingRegistrations.delete(key)
+  }
+}, 5 * 60 * 1000)
 
 // POST /auth/register
 router.post('/register', async (req: Request, res: Response) => {
@@ -42,7 +52,6 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 
   try {
-    // Check email already exists
     const { data: existing } = await supabase
       .from('players')
       .select('id')
@@ -54,21 +63,21 @@ router.post('/register', async (req: Request, res: Response) => {
       return
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Save pending registration with both plain and hashed password
-    pendingRegistrations.set(email, { email, password, hashedPassword, username })
+    pendingRegistrations.set(email, {
+      email,
+      password,
+      hashedPassword,
+      username,
+      expiresAt: Date.now() + 10 * 60 * 1000
+    })
 
-    // Generate + send OTP
     const otp = generateOTP()
     saveOTP(email, otp)
     await sendOTPEmail(email, otp)
 
-    res.status(200).json({
-      message: 'OTP sent to your email',
-      email
-    })
+    res.status(200).json({ message: 'OTP sent to your email', email })
 
   } catch (error) {
     console.error(error)
@@ -92,13 +101,13 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   }
 
   const pending = pendingRegistrations.get(email)
-  if (!pending) {
+  if (!pending || Date.now() > pending.expiresAt) {
+    pendingRegistrations.delete(email)
     res.status(400).json({ error: 'Registration session expired. Please register again.' })
     return
   }
 
   try {
-    // Create user in Supabase with plain password (Supabase will hash it)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: pending.email,
       password: pending.password,
@@ -111,16 +120,13 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
       return
     }
 
-    // Check if player already exists
     const { data: existingPlayer } = await supabase
       .from('players')
       .select('id')
       .eq('id', authData.user.id)
       .single()
 
-    // Create or update player profile
     if (existingPlayer) {
-      // Update existing player
       const { error: updateError } = await supabase
         .from('players')
         .update({
@@ -135,7 +141,6 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         return
       }
     } else {
-      // Create new player
       const { error: insertError } = await supabase
         .from('players')
         .insert({
@@ -151,10 +156,8 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
       }
     }
 
-    // Clean up
     pendingRegistrations.delete(email)
 
-    // Generate JWT
     const token = generateToken({
       id: authData.user.id,
       email: authData.user.email || '',
@@ -256,6 +259,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 })
 
+// POST /auth/token
 router.post('/token', async (req: Request, res: Response) => {
   const { supabase_token } = req.body
   if (!supabase_token) {
@@ -268,17 +272,28 @@ router.post('/token', async (req: Request, res: Response) => {
       res.status(401).json({ error: 'Invalid token' })
       return
     }
+
     const { data: profile } = await supabase
       .from('players')
       .select('*')
       .eq('id', user.id)
       .single()
 
+    if (!profile) {
+      await supabase.from('players').insert({
+        id: user.id,
+        email: user.email,
+        username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Player',
+        hashed_password: ''
+      })
+    }
+
     const token = generateToken({
       id: user.id,
       email: user.email || '',
-      username: profile?.username || ''
+      username: profile?.username || user.user_metadata?.full_name || ''
     })
+
     res.json({ token, user: profile })
   } catch {
     res.status(500).json({ error: 'Internal server error' })
@@ -288,6 +303,7 @@ router.post('/token', async (req: Request, res: Response) => {
 router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
   res.json({ user: req.user })
 })
+
 router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { data: profile } = await supabase
     .from('players')

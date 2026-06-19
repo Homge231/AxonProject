@@ -37,6 +37,24 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
+  async function exchangeTokenAfterOAuth() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    try {
+      const res = await fetch(`${SERVER_URL}/auth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supabase_token: session.access_token })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        localStorage.setItem('arena_token', data.token)
+      }
+    } catch (err) {
+      console.error('exchangeTokenAfterOAuth failed', err)
+    }
+  }
+
   async function registerWithEmail(email: string, password: string): Promise<{ success: boolean }> {
     try {
       const res = await fetch(`${SERVER_URL}/auth/register`, {
@@ -89,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user, profile, loading, isLoggedIn,
     init, loginWithGoogle, loginWithEmail,
-    registerWithEmail, logout, fetchProfile
+    registerWithEmail, logout, fetchProfile,
+    exchangeTokenAfterOAuth
   }
 })
