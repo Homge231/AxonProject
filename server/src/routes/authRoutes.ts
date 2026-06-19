@@ -25,7 +25,6 @@ interface PendingRegistration {
 
 const pendingRegistrations = new Map<string, PendingRegistration>()
 
-// Auto-cleanup expired entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
   for (const [key, val] of pendingRegistrations.entries()) {
@@ -52,21 +51,17 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 
   try {
-    // Check both the players table AND Supabase auth for existing email.
-    // A Google OAuth user will exist in auth.users but may or may not have
-    // a players row; we block re-registration either way.
-    const { data: { users: existingAuthUsers } } = await supabase.auth.admin.listUsers()
-    const existingAuthUser = existingAuthUsers?.find(u => u.email === email)
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
-    if (existingAuthUser) {
-      // Check if they signed up via Google (no password set)
-      const isOAuthOnly = !existingAuthUser.identities?.some(
-        (id: any) => id.provider === 'email'
-      )
+    if (existingPlayer) {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
+      const isOAuthOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
       if (isOAuthOnly) {
-        res.status(409).json({
-          error: 'This email is linked to a Google account. Please sign in with Google.'
-        })
+        res.status(409).json({ error: 'This email is linked to a Google account. Please sign in with Google.' })
       } else {
         res.status(409).json({ error: 'Email already registered' })
       }
@@ -151,7 +146,6 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         return
       }
     } else {
-      // Explicitly set elo to 1000 (don't rely on DB default alone)
       const { error: insertError } = await supabase
         .from('players')
         .insert({
@@ -236,17 +230,17 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   try {
-    // Check if the email belongs to a Google-only account before attempting password login
-    const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
-    const authUser = authUsers?.find(u => u.email === email)
-    if (authUser) {
-      const isOAuthOnly = !authUser.identities?.some(
-        (id: any) => id.provider === 'email'
-      )
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existingPlayer) {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
+      const isOAuthOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
       if (isOAuthOnly) {
-        res.status(401).json({
-          error: 'This account uses Google sign-in. Please use the Google button to log in.'
-        })
+        res.status(401).json({ error: 'This account uses Google sign-in. Please use the Google button to log in.' })
         return
       }
     }
@@ -290,7 +284,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 })
 
-// POST /auth/token — exchange Supabase OAuth token for arena JWT
+// POST /auth/token
 router.post('/token', async (req: Request, res: Response) => {
   const { supabase_token } = req.body
   if (!supabase_token) {
@@ -311,7 +305,6 @@ router.post('/token', async (req: Request, res: Response) => {
       .single()
 
     if (!profile) {
-      // First time Google sign-in: create the players row with proper defaults
       const { error: insertError } = await supabase.from('players').insert({
         id: user.id,
         email: user.email,
@@ -328,7 +321,6 @@ router.post('/token', async (req: Request, res: Response) => {
       }
     }
 
-    // Re-fetch after potential insert to return fresh data
     const { data: freshProfile } = await supabase
       .from('players')
       .select('*')
@@ -347,10 +339,12 @@ router.post('/token', async (req: Request, res: Response) => {
   }
 })
 
+// GET /auth/me
 router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
   res.json({ user: req.user })
 })
 
+// GET /auth/profile
 router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { data: profile } = await supabase
     .from('players')
