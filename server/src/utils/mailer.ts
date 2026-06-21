@@ -1,3 +1,6 @@
+import dns from 'node:dns'
+dns.setDefaultResultOrder('ipv4first')
+
 import nodemailer from 'nodemailer'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import dotenv from 'dotenv'
@@ -17,7 +20,6 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 10000
 } as SMTPTransport.Options)
 
-// Verify connection on startup so you catch config errors early
 transporter.verify((error) => {
   if (error) {
     console.error('Mailer config error:', error)
