@@ -137,7 +137,8 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         .update({
           email: pending.email,
           username: pending.username,
-          hashed_password: pending.hashedPassword
+          hashed_password: pending.hashedPassword,
+          elo: 0
         })
         .eq('id', authData.user.id)
 
@@ -180,7 +181,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         id: authData.user.id,
         email: authData.user.email,
         username: pending.username,
-        elo: 1000
+        elo: 0
       }
     })
 
@@ -275,7 +276,7 @@ router.post('/login', async (req: Request, res: Response) => {
         email: authData.user.email,
         username: profile?.username,
         avatar_url: profile?.avatar_url,
-        elo: profile?.elo ?? 1000
+        elo: profile?.elo ?? 0
       }
     })
 
