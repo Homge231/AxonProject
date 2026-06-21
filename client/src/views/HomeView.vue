@@ -132,7 +132,7 @@ const avatarUrl = computed(() =>
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${username.value}`
 )
 
-const elo = computed(() => authStore.profile?.elo || 1000)
+const elo = computed(() => authStore.profile?.elo ?? 1000)
 
 function handleLogout() {
   authStore.logout()
