@@ -1,17 +1,21 @@
 import nodemailer from 'nodemailer'
+import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import dotenv from 'dotenv'
 dotenv.config()
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS
   },
+  family: 4,
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 10000
-})
+} as SMTPTransport.Options)
 
 // Verify connection on startup so you catch config errors early
 transporter.verify((error) => {
