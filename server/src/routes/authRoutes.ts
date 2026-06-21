@@ -153,7 +153,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
           email: pending.email,
           username: pending.username,
           hashed_password: pending.hashedPassword,
-          elo: 1000,
+          elo: 0,
           wins: 0,
           losses: 0,
           total_matches: 0
@@ -311,7 +311,7 @@ router.post('/token', async (req: Request, res: Response) => {
         username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Player',
         hashed_password: '',
         avatar_url: user.user_metadata?.avatar_url || null,
-        elo: 1000,
+        elo: 0,
         wins: 0,
         losses: 0,
         total_matches: 0
