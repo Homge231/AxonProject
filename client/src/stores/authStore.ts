@@ -29,10 +29,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
  async function loginWithGoogle() {
+  const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
   await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/home`,
+      redirectTo: `${siteUrl}/home`,
       queryParams: {
         prompt: 'select_account'
       }
