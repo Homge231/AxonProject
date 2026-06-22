@@ -10,12 +10,12 @@ const supabase = createClient(
 )
 
 function getRankFromElo(elo: number): string {
-  if (elo >= 2000) return 'Grandmaster'
-  if (elo >= 1800) return 'Master'
-  if (elo >= 1600) return 'Diamond'
-  if (elo >= 1400) return 'Platinum'
-  if (elo >= 1200) return 'Gold'
-  if (elo >= 1000) return 'Silver'
+  if (elo >= 6500) return 'Grandmaster'
+  if (elo >= 5500) return 'Master'
+  if (elo >= 4500) return 'Diamond'
+  if (elo >= 3500) return 'Platinum'
+  if (elo >= 2500) return 'Gold'
+  if (elo >= 1500) return 'Silver'
   return 'Bronze'
 }
 
