@@ -23,15 +23,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     auth.user = session.user
     await auth.fetchProfile()
     await auth.exchangeTokenAfterOAuth()
+    // Add this: redirect to /home after Google OAuth if on login page
+    const currentPath = window.location.pathname
+    if (currentPath === '/' || currentPath === '/login') {
+      router.push('/home')
+    }
   }
   if (event === 'SIGNED_OUT') {
     auth.user = null
-  }
-})
-
-supabase.auth.getSession().then(({ data: { session } }) => {
-  if (session?.user) {
-    auth.user = session.user
-    auth.fetchProfile()
   }
 })
