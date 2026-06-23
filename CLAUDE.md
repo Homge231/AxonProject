@@ -225,4 +225,4 @@ success: '#22C55E'
 
 **Environment Variables:**
 - Client: VITE_SERVER_URL=https://axonproject-1.onrender.com
-- Client: VITE_SITE_URL=https://naenra.xyz
+- Client: VITE_SITE_URL=https://naenra.xyz.
