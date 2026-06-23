@@ -4,6 +4,7 @@ import { createServer } from 'http'
 import dotenv from 'dotenv'
 import authRoutes from './routes/authRoutes'
 import userRoutes from './routes/userRoutes'
+import gameRoutes from './routes/gameRoutes'
 
 dotenv.config()
 
@@ -28,6 +29,7 @@ app.get('/health', (_, res) => {
 
 app.use('/auth', authRoutes)
 app.use('/api/user', userRoutes)
+app.use('/api/game', gameRoutes)
 
 
 httpServer.listen(3000, () => {
