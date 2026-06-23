@@ -12,9 +12,20 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!user.value)
 
   async function init() {
+    const token = localStorage.getItem('arena_token')
+
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user ?? null
-    if (user.value) await fetchProfile()
+
+    // Email login users have no Supabase session — restore from arena JWT
+    if (!user.value && token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        user.value = { id: payload.id, email: payload.email }
+      } catch {}
+    }
+
+    if (user.value || token) await fetchProfile()
     loading.value = false
 
     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -23,29 +34,30 @@ export const useAuthStore = defineStore('auth', () => {
         await fetchProfile()
       }
       if (event === 'SIGNED_OUT') {
-        profile.value = null
+        // Only clear if no arena token — email login users keep their session
+        if (!localStorage.getItem('arena_token')) {
+          profile.value = null
+        }
       }
     })
   }
 
- async function loginWithGoogle() {
-  const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${siteUrl}/home`,
-      queryParams: {
-        prompt: 'select_account'
+  async function loginWithGoogle() {
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${siteUrl}/home`,
+        queryParams: {
+          prompt: 'select_account'
+        }
       }
-    }
-  })
-}
+    })
+  }
 
   async function exchangeTokenAfterOAuth() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.access_token) return
-    // Only exchange if we don't already have an arena token, or if it might
-    // belong to a different session (e.g. after Google sign-in).
     try {
       const res = await fetch(`${SERVER_URL}/auth/token`, {
         method: 'POST',
@@ -55,7 +67,6 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await res.json()
       if (res.ok && data.token) {
         localStorage.setItem('arena_token', data.token)
-        // Refresh profile after token exchange so we get server-side data
         await fetchProfile()
       }
     } catch (err) {
@@ -91,9 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await res.json()
       if (!res.ok) return { success: false, error: data.error }
       localStorage.setItem('arena_token', data.token)
-      // Store a minimal user object; full profile is fetched via fetchProfile()
       user.value = { id: data.user.id, email: data.user.email }
-      // Fetch profile from the server using the arena JWT (bypasses RLS)
       await fetchProfile()
       return { success: true }
     } catch {
@@ -108,8 +117,6 @@ export const useAuthStore = defineStore('auth', () => {
     profile.value = null
   }
 
-  // Fetch profile using the arena JWT so we bypass Supabase RLS and get
-  // server-computed fields like rank.
   async function fetchProfile() {
     const token = localStorage.getItem('arena_token')
     if (!token) return
