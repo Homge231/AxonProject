@@ -1,59 +1,111 @@
+# ARENA.ENG — Naenra
 
-# AxonProject
-=======
-# ARENA.ENG
-
-A web-based arena game project with a Vue 3 + TypeScript frontend and an Express/Colyseus backend.
+A web-based typing esports arena built with Vue 3 + TypeScript frontend and an Express/Colyseus backend.
 
 ## Overview
 
-This repository contains a multiplayer game prototype built as a full-stack application.
-- `client/`: Vue 3 app using Vite, Phaser, Pinia, and Tailwind CSS for the game UI.
-- `server/`: Express-based backend with Colyseus support for real-time multiplayer game servers.
+Naenra is a multiplayer typing game where players compete in real-time ranked matches.
+- `client/`: Vue 3 app using Vite, Phaser, Pinia, and Tailwind CSS
+- `server/`: Express-based backend with Colyseus support for real-time multiplayer
 
-## Features
+## Tech Stack
 
-- Phaser game engine integration for browser-based gameplay
-- Vue 3 frontend with TypeScript and Vite
-- Lobby UI and game scene setup
-- Express server with a health endpoint and multiplayer server support
+**Frontend:** Vue 3, TypeScript, Vite 8, Phaser 4, Pinia 3, Vue Router 5, Tailwind CSS 3, Supabase JS 2
 
-## Tech stack
+**Backend:** Node.js, Express 5, TypeScript, Colyseus 0.17, Supabase JS 2, bcrypt, jsonwebtoken, nodemailer, dotenv
 
-- Frontend: Vue 3, TypeScript, Vite, Phaser, Pinia, Vue Router, Tailwind CSS
-- Backend: Express, Colyseus, dotenv, CORS
+## Project Structure
 
-## Project structure
+```
+client/
+  src/
+    game/        # Phaser game initialization and scenes
+    views/       # Vue views (Login, Home, Profile, etc.)
+    stores/      # Pinia stores (auth, error, game)
+    router/      # Vue Router with auth guards
+    components/  # Reusable components
+server/
+  src/
+    routes/      # Auth and user routes
+    controllers/ # User profile controller
+    middleware/  # JWT auth middleware
+    utils/       # JWT, OTP, mailer utilities
+```
 
-- `client/`: frontend source code and configuration
-- `server/`: backend source code and server configuration
-- `client/src/game/`: Phaser game initialization
-- `client/src/views/`: Vue views and lobby UI
-- `server/src/index.ts`: Express server entrypoint
+## Run Locally
 
-## Run locally
+```bash
+# Client
+cd client
+npm install
+npm run dev
 
-1. Install client dependencies:
-   ```bash
-   cd client
-   npm install
-   npm run dev
-   ```
+# Server (new terminal)
+cd server
+npm install
+npm run dev
+```
 
-2. Install server dependencies and start the server:
-   ```bash
-   cd ../server
-   npm install
-   npm run dev
-   ```
+- Client: http://localhost:5173
+- Server: http://localhost:3000/health
 
-3. Open the frontend in your browser via Vite and verify the backend at http://localhost:3000/health.
+## Environment Variables
 
-## Deployment (Railway)
-To deploy the client on Railway as a Single Page Application (SPA):
+**`client/.env`**
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_SERVER_URL=http://localhost:3000
+VITE_SITE_URL=http://localhost:5173
+```
 
-1. Set the Root Directory to `/client`
-2. Set the Pre-deploy Command: `npm install && npm run build`
-3. Set the Custom Start Command: `npx serve -s dist -l $PORT`
-   - The `-s` flag is crucial to prevent 404 errors on direct navigation
-4. Configure Supabase Redirect URLs to allow your domain (e.g., `https://naenra.up.railway.app/`)
+**`server/.env`**
+```
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+JWT_SECRET=
+RESEND_API_KEY=
+MAIL_FROM=
+```
+
+## Deployment (Render)
+
+**Server — Web Service:**
+- Root Directory: `server`
+- Build Command: `npm install && npm run build`
+- Start Command: `npm start`
+- URL: https://axonproject-1.onrender.com
+
+**Client — Static Site:**
+- Root Directory: `client`
+- Build Command: `npm install && npm run build`
+- Publish Directory: `dist`
+- URL: https://axonproject.onrender.com
+- Custom Domain: https://naenra.xyz
+
+**Client ENV on Render:**
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_SERVER_URL=https://axonproject-1.onrender.com
+VITE_SITE_URL=https://naenra.xyz
+```
+
+**Server ENV on Render:**
+```
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+JWT_SECRET=
+RESEND_API_KEY=
+MAIL_FROM=
+```
+
+**CORS Origins (server):**
+- https://naenra.xyz
+- https://www.naenra.xyz
+- https://axonproject.onrender.com
+- http://localhost:5173
+
+**Supabase:**
+- Site URL: https://naenra.xyz
+- Redirect URLs: https://naenra.xyz/**, https://www.naenra.xyz/**
