@@ -117,17 +117,6 @@ Table `players` — actual schema:
 
 RLS enabled. Server uses `SUPABASE_SERVICE_KEY` to bypass RLS for admin ops.
 
-**No `rank` column** — rank is computed server-side from elo:
-```
->= 2000 → Grandmaster
->= 1800 → Master
->= 1600 → Diamond
->= 1400 → Platinum
->= 1200 → Gold
->= 1000 → Silver
-<  1000 → Bronze
-```
-
 ---
 
 ## Environment Variables
@@ -218,7 +207,6 @@ success: '#22C55E'
 - https://axonproject.onrender.com
 - http://localhost:5173 (local dev)
 
-## Deployment (Railway)
 
 ## Deployment (Render)
 
