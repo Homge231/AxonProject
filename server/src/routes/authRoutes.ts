@@ -216,6 +216,39 @@ router.post('/resend-otp', async (req: Request, res: Response) => {
   }
 })
 
+// GET /auth/check-email
+router.get('/check-email', async (req: Request, res: Response) => {
+  const { email } = req.query
+
+  if (!email || typeof email !== 'string') {
+    res.status(400).json({ error: 'Email is required' })
+    return
+  }
+
+  try {
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (!existingPlayer) {
+      res.json({ exists: false, provider: null })
+      return
+    }
+
+    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
+    const isGoogleOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
+
+    res.json({
+      exists: true,
+      provider: isGoogleOnly ? 'google' : 'email'
+    })
+  } catch {
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
 // POST /auth/login
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body
@@ -299,7 +332,7 @@ router.post('/token', async (req: Request, res: Response) => {
       return
     }
 
-      const { data: profile } = await supabase
+    const { data: profile } = await supabase
       .from('players')
       .select('*')
       .eq('id', user.id)
