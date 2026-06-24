@@ -90,7 +90,6 @@
           </div>
 
           <div v-else class="flex flex-col items-center text-center w-full">
-            // updated code here
             <div v-if="currentQuestion.hint" class="mb-8 w-full max-w-full">
               <h1 
                 class="text-xl md:text-2xl font-bold text-blue tracking-wider drop-shadow-sm whitespace-nowrap overflow-hidden text-ellipsis px-2">
