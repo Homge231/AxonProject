@@ -29,7 +29,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-              }}</span></p>
+                  }}</span></p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
@@ -78,68 +78,107 @@
     </header>
 
     <main
-      class="relative z-20 flex-1 flex flex-col items-center justify-center px-6 lg:px-16 py-10 max-w-5xl mx-auto w-full">
+      class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
 
-      <section class="w-full max-w-4xl">
-        <div
-          class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-14 shadow-2xl transition-all duration-300"
-          :class="gameState === 'loading' ? 'animate-pulse' : ''">
-          <div v-if="gameState === 'loading'" class="space-y-8 w-full text-center">
-            <div class="h-12 bg-white/20 rounded w-1/3 mx-auto mb-6"></div>
-            <div class="h-8 bg-white/20 rounded w-3/4 mx-auto"></div>
-          </div>
+      <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
 
-          <div v-else class="flex flex-col items-center text-center w-full">
-            <div v-if="currentQuestion.hint" class="mb-8 w-full max-w-full">
-              <h1 
-                class="text-xl md:text-2xl font-bold text-blue tracking-wider drop-shadow-sm whitespace-nowrap overflow-hidden text-ellipsis px-2">
-                {{ currentQuestion.hint }}
-              </h1>
-            </div>
-
-            <p class="text-xl md:text-3xl font-medium text-white leading-relaxed max-w-3xl">
-
-              <span v-if="currentQuestion.question_text.split(/_+/)[0]">
-                {{ currentQuestion.question_text.split(/_+/)[0] }}
-              </span>
-
-              <span class="inline-flex items-baseline mx-1">
-                <span v-for="(char, idx) in currentQuestion.target_word.split('')" :key="idx"
-                  class="inline-block text-center transition-colors duration-150 min-w-[1ch]" :class="{
-                    'text-orange animate-pulse': idx === typedLetters.length && gameState === 'playing',
-                    'text-white font-bold': typedLetters[idx] !== undefined && gameState === 'playing',
-                    'text-success font-bold': gameState === 'correct',
-                    'text-hexred font-bold': gameState === 'wrong',
-                    'text-white/60': typedLetters[idx] === undefined && idx !== typedLetters.length
-                  }">
-                  {{ typedLetters[idx] ?? '_' }}
-                </span>
-              </span>
-
-              <span v-if="currentQuestion.question_text.split(/_+/)[1]">
-                {{ currentQuestion.question_text.split(/_+/)[1] }}
-              </span>
-            </p>
-
-            <transition name="fade">
-              <div v-if="gameState === 'correct' || gameState === 'wrong'"
-                class="flex items-center gap-3 px-8 py-3.5 border font-bold text-sm tracking-widest uppercase rounded-full shadow-2xl mt-10 mx-auto w-fit backdrop-blur-lg"
-                :class="{
-                  'border-success/50 bg-success/20 text-green-300': gameState === 'correct',
-                  'border-hexred/50 bg-hexred/20 text-red-300': gameState === 'wrong',
-                }">
-                <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
-                <span v-else>✕ Correct word: <span class="uppercase text-white ml-1 font-black">{{
-                  currentQuestion.target_word }}</span></span>
-              </div>
-            </transition>
-
-          </div>
-
+        <div v-if="gameState === 'loading'" class="w-full flex flex-col gap-10">
+          <div class="bg-blue/10 backdrop-blur-xl border border-blue/20 rounded-2xl p-6 h-28 animate-pulse"></div>
+          <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-14 h-44 animate-pulse"></div>
         </div>
+
+        <template v-else>
+          <transition name="card-flip" mode="out-in">
+            <div :key="currentQuestion.target_word" class="w-full flex flex-col items-center gap-10">
+
+              <div v-if="currentQuestion.hint"
+                class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+                </div>
+                <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
+                  <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+                  </svg>
+                  <span class="text-[10px] font-bold text-lightBlue tracking-[0.25em] uppercase">Hint</span>
+                </div>
+                <h1
+                  class="text-2xl md:text-4xl font-black text-lightBlue tracking-wider drop-shadow-lg leading-tight break-words px-2 py-1">
+                  {{ currentQuestion.hint }}
+                </h1>
+              </div>
+
+              <div
+                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300">
+                <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
+                  <span v-if="currentQuestion.question_text.split(/_+/)[0]">
+                    {{ currentQuestion.question_text.split(/_+/)[0] }}
+                  </span>
+                  <span class="text-white/30 font-bold mx-2 tracking-widest">____</span>
+                  <span v-if="currentQuestion.question_text.split(/_+/)[1]">
+                    {{ currentQuestion.question_text.split(/_+/)[1] }}
+                  </span>
+                </p>
+              </div>
+
+              <div class="w-full flex flex-nowrap flex-col items-center overflow-x-auto gap-3">
+
+                <div class="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full max-w-3xl">
+                  <div v-for="(char, idx) in currentQuestion.target_word.split('')" :key="idx"
+                    class="slot flex flex-col items-center gap-2">
+                    <div
+                      class="relative w-10 h-14 md:w-14 md:h-20 bg-black/40 backdrop-blur-md rounded-t-lg flex items-center justify-center border-b-4 transition-all duration-200"
+                      :class="{
+                        'slot--active border-orange bg-black/60 shadow-[0_-4px_15px_rgba(255,165,0,0.35)]': idx === typedLetters.length && gameState === 'playing',
+                        'slot--correct border-success': gameState === 'correct',
+                        'slot--wrong border-hexred': gameState === 'wrong',
+                        'border-white/20': idx !== typedLetters.length || gameState !== 'playing'
+                      }">
+                      <span
+                        class="text-2xl md:text-4xl font-black uppercase tracking-widest drop-shadow-md transition-all duration-100"
+                        :class="{
+                          'text-white': typedLetters[idx] !== undefined && gameState === 'playing',
+                          'glow-sweep': gameState === 'correct',
+                          'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.6)]': gameState === 'wrong',
+                          'opacity-0': typedLetters[idx] === undefined,
+                          'opacity-100': typedLetters[idx] !== undefined,
+                        }" :style="gameState === 'correct' ? { animationDelay: `${idx * 0.05}s` } : {}">
+                        {{ typedLetters[idx] ?? '_' }}
+                      </span>
+
+                      <span v-if="idx === typedLetters.length && gameState === 'playing'"
+                        class="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-1 bg-orange animate-pulse rounded-full"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="gameState === 'playing'"
+                  class="text-xs md:text-sm font-semibold text-lightBlue/80 tracking-widest font-mono mt-1">
+                  ({{ currentQuestion.target_word.length }} letters)
+                </div>
+              </div>
+
+              <transition name="fade">
+                <div v-if="gameState === 'correct' || gameState === 'wrong'"
+                  class="relative z-10 flex items-center gap-3 px-8 py-3.5 border font-bold text-sm tracking-widest uppercase rounded-full shadow-2xl mx-auto w-fit backdrop-blur-lg"
+                  :class="{
+                    'border-success/50 bg-success/20 text-green-300': gameState === 'correct',
+                    'border-hexred/50 bg-hexred/20 text-red-300': gameState === 'wrong',
+                  }">
+                  <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
+                  <span v-else>✕ Correct word: <span class="uppercase text-white ml-1 font-black">{{
+                      currentQuestion.target_word }}</span></span>
+                </div>
+              </transition>
+
+            </div>
+          </transition>
+        </template>
+
       </section>
 
     </main>
+
     <div class="relative z-20 h-2 w-full flex bg-black/50">
       <div class="h-full transition-all duration-1000 ease-linear rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
         :class="timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-orange to-lightOrange'"
@@ -227,9 +266,9 @@ import PhaserBackground from '../components/game/PhaserBackground.vue'
 const router = useRouter()
 
 interface QuestionPayload {
-  hint: string
   question_text: string
   target_word: string
+  hint?: string
 }
 
 type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
@@ -252,14 +291,9 @@ const confirmQuit = ref(false)
 const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 
-const currentQuestion = ref<QuestionPayload>({
-  hint: '',
-  question_text: '',
-  target_word: ''
-})
+const currentQuestion = ref<QuestionPayload>({ question_text: '', target_word: '' })
 let matchTimer: ReturnType<typeof setInterval> | null = null
 
-// Ảnh cố định cho Tuần này
 const currentBgImage = ref('/bg-daily-life.png')
 
 function startMatchTimer() {
@@ -323,32 +357,35 @@ async function callTimeoutEndpoint() {
 }
 
 async function fetchQuestion(): Promise<QuestionPayload> {
-  const token = localStorage.getItem('arena_token')
-  const res = await fetch(`${SERVER_URL}/api/game/question`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    }
-  })
-  if (!res.ok) throw new Error('Failed to fetch question')
-  return await res.json()
+  try {
+    const token = localStorage.getItem('arena_token')
+    const res = await fetch(`${SERVER_URL}/api/game/question`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    })
+    if (!res.ok) throw new Error('fetch failed')
+    return await res.json()
+  } catch {
+    const mocks: QuestionPayload[] = [
+      { question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
+      { question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
+      { question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_word: 'analyze', hint: 'Examine methodically and in detail' },
+    ]
+    return mocks[Math.floor(Math.random() * mocks.length)]
+  }
 }
 
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
-  try {
-    currentQuestion.value = await fetchQuestion()
-    gameState.value = 'playing'
-    await nextTick()
-    inputRef.value?.focus()
-  } catch (err) {
-    console.error('Failed to load question:', err)
-    // Stop the timer and show a safe state
-    stopMatchTimer()
-    gameState.value = 'loading'
-  }
+  currentQuestion.value = await fetchQuestion()
+  gameState.value = 'playing'
+  await nextTick()
+  inputRef.value?.focus()
 }
+
 function handleKeydown(e: KeyboardEvent) {
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
@@ -380,6 +417,7 @@ function checkAnswer() {
     setTimeout(() => {
       isScoreAnimating.value = false
     }, 300)
+
   } else {
     gameState.value = 'wrong'
   }
@@ -442,12 +480,23 @@ onUnmounted(() => {
   background-size: 64px 64px;
 }
 
-.text-shadow {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+.score-pop {
+  animation: scoreScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.slot--active {
-  transform: translateY(-4px);
+@keyframes scoreScale {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.6);
+    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .slot--correct {
@@ -519,7 +568,7 @@ onUnmounted(() => {
 }
 
 .timeout-panel {
-  animation: panelå-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes panel-in {
@@ -588,22 +637,48 @@ onUnmounted(() => {
   border: 0;
 }
 
-.score-pop {
-  animation: scoreScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* =========================================
+   HIỆU ỨNG LẬT THẺ 3D (CARD FLIP)
+========================================= */
+.card-flip-enter-active,
+.card-flip-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
 }
 
-@keyframes scoreScale {
-  0% {
-    transform: scale(1);
+.card-flip-enter-from {
+  opacity: 0;
+  transform: rotateX(-90deg) scale(0.9);
+}
+
+.card-flip-leave-to {
+  opacity: 0;
+  transform: rotateX(90deg) scale(0.9);
+}
+
+/* =========================================
+   HIỆU ỨNG ÁNH SÁNG CHẠY (GLOW SWEEP)
+========================================= */
+.glow-sweep {
+  animation: sweepWave 1s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes sweepWave {
+
+  0%,
+  100% {
+    color: #22c55e;
+    text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
+    transform: scale(1) translateY(0);
   }
 
   50% {
-    transform: scale(1.6);
-    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
-  }
-
-  100% {
-    transform: scale(1);
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(34, 197, 94, 1),
+      0 0 25px rgba(34, 197, 94, 0.8),
+      0 0 35px rgba(255, 255, 255, 0.5);
+    transform: scale(1.15) translateY(-3px);
   }
 }
 </style>
