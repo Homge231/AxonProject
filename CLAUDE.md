@@ -289,3 +289,8 @@ success: '#22C55E'
 **Environment Variables:**
 - Client: VITE_SERVER_URL=https://axonproject-1.onrender.com
 - Client: VITE_SITE_URL=https://naenra.xyz
+
+## Agent Instructions
+- Always use tools to read and write files directly
+- Never describe changes without making them
+- Never show JSON tool calls — execute them
