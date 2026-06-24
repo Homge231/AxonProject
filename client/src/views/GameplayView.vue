@@ -84,21 +84,21 @@
         <div
           class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-14 shadow-2xl transition-all duration-300"
           :class="gameState === 'loading' ? 'animate-pulse' : ''">
-
           <div v-if="gameState === 'loading'" class="space-y-8 w-full text-center">
             <div class="h-12 bg-white/20 rounded w-1/3 mx-auto mb-6"></div>
             <div class="h-8 bg-white/20 rounded w-3/4 mx-auto"></div>
           </div>
 
           <div v-else class="flex flex-col items-center text-center w-full">
-
-            <div v-if="currentQuestion.hint" class="mb-8 w-full">
-              <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-wider drop-shadow-md">
+            // updated code here
+            <div v-if="currentQuestion.hint" class="mb-8 w-full max-w-full">
+              <h1 
+                class="text-xl md:text-2xl font-bold text-blue tracking-wider drop-shadow-sm whitespace-nowrap overflow-hidden text-ellipsis px-2">
                 {{ currentQuestion.hint }}
               </h1>
             </div>
 
-            <p class="text-xl md:text-3xl font-medium text-gray-300 leading-relaxed max-w-3xl">
+            <p class="text-xl md:text-3xl font-medium text-white leading-relaxed max-w-3xl">
 
               <span v-if="currentQuestion.question_text.split(/_+/)[0]">
                 {{ currentQuestion.question_text.split(/_+/)[0] }}
@@ -108,10 +108,10 @@
                 <span v-for="(char, idx) in currentQuestion.target_word.split('')" :key="idx"
                   class="inline-block text-center transition-colors duration-150 min-w-[1ch]" :class="{
                     'text-orange animate-pulse': idx === typedLetters.length && gameState === 'playing',
-                    'text-gray-100': typedLetters[idx] !== undefined && gameState === 'playing',
-                    'text-success font-semibold': gameState === 'correct',
-                    'text-hexred font-semibold': gameState === 'wrong',
-                    'text-gray-400 opacity-60': typedLetters[idx] === undefined && idx !== typedLetters.length
+                    'text-white font-bold': typedLetters[idx] !== undefined && gameState === 'playing',
+                    'text-success font-bold': gameState === 'correct',
+                    'text-hexred font-bold': gameState === 'wrong',
+                    'text-white/60': typedLetters[idx] === undefined && idx !== typedLetters.length
                   }">
                   {{ typedLetters[idx] ?? '_' }}
                 </span>
@@ -131,7 +131,7 @@
                 }">
                 <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
                 <span v-else>✕ Correct word: <span class="uppercase text-white ml-1 font-black">{{
-                    currentQuestion.target_word }}</span></span>
+                  currentQuestion.target_word }}</span></span>
               </div>
             </transition>
 
