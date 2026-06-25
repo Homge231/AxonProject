@@ -6,3 +6,6 @@ client/.env
 client/.env.local
 server/.env
 .DS_Store
+.claude
+.github
+.qodo
