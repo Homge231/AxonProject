@@ -303,4 +303,4 @@ success: '#22C55E'
 ## Agent Instructions
 - Always use tools to read and write files directly
 - Never describe changes without making them
-- Never show JSON tool calls — execute them
+- Never show JSON tool calls — execute them.
