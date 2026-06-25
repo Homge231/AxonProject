@@ -283,7 +283,7 @@ interface QuestionPayload {
 type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-const MATCH_DURATION = 45
+const MATCH_DURATION = 60
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
 
