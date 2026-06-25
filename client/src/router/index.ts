@@ -65,37 +65,32 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
-    
   ]
 })
 
-// Navigation guard đã sửa: dùng return thay vì next()
 router.beforeEach(async (to) => {
-  // 1. Kiểm tra xem URL có chứa token phục hồi của Supabase không
-  // Dấu hiệu: URL có #access_token hoặc type=recovery
   const hash = window.location.hash;
   if (hash.includes('access_token') || hash.includes('type=recovery')) {
-    return true; // Cho phép tải trang reset-password để Supabase xử lý token
+    return true;
   }
 
-  // 2. Các route ngoại lệ đã định nghĩa
   if (to.name === 'reset-password' || to.name === 'forgot-password') {
     return true
   }
 
-  // 3. Logic Auth của bạn
   if (!to.meta.requiresAuth) {
     return true
   }
 
+  // arena_token alone is sufficient — email login users have no Supabase session
   const token = localStorage.getItem('arena_token')
+  if (token) return true
+
+  // Fallback for Google OAuth users
   const { data: { session } } = await supabase.auth.getSession()
+  if (session) return true
 
-  if (!token && !session) {
-    return { name: 'login' } 
-  }
-
-  return true
+  return { name: 'login' }
 })
 
 export default router
