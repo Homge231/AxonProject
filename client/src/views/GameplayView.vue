@@ -276,7 +276,10 @@ type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const MATCH_DURATION = 45
 const FEEDBACK_MS = 1000
+// Refetch batch khi queue còn ≤ ngưỡng này
+const REFETCH_THRESHOLD = 5
 
+// ── State ────────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
 const timeLeft = ref(MATCH_DURATION)
 const score = ref(0)
@@ -290,12 +293,16 @@ const menuOpen = ref(false)
 const confirmQuit = ref(false)
 const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
-
-const currentQuestion = ref<QuestionPayload>({ question_text: '', target_word: '' })
-let matchTimer: ReturnType<typeof setInterval> | null = null
-
 const currentBgImage = ref('/bg-daily-life.png')
 
+// ── Question queue ────────────────────────────────────────────────────────────
+const questionQueue = ref<QuestionPayload[]>([])
+const isFetchingBatch = ref(false)
+const currentQuestion = ref<QuestionPayload>({ question_text: '', target_word: '' })
+
+let matchTimer: ReturnType<typeof setInterval> | null = null
+
+// ── Timer ─────────────────────────────────────────────────────────────────────
 function startMatchTimer() {
   if (matchTimer) return
   matchTimer = setInterval(() => {
@@ -314,6 +321,7 @@ function stopMatchTimer() {
   if (matchTimer) { clearInterval(matchTimer); matchTimer = null }
 }
 
+// ── Session API ───────────────────────────────────────────────────────────────
 async function createSession() {
   try {
     const token = localStorage.getItem('arena_token')
@@ -356,36 +364,65 @@ async function callTimeoutEndpoint() {
   }
 }
 
-async function fetchQuestion(): Promise<QuestionPayload> {
+// ── Batch fetching ────────────────────────────────────────────────────────────
+const MOCK_QUESTIONS: QuestionPayload[] = [
+  { question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
+  { question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
+  { question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_word: 'analyze', hint: 'Examine methodically and in detail' },
+  { question_text: 'The team celebrated their ________ after months of hard work.', target_word: 'victory', hint: 'Winning a competition' },
+  { question_text: 'She showed great ________ in the face of adversity.', target_word: 'resilience', hint: 'Ability to recover quickly' },
+]
+
+async function fetchBatch(): Promise<void> {
+  // Không fetch nếu đang fetch dở hoặc game đã timeout
+  if (isFetchingBatch.value || gameState.value === 'timeout') return
+  isFetchingBatch.value = true
   try {
     const token = localStorage.getItem('arena_token')
-    const res = await fetch(`${SERVER_URL}/api/game/question`, {
+    const res = await fetch(`${SERVER_URL}/api/game/questions`, {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
     })
     if (!res.ok) throw new Error('fetch failed')
-    return await res.json()
+    const data = await res.json()
+    // Đẩy toàn bộ batch vào cuối queue
+    questionQueue.value.push(...(data.questions as QuestionPayload[]))
   } catch {
-    const mocks: QuestionPayload[] = [
-      { question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
-      { question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
-      { question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_word: 'analyze', hint: 'Examine methodically and in detail' },
-    ]
-    return mocks[Math.floor(Math.random() * mocks.length)]
+    // Fallback mock khi DB không kết nối được
+    const shuffled = [...MOCK_QUESTIONS].sort(() => Math.random() - 0.5)
+    questionQueue.value.push(...shuffled)
+  } finally {
+    isFetchingBatch.value = false
   }
 }
 
+// ── Question loading ──────────────────────────────────────────────────────────
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
-  currentQuestion.value = await fetchQuestion()
+
+  // Khi queue còn ≤ REFETCH_THRESHOLD câu → fetch batch mới (background nếu có thể)
+  if (questionQueue.value.length <= REFETCH_THRESHOLD) {
+    await fetchBatch()
+  }
+
+  // Lấy câu đầu tiên ra khỏi queue
+  const next = questionQueue.value.shift()
+  if (!next) {
+    // Không nên xảy ra sau fetchBatch, nhưng guard cho chắc
+    currentQuestion.value = MOCK_QUESTIONS[Math.floor(Math.random() * MOCK_QUESTIONS.length)]
+  } else {
+    currentQuestion.value = next
+  }
+
   gameState.value = 'playing'
   await nextTick()
   inputRef.value?.focus()
 }
 
+// ── Input handling ────────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
@@ -414,10 +451,7 @@ function checkAnswer() {
     gameState.value = 'correct'
 
     isScoreAnimating.value = true
-    setTimeout(() => {
-      isScoreAnimating.value = false
-    }, 300)
-
+    setTimeout(() => { isScoreAnimating.value = false }, 300)
   } else {
     gameState.value = 'wrong'
   }
@@ -433,12 +467,15 @@ function triggerTimeout() {
   callTimeoutEndpoint()
 }
 
+// ── Match control ─────────────────────────────────────────────────────────────
 async function restartMatch() {
   score.value = 0
   questionsAnswered.value = 0
   timeLeft.value = MATCH_DURATION
+  questionQueue.value = []
   stopMatchTimer()
   await createSession()
+  await fetchBatch()
   await loadQuestion()
   startMatchTimer()
 }
@@ -448,6 +485,7 @@ function goHome() {
   router.push('/home')
 }
 
+// ── Misc ──────────────────────────────────────────────────────────────────────
 function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
@@ -461,6 +499,7 @@ function refocusInput() {
 
 onMounted(async () => {
   await createSession()
+  await fetchBatch()   // pre-fill queue với 20 câu đầu
   await loadQuestion()
   startMatchTimer()
   document.addEventListener('click', handleOutsideClick)
@@ -485,146 +524,53 @@ onUnmounted(() => {
 }
 
 @keyframes scoreScale {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.6);
-    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.6); text-shadow: 0 0 15px rgba(255, 165, 0, 0.8); }
+  100% { transform: scale(1); }
 }
 
-.slot--correct {
-  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.slot--wrong {
-  animation: shake 0.4s ease;
-}
+.slot--correct { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.slot--wrong   { animation: shake 0.4s ease; }
 
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.15);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 @keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-6px);
-  }
-
-  75% {
-    transform: translateX(6px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px); }
 }
 
-.timeout-glitch {
-  animation: glitch 0.8s ease forwards;
-}
+.timeout-glitch { animation: glitch 0.8s ease forwards; }
 
 @keyframes glitch {
-  0% {
-    clip-path: inset(0 0 100% 0);
-    opacity: 0;
-    transform: skewX(-10deg) scale(1.1);
-    color: #fff;
-  }
-
-  30% {
-    clip-path: inset(0 0 0% 0);
-    opacity: 1;
-    transform: skewX(5deg);
-    color: #E63946;
-  }
-
-  60% {
-    transform: skewX(-2deg);
-    color: #fff;
-  }
-
-  100% {
-    transform: skewX(0);
-    color: #E63946;
-  }
+  0%   { clip-path: inset(0 0 100% 0); opacity: 0; transform: skewX(-10deg) scale(1.1); color: #fff; }
+  30%  { clip-path: inset(0 0 0% 0);   opacity: 1; transform: skewX(5deg);              color: #E63946; }
+  60%  { transform: skewX(-2deg); color: #fff; }
+  100% { transform: skewX(0);    color: #E63946; }
 }
 
-.timeout-panel {
-  animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+.timeout-panel { animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
 @keyframes panel-in {
-  from {
-    transform: scale(0.9) translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+  from { transform: scale(0.9) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);      opacity: 1; }
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
+.fade-enter-active, .fade-leave-active         { transition: opacity 0.2s, transform 0.2s; }
+.fade-enter-from,   .fade-leave-to             { opacity: 0; transform: translateY(10px); }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
+.dropdown-enter-active, .dropdown-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.dropdown-enter-from,   .dropdown-leave-to     { opacity: 0; transform: translateY(-10px); }
 
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
+.timeout-overlay-enter-active, .timeout-overlay-leave-active { transition: opacity 0.3s; }
+.timeout-overlay-enter-from,   .timeout-overlay-leave-to     { opacity: 0; }
 
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.timeout-overlay-enter-active,
-.timeout-overlay-leave-active {
-  transition: opacity 0.3s backdrop-filter 0.3s;
-}
-
-.timeout-overlay-enter-from,
-.timeout-overlay-leave-to {
-  opacity: 0;
-  backdrop-filter: blur(0px);
-}
-
-.overlay-enter-active,
-.overlay-leave-active {
-  transition: opacity 0.2s;
-}
-
-.overlay-enter-from,
-.overlay-leave-to {
-  opacity: 0;
-}
+.overlay-enter-active, .overlay-leave-active { transition: opacity 0.2s; }
+.overlay-enter-from,   .overlay-leave-to     { opacity: 0; }
 
 .sr-only {
   position: absolute;
@@ -637,47 +583,24 @@ onUnmounted(() => {
   border: 0;
 }
 
-/* =========================================
-   HIỆU ỨNG LẬT THẺ 3D (CARD FLIP)
-========================================= */
-.card-flip-enter-active,
-.card-flip-leave-active {
+.card-flip-enter-active, .card-flip-leave-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
+.card-flip-enter-from { opacity: 0; transform: rotateX(-90deg) scale(0.9); }
+.card-flip-leave-to   { opacity: 0; transform: rotateX(90deg)  scale(0.9); }
 
-.card-flip-enter-from {
-  opacity: 0;
-  transform: rotateX(-90deg) scale(0.9);
-}
-
-.card-flip-leave-to {
-  opacity: 0;
-  transform: rotateX(90deg) scale(0.9);
-}
-
-/* =========================================
-   HIỆU ỨNG ÁNH SÁNG CHẠY (GLOW SWEEP)
-========================================= */
-.glow-sweep {
-  animation: sweepWave 1s ease-in-out infinite;
-  display: inline-block;
-}
+.glow-sweep { animation: sweepWave 1s ease-in-out infinite; display: inline-block; }
 
 @keyframes sweepWave {
-
-  0%,
-  100% {
+  0%, 100% {
     color: #22c55e;
     text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
     transform: scale(1) translateY(0);
   }
-
   50% {
     color: #ffffff;
-    text-shadow: 0 0 15px rgba(34, 197, 94, 1),
-      0 0 25px rgba(34, 197, 94, 0.8),
-      0 0 35px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
     transform: scale(1.15) translateY(-3px);
   }
 }
