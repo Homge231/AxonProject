@@ -70,9 +70,9 @@ MAIL_PASS=
 
 ## Gameplay
 
-Each match is **45 seconds**. Players receive an infinite stream of fill-in-the-blank questions and earn points for every correct answer. Typing the correct word immediately loads the next question — no limit on questions per match.
+Each match is **60 seconds**. Players receive an infinite stream of fill-in-the-blank questions and earn points for every correct answer. Typing the correct word immediately loads the next question — no limit on questions per match.
 
-**Scoring:** `100 + (timeLeft × 3)` points per correct answer.
+**Scoring:** `100 points per correct answer.`
 
 **Question loading:** The client pre-fetches a batch of 20 questions on match start. When the queue drops to 5 or fewer, a new batch is fetched in the background — ensuring zero latency between questions.
 

@@ -246,8 +246,8 @@ MAIL_PASS=
 - Fixed: logout redirect, pendingRegistrations TTL, Google OAuth player row creation
 - Fixed (post): Google+email conflict detection, elo=0 bug, Remember Me for email login
 
-**Sprint 2 (in progress)**:
-- GameplayView: 45s match, letter-slot UI, correct/wrong feedback, TIME OUT overlay
+**Sprint 2 (complete)**:
+- GameplayView: 60s match, letter-slot UI, correct/wrong feedback, TIME OUT overlay
 - `POST /api/game/session` — creates active session on match start
 - `POST /api/game/timeout` — locks session with score on timer end; rejects duplicate calls with 409
 - `GET /api/game/question` — single random question from DB (legacy, kept for compatibility)
