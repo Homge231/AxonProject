@@ -263,11 +263,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
+import Avatar from '../components/Avatar.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 interface QuestionPayload {
   id: string
@@ -307,7 +310,11 @@ const confirmQuit = ref(false)
 const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
-const playerAvatarUrl = ref<string>('')
+
+const playerAvatarUrl = computed(() =>
+  authStore.profile?.avatar_url ||
+  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authStore.profile?.username || 'Player')}`
+)
 
 // ── Question queue ────────────────────────────────────────────────────────────
 const questionQueue = ref<QuestionPayload[]>([])
@@ -362,7 +369,7 @@ async function createSession() {
     const data = await res.json()
     sessionId.value = data.session_id
     if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
-    if (data.avatar_url) playerAvatarUrl.value = data.avatar_url
+    // avatar_url no longer needed from session — handled by computed from authStore
   } catch (err) {
     console.error(err)
   }
@@ -471,21 +478,18 @@ function checkAnswer() {
 
   if (isCorrect) {
     gameState.value = 'correct'
-    pointsEarned.value = BASE_POINTS // Sprint 3: nhân với core multiplier tại đây
+    pointsEarned.value = BASE_POINTS
     score.value += pointsEarned.value
     questionsAnswered.value++
     triggerScoreFlash('correct')
-    // Fire-and-forget — do NOT let syncAnswer overwrite score.value
     syncAnswer(typed)
   } else {
     gameState.value = 'wrong'
 
-    // Count mismatched letters position by position
     let wrongCount = 0
     for (let i = 0; i < target.length; i++) {
       if (typed[i] !== target[i]) wrongCount++
     }
-    // penalty: 5 pts per wrong letter, min 5, max 25
     const penalty = Math.min(25, Math.max(5, wrongCount * 5))
     pointsDeducted.value = penalty
     score.value = Math.max(0, score.value - penalty)
@@ -497,7 +501,6 @@ function checkAnswer() {
   }, FEEDBACK_MS)
 }
 
-// Fire-and-forget: only used for server-side tracking, never overwrites local score
 async function syncAnswer(answer: string) {
   if (!sessionId.value || !currentQuestion.value.id) return
   try {
@@ -514,9 +517,6 @@ async function syncAnswer(answer: string) {
         answer: answer
       })
     })
-    // ⚠️ Intentionally NOT reading the response score back —
-    // local score is authoritative (includes wrong-answer penalties
-    // that the server doesn't track). Final score is sent on timeout.
   } catch (err) {
     console.error('Failed to sync answer:', err)
   }
