@@ -187,11 +187,7 @@
         :style="{ width: `${(timeLeft / MATCH_DURATION) * 100}%` }"></div>
     </div>
 
-    <div v-if="playerAvatarUrl" class="absolute bottom-6 left-6 z-60 pointer-events-none">
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue to-lightBlue p-0.5 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-        <img :src="playerAvatarUrl" alt="Player Avatar" class="w-full h-full rounded-full object-cover bg-darkNavy" />
-      </div>
-    </div>
+    <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
 
     <transition name="timeout-overlay">
       <div v-if="gameState === 'timeout'" class="absolute inset-0 z-50 flex items-center justify-center">
