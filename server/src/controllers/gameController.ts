@@ -6,13 +6,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 )
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const BASE_POINTS = 100
 const COMBO_BONUS_PER_STREAK = 10   // +10 pts per combo level (combo 5 → +50)
 const MAX_COMBO_BONUS = 100         // cap combo bonus at +100 pts
 const DEFAULT_CORE_ID = '00000000-0000-0000-0000-000000000001' // "No Core"
 
-// ── Types ────────────────────────────────────────────────────────────────────
+const TYPO_ACCURACY_THRESHOLD = 0.8   // >= 80% similarity counts as a "typo"
+const TYPO_PENALTY_PER_LETTER = 2     // -2 pts per wrong letter for close misses
+const WRONG_PENALTY_PER_CHAR = 10     // -10 pts per wrong/missing character for standard misses
+const MIN_WRONG_PENALTY = 10          // floor — even a 1-character miss costs at least this much
+const MAX_WRONG_PENALTY = 50          // ceiling — caps penalty for a full skip / completely unrelated guess
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface CoreRow {
   id: string
   name: string
@@ -20,18 +26,90 @@ interface CoreRow {
   multiplier_buff: number
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+type PenaltyType = 'typo' | 'wrong' | null
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function normalizeAnswer(value: unknown): string {
   return String(value ?? '').trim().toLowerCase()
 }
 
-function getWrongAnswerPenalty(answer: string, target: string): number {
-  let wrongCount = Math.abs(target.length - answer.length)
-  const comparableLength = Math.min(answer.length, target.length)
-  for (let i = 0; i < comparableLength; i++) {
-    if (answer[i] !== target[i]) wrongCount++
+/**
+ * Classic Levenshtein edit-distance (insert/delete/substitute), O(m*n).
+ * Used to measure how close `typed` is to `target`.
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1]
+      } else {
+        dp[i][j] = 1 + Math.min(
+          dp[i - 1][j],     // deletion
+          dp[i][j - 1],     // insertion
+          dp[i - 1][j - 1]  // substitution
+        )
+      }
+    }
   }
-  return Math.min(25, Math.max(5, wrongCount * 5))
+
+  return dp[m][n]
+}
+
+/**
+ * Accuracy as a 0..1 ratio: 1 - (edit_distance / longer_word_length).
+ * An empty typed word (skip) always yields accuracy 0.
+ */
+function calculateAccuracy(typed: string, target: string): { distance: number; accuracy: number } {
+  if (typed.length === 0 || target.length === 0) {
+    return { distance: Math.max(typed.length, target.length), accuracy: 0 }
+  }
+  const distance = levenshteinDistance(typed, target)
+  const maxLen = Math.max(typed.length, target.length)
+  const accuracy = maxLen === 0 ? 0 : 1 - distance / maxLen
+  return { distance, accuracy }
+}
+
+/**
+ * Determines the penalty for a wrong answer, scaled proportionally to how many
+ * characters differ from the target (Levenshtein edit distance). No flat
+ * deduction is ever applied — the penalty always grows with the error margin.
+ *
+ *  - High accuracy (>= 80%, non-empty submission) → "typo": -2 pts per wrong letter
+ *  - Low accuracy (< 80%) or empty/skip           → "wrong": -10 pts per wrong letter,
+ *                                                     capped at MAX_WRONG_PENALTY so a
+ *                                                     totally unrelated guess or a full
+ *                                                     skip doesn't wipe out the score.
+ */
+function getWrongAnswerPenalty(
+  typed: string,
+  target: string
+): { penalty: number; penaltyType: PenaltyType; accuracy: number; distance: number } {
+  const { distance, accuracy } = calculateAccuracy(typed, target)
+
+  const isSkip = typed.length === 0
+  if (!isSkip && accuracy >= TYPO_ACCURACY_THRESHOLD) {
+    const penalty = Math.max(1, distance * TYPO_PENALTY_PER_LETTER)
+    return { penalty, penaltyType: 'typo', accuracy, distance }
+  }
+
+  // Proportional to the number of wrong characters; a full skip is treated as
+  // the worst case (distance == target length) and is naturally capped below.
+  const effectiveDistance = isSkip ? target.length : distance
+  const penalty = Math.min(
+    MAX_WRONG_PENALTY,
+    Math.max(MIN_WRONG_PENALTY, effectiveDistance * WRONG_PENALTY_PER_CHAR)
+  )
+  return { penalty, penaltyType: 'wrong', accuracy, distance: effectiveDistance }
 }
 
 /**
@@ -75,7 +153,7 @@ function calculateScore(
   }
 }
 
-// ── Endpoint: GET /api/game/question (legacy) ───────────────────────────────
+// ── Endpoint: GET /api/game/question (legacy) ─────────────────────────────────
 export async function getQuestion(_req: Request, res: Response): Promise<void> {
   try {
     const { data: ids, error: idError } = await supabase.from('questions').select('id')
@@ -97,7 +175,7 @@ export async function getQuestion(_req: Request, res: Response): Promise<void> {
   }
 }
 
-// ── Endpoint: GET /api/game/questions ───────────────────────────────────────
+// ── Endpoint: GET /api/game/questions ────────────────────────────────────────
 export async function getQuestions(_req: Request, res: Response): Promise<void> {
   const BATCH_SIZE = 20
   try {
@@ -122,7 +200,7 @@ export async function getQuestions(_req: Request, res: Response): Promise<void> 
   }
 }
 
-// ── Endpoint: GET /api/game/cores ───────────────────────────────────────────
+// ── Endpoint: GET /api/game/cores ────────────────────────────────────────────
 export async function getCores(_req: Request, res: Response): Promise<void> {
   try {
     const { data: cores, error } = await supabase
@@ -138,7 +216,7 @@ export async function getCores(_req: Request, res: Response): Promise<void> {
   }
 }
 
-// ── Endpoint: POST /api/game/session ────────────────────────────────────────
+// ── Endpoint: POST /api/game/session ─────────────────────────────────────────
 export async function createSession(req: Request, res: Response): Promise<void> {
   try {
     const playerId = (req as any).user?.id
@@ -190,13 +268,19 @@ export async function createSession(req: Request, res: Response): Promise<void> 
   }
 }
 
-// ── Endpoint: POST /api/game/submit-answer ──────────────────────────────────
+// ── Endpoint: POST /api/game/submit-answer ────────────────────────────────────
 /**
  * Receives:  { session_id, question_id, answer, time_taken?, current_combo, active_core_id }
  * Validates: active_core_id matches game_sessions.active_core_id (anti-cheat)
- * Calculates: ((Base + ComboBonus) + FlatBuff) * MultiplierBuff
- *             ComboBonus only applies when active core is "Combo Core"
- * Returns:   { status, correct, points_earned, points_deducted, current_total_score, questions_answered, breakdown }
+ * Calculates:
+ *   correct → ((Base + ComboBonus) + FlatBuff) * MultiplierBuff
+ *             ComboBonus only applies when the active core is "Combo Core" — all other
+ *             cores ignore current_combo entirely, regardless of streak length.
+ *   wrong   → Levenshtein-based similarity check, fully proportional (never flat):
+ *               accuracy >= 80%  → dynamic "typo" penalty (-2 pts per wrong letter)
+ *               accuracy < 80%   → proportional "wrong" penalty (-10 pts per wrong letter, clamped 10–50)
+ * Returns:   { status, correct, points_earned, points_deducted, penalty_type, accuracy,
+ *              current_total_score, questions_answered, breakdown }
  */
 export async function submitAnswer(req: Request, res: Response): Promise<void> {
   try {
@@ -205,6 +289,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
 
     const { session_id, question_id, answer, time_taken, current_combo, active_core_id } = req.body
 
+    // ── 1. Input validation ───────────────────────────────────────────────────
     if (!session_id || !question_id || typeof answer !== 'string') {
       res.status(400).json({ error: 'session_id, question_id and answer are required.' })
       return
@@ -214,6 +299,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       ? Math.floor(current_combo)
       : 0
 
+    // ── 2. Fetch session (verify ownership & status) ──────────────────────────
     const { data: session, error: sessErr } = await supabase
       .from('game_sessions')
       .select('id, status, score, questions_answered, active_core_id')
@@ -230,6 +316,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       return
     }
 
+    // ── 3. Anti-cheat: validate submitted core matches session core ────────────
     const sessionCoreId = session.active_core_id ?? DEFAULT_CORE_ID
     const submittedCoreId = active_core_id ?? DEFAULT_CORE_ID
 
@@ -243,6 +330,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       return
     }
 
+    // ── 4. Fetch core buffs ───────────────────────────────────────────────────
     const { data: coreRow, error: coreErr } = await supabase
       .from('cores')
       .select('id, name, flat_buff, multiplier_buff')
@@ -256,6 +344,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
 
     const core: CoreRow = coreRow
 
+    // ── 5. Fetch question & evaluate answer ──────────────────────────────────
     const { data: question, error: qErr } = await supabase
       .from('questions')
       .select('target_word')
@@ -271,10 +360,22 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
     const normalizedTarget = normalizeAnswer(question.target_word)
     const isCorrect = normalizedAnswer === normalizedTarget
 
-    const wrongPenalty = isCorrect ? 0 : getWrongAnswerPenalty(normalizedAnswer, normalizedTarget)
+    // ── 6. Calculate similarity-based penalty for wrong answers ───────────────
+    let penaltyType: PenaltyType = null
+    let accuracy = 1
+    let wrongPenalty = 0
 
+    if (!isCorrect) {
+      const result = getWrongAnswerPenalty(normalizedAnswer, normalizedTarget)
+      wrongPenalty = result.penalty
+      penaltyType = result.penaltyType
+      accuracy = result.accuracy
+    }
+
+    // ── 7. Calculate score ────────────────────────────────────────────────────
     const { pointsDelta, breakdown } = calculateScore(isCorrect, combo, core, wrongPenalty)
 
+    // ── 8. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
       .from('game_session_answers')
       .insert({
@@ -293,6 +394,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       throw answerErr
     }
 
+    // ── 9. Update session totals ──────────────────────────────────────────────
     const newScore = Math.max(0, (session.score || 0) + pointsDelta)
     const newQuestionsAnswered = (session.questions_answered || 0) + 1
 
@@ -305,6 +407,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
 
     if (updateErr) throw updateErr
 
+    // ── 10. Build response ────────────────────────────────────────────────────
     const pointsEarned = isCorrect ? pointsDelta : 0
     const pointsDeducted = isCorrect ? 0 : Math.abs(pointsDelta)
 
@@ -313,6 +416,8 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       correct: isCorrect,
       points_earned: pointsEarned,
       points_deducted: pointsDeducted,
+      penalty_type: penaltyType,        // 'typo' | 'wrong' | null
+      accuracy: Math.round(accuracy * 1000) / 1000, // rounded to 3 decimals
       current_total_score: newScore,
       questions_answered: newQuestionsAnswered,
       breakdown: {
@@ -330,7 +435,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
   }
 }
 
-// ── Endpoint: POST /api/game/timeout ────────────────────────────────────────
+// ── Endpoint: POST /api/game/timeout ─────────────────────────────────────────
 export async function timeoutSession(req: Request, res: Response): Promise<void> {
   try {
     const playerId = (req as any).user?.id
@@ -374,7 +479,7 @@ export async function timeoutSession(req: Request, res: Response): Promise<void>
   }
 }
 
-// ── Endpoint: POST /api/game/abandon ────────────────────────────────────────
+// ── Endpoint: POST /api/game/abandon ─────────────────────────────────────────
 export async function abandonSession(req: Request, res: Response): Promise<void> {
   try {
     const playerId = (req as any).user?.id
