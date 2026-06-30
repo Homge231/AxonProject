@@ -15,6 +15,23 @@
     <div class="absolute inset-0 cyber-grid opacity-50 pointer-events-none z-0"></div>
 
     <div class="relative z-10 w-full max-w-4xl flex flex-col items-center">
+
+      <div v-if="!loading && !errorMsg" class="flex flex-col items-center mb-6">
+        <div class="flex items-center gap-2" :class="timeLeft <= 5 ? 'text-hexred' : 'text-lightOrange'">
+          <svg class="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-mono font-black text-4xl tabular-nums drop-shadow-lg"
+            :class="timeLeft <= 5 ? 'animate-pulse' : ''">{{ timeLeft }}</span>
+        </div>
+        <div class="w-48 h-1.5 bg-black/50 rounded-full mt-2 overflow-hidden">
+          <div class="h-full transition-all duration-1000 ease-linear rounded-full"
+            :class="timeLeft <= 5 ? 'bg-hexred' : 'bg-gradient-to-r from-orange to-lightOrange'"
+            :style="{ width: `${(timeLeft / SELECTION_DURATION) * 100}%` }"></div>
+        </div>
+      </div>
+
       <h2 class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Support
       </h2>
@@ -35,18 +52,21 @@
         <div v-for="core in randomCores" :key="core.id"
              @click="selectCore(core)"
              class="group relative bg-white/5 backdrop-blur-xl border rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 cursor-pointer transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-4 flex flex-col items-center text-center overflow-hidden"
-             :class="selectedCoreId === core.id
-               ? 'border-lightBlue/70 bg-white/10 shadow-[0_0_40px_rgba(59,130,246,0.35)] -translate-y-2'
+             :class="selectedCore?.id === core.id
+               ? 'border-lightBlue bg-white/10 shadow-[0_0_50px_rgba(59,130,246,0.6)] -translate-y-2 ring-2 ring-lightBlue/80'
                : 'border-white/10 hover:border-lightBlue/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.3)]'">
           <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-          <div class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 group-hover:from-blue/20 group-hover:to-lightBlue/10 transition-all duration-500 border border-white/10 group-hover:border-lightBlue shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-            <svg class="w-12 h-12 text-gray-400 group-hover:text-lightBlue transition-colors duration-500 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 group-hover:from-blue/20 group-hover:to-lightBlue/10 transition-all duration-500 border border-white/10 group-hover:border-lightBlue shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]"
+            :class="selectedCore?.id === core.id ? 'border-lightBlue shadow-[0_0_25px_rgba(59,130,246,0.6)]' : ''">
+            <svg class="w-12 h-12 text-gray-400 group-hover:text-lightBlue transition-colors duration-500 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              :class="selectedCore?.id === core.id ? 'text-lightBlue' : ''">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
             </svg>
           </div>
 
-          <h3 class="text-3xl font-black text-white mb-4 tracking-wide group-hover:text-lightBlue transition-colors duration-500">
+          <h3 class="text-3xl font-black text-white mb-4 tracking-wide group-hover:text-lightBlue transition-colors duration-500"
+            :class="selectedCore?.id === core.id ? 'text-lightBlue' : ''">
             {{ core.name }}
           </h3>
           <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px] mb-4">
@@ -58,7 +78,12 @@
             <span class="px-2 py-1 rounded bg-black/30 text-lightOrange">x{{ core.multiplier_buff }} mult</span>
           </div>
 
-          <div class="mt-6 opacity-0 group-hover:opacity-100 transition-all transform translate-y-6 group-hover:translate-y-0 duration-500">
+          <div v-if="selectedCore?.id === core.id"
+            class="mt-6 px-8 py-3 bg-blue/30 rounded-full border border-lightBlue overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+            <span class="relative z-10 text-xs font-black text-lightBlue tracking-[0.2em] uppercase drop-shadow-md">Selected</span>
+          </div>
+          <div v-else
+            class="mt-6 opacity-0 group-hover:opacity-100 transition-all transform translate-y-6 group-hover:translate-y-0 duration-500">
             <div class="relative px-8 py-3 bg-blue/20 rounded-full border border-lightBlue overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.5)]">
               <div class="absolute inset-0 bg-lightBlue/20 animate-pulse"></div>
               <span class="relative z-10 text-xs font-black text-lightBlue tracking-[0.2em] uppercase drop-shadow-md">Select</span>
@@ -71,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/gameStore'
 
@@ -93,15 +118,20 @@ const ICON_MAP: Record<string, string> = {
 }
 const DEFAULT_ICON = 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
 
+const SELECTION_DURATION = 15
+
 const router = useRouter()
 const gameStore = useGameStore()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
 const supportCores = ref<CoreOption[]>([])
-const selectedCoreId = ref<string | null>(null)
+const randomCores = ref<CoreOption[]>([])
+const selectedCore = ref<CoreOption | null>(null)
 const loading = ref(true)
 const errorMsg = ref('')
-const randomCores = ref<CoreOption[]>([])
+
+const timeLeft = ref(SELECTION_DURATION)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 function getRandomCores(cores: CoreOption[], count: number): CoreOption[] {
   const shuffled = [...cores].sort(() => 0.5 - Math.random())
@@ -129,25 +159,48 @@ async function fetchSupportCores() {
     }))
 
     randomCores.value = getRandomCores(supportCores.value, 2)
-    selectedCoreId.value = randomCores.value.length > 0 ? randomCores.value[0].id : null
-
+    selectedCore.value = null
   } catch (err) {
     console.error('fetchSupportCores error:', err)
     errorMsg.value = 'Failed to load Support Cores.'
   } finally {
     loading.value = false
+    if (!errorMsg.value) startCountdown()
   }
 }
 
 function selectCore(core: CoreOption) {
-  selectedCoreId.value = core.id
-  gameStore.activeCoreId = core.id
+  selectedCore.value = core
+}
+
+function startCountdown() {
+  stopCountdown()
+  timeLeft.value = SELECTION_DURATION
+  countdownTimer = setInterval(() => {
+    if (timeLeft.value <= 1) {
+      timeLeft.value = 0
+      stopCountdown()
+      confirmAndStart()
+    } else {
+      timeLeft.value--
+    }
+  }, 1000)
+}
+
+function stopCountdown() {
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null }
+}
+
+function confirmAndStart() {
+  if (!selectedCore.value) {
+    selectedCore.value = randomCores.value[Math.floor(Math.random() * randomCores.value.length)]
+  }
+  gameStore.activeCoreId = selectedCore.value.id
   router.push('/game')
 }
 
-
-
 onMounted(fetchSupportCores)
+onUnmounted(stopCountdown)
 </script>
 
 <style scoped>
