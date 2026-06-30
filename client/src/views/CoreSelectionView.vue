@@ -66,23 +66,6 @@
           </div>
         </div>
       </div>
-
-      <div v-if="!loading && !errorMsg" class="flex gap-4 mt-12">
-        <button @click="router.push('/home')"
-          class="px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors">
-          Back
-        </button>
-        <button
-          @click="confirmAndStart"
-          :disabled="!selectedCoreId"
-          class="group relative w-[280px] h-[56px] bg-darkNavy border border-white/10 overflow-hidden transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-hexred focus:outline-none"
-        >
-          <div class="absolute inset-0 bg-gradient-to-r from-orange to-hexred translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0"></div>
-          <span class="relative z-10 text-sm font-black italic tracking-widest uppercase text-gray-300 group-hover:text-white transition-colors duration-300">
-            Confirm & Find Match
-          </span>
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -158,15 +141,10 @@ async function fetchSupportCores() {
 
 function selectCore(core: CoreOption) {
   selectedCoreId.value = core.id
-}
-
-function confirmAndStart() {
-  if (!selectedCoreId.value) return
-  const core = randomCores.value.find(c => c.id === selectedCoreId.value)
-  gameStore.activeCoreId = selectedCoreId.value
-  gameStore.activeCoreName = core?.name ?? null
   router.push('/game')
 }
+
+
 
 onMounted(fetchSupportCores)
 </script>
