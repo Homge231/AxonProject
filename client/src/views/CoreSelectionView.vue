@@ -1,6 +1,20 @@
 <template>
-  <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
-    <div class="relative w-full max-w-4xl px-4 md:px-8 flex flex-col items-center">
+  <div class="h-screen w-full bg-darkNavy text-white overflow-hidden relative font-sans flex flex-col items-center justify-center px-6">
+    <div
+      class="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-blue rounded-full mix-blend-screen filter blur-[200px] opacity-15 pointer-events-none z-0">
+    </div>
+    <div
+      class="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-orange rounded-full mix-blend-screen filter blur-[200px] opacity-15 pointer-events-none z-0">
+    </div>
+
+    <div
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[18vw] font-black italic text-white/[0.02] tracking-tighter whitespace-nowrap select-none pointer-events-none z-0 transform -skew-x-12">
+      NAENRA
+    </div>
+
+    <div class="absolute inset-0 cyber-grid opacity-50 pointer-events-none z-0"></div>
+
+    <div class="relative z-10 w-full max-w-4xl flex flex-col items-center">
       <h2 class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Support
       </h2>
@@ -53,14 +67,22 @@
         </div>
       </div>
 
-      <button
-        v-if="!loading && !errorMsg"
-        @click="confirmAndStart"
-        :disabled="!selectedCoreId"
-        class="mt-12 px-10 py-3.5 bg-gradient-to-r from-orange to-hexred text-white font-black text-sm tracking-widest uppercase rounded-xl shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Confirm & Find Match
-      </button>
+      <div v-if="!loading && !errorMsg" class="flex gap-4 mt-12">
+        <button @click="router.push('/home')"
+          class="px-8 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors">
+          Back
+        </button>
+        <button
+          @click="confirmAndStart"
+          :disabled="!selectedCoreId"
+          class="group relative w-[280px] h-[56px] bg-darkNavy border border-white/10 overflow-hidden transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-hexred focus:outline-none"
+        >
+          <div class="absolute inset-0 bg-gradient-to-r from-orange to-hexred translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0"></div>
+          <span class="relative z-10 text-sm font-black italic tracking-widest uppercase text-gray-300 group-hover:text-white transition-colors duration-300">
+            Confirm & Find Match
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -138,3 +160,11 @@ function confirmAndStart() {
 
 onMounted(fetchSupportCores)
 </script>
+
+<style scoped>
+.cyber-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+</style>
