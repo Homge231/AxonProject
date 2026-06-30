@@ -343,6 +343,7 @@ const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
 const currentCombo = ref(0)
+const COMBO_CORE_ID = '00000000-0000-0000-0000-000000000005'
 
 // active_core_id / name sourced from gameStore (set in CoreSelectionView)
 const activeCoreId = computed<string | null>({
@@ -350,9 +351,8 @@ const activeCoreId = computed<string | null>({
   set: (val) => { gameStore.activeCoreId = val }
 })
 
-const isComboCore = computed(() =>
-  (gameStore.activeCoreName ?? '').toLowerCase().includes('combo')
-)
+const isComboCore = computed(() => gameStore.activeCoreId === COMBO_CORE_ID)
+
 
 // Floating point popups
 const pointPopups = ref<PointPopup[]>([])
@@ -443,7 +443,6 @@ async function createSession() {
     const data = await res.json()
     sessionId.value = data.session_id
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
-    if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
   } catch (err) {
     console.error(err)

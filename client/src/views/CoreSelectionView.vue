@@ -142,9 +142,7 @@ async function fetchSupportCores() {
 function selectCore(core: CoreOption) {
   selectedCoreId.value = core.id
   gameStore.activeCoreId = core.id
-  gameStore.activeCoreName = core.name
   router.push('/game')
-
 }
 
 
