@@ -98,7 +98,6 @@ async function fetchCores() {
     if (!res.ok) throw new Error('failed')
     const data = await res.json()
     cores.value = data.cores ?? []
-    // Default-select "No Core" if present, else first core
     const noCore = cores.value.find(c => c.name.toLowerCase() === 'no core')
     selectedCoreId.value = (noCore ?? cores.value[0])?.id ?? null
   } catch (err) {

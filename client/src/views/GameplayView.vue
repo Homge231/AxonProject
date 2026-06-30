@@ -2,7 +2,6 @@
   <div class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white"
     @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" />
-
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
     <!-- Floating points popup container -->
@@ -43,7 +42,8 @@
             class="absolute top-full left-0 mt-3 w-56 bg-darkNavy/90 backdrop-blur-xl border border-white/10 shadow-2xl z-50 rounded-b-lg overflow-hidden">
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
-              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score }}</span></p>
+              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
+                  }}</span></p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
@@ -86,15 +86,27 @@
           <span class="font-mono font-black text-3xl tabular-nums drop-shadow-lg"
             :class="timeLeft <= 10 ? 'animate-pulse' : ''">{{ String(timeLeft).padStart(2, '0') }}</span>
         </div>
+<<<<<<< HEAD
+
+        <div class="text-right hidden md:block">
+          <p class="text-[10px] text-gray-400 uppercase tracking-widest drop-shadow-sm">Score</p>
+          <p class="font-black text-xl drop-shadow-md inline-block transition-colors duration-200" :class="{
+            'score-pop-correct text-orange': scoreFlash === 'correct',
+            'score-pop-wrong text-hexred': scoreFlash === 'wrong',
+            'text-white': scoreFlash === null
+          }">
+            {{ score }}
+          </p>
+        </div>
+=======
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
       </div>
     </header>
 
     <main
       class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
-
       <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
-
-        <div v-if="gameState === 'loading'" class="w-full flex flex-col gap-10">
+        <div v-if="gameState === 'loading' || gameState === 'selecting_core'" class="w-full flex flex-col gap-10">
           <div class="bg-blue/10 backdrop-blur-xl border border-blue/20 rounded-2xl p-6 h-28 animate-pulse"></div>
           <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-14 h-44 animate-pulse"></div>
         </div>
@@ -105,7 +117,8 @@
 
               <div v-if="currentQuestion.hint"
                 class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent"></div>
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+                </div>
                 <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
                   <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -187,7 +200,6 @@
             </div>
           </transition>
         </template>
-
       </section>
     </main>
 
@@ -202,6 +214,59 @@
 
     <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
 
+    <transition name="overlay">
+      <div v-if="gameState === 'selecting_core'"
+        class="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
+        <div class="relative w-full max-w-4xl px-4 md:px-8 flex flex-col items-center">
+
+          <h2
+            class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
+            Tactical Support
+          </h2>
+          <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
+            Select 1 of 2 available cores for this round
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 w-full">
+            <div v-for="core in supportCores" :key="core.id" @click="confirmCoreSelection(core)"
+              class="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 hover:border-lightBlue/50 cursor-pointer transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-4 flex flex-col items-center text-center overflow-hidden">
+
+              <div
+                class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+              </div>
+
+              <div
+                class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 group-hover:from-blue/20 group-hover:to-lightBlue/10 transition-all duration-500 border border-white/10 group-hover:border-lightBlue shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                <svg
+                  class="w-12 h-12 text-gray-400 group-hover:text-lightBlue transition-colors duration-500 drop-shadow-md"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
+                </svg>
+              </div>
+
+              <h3
+                class="text-3xl font-black text-white mb-4 tracking-wide group-hover:text-lightBlue transition-colors duration-500">
+                {{ core.title }}</h3>
+
+              <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px]">{{ core.description }}</p>
+
+              <div
+                class="mt-10 opacity-0 group-hover:opacity-100 transition-all transform translate-y-6 group-hover:translate-y-0 duration-500">
+                <div
+                  class="relative px-8 py-3 bg-blue/20 rounded-full border border-lightBlue overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  <div class="absolute inset-0 bg-lightBlue/20 animate-pulse"></div>
+                  <span
+                    class="relative z-10 text-xs font-black text-lightBlue tracking-[0.2em] uppercase drop-shadow-md">
+                    Select
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
     <transition name="timeout-overlay">
       <div v-if="gameState === 'timeout'" class="absolute inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-darkNavy/80 backdrop-blur-xl"></div>
@@ -271,7 +336,8 @@
     </transition>
 
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="gameState === 'timeout'" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="gameState === 'timeout' || gameState === 'selecting_core'"
+      @keydown="handleKeydown" />
   </div>
 </template>
 
@@ -283,10 +349,12 @@ import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
 import { useGameStore } from '../stores/gameStore'
 
+// Dependencies
 const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
 
+// Types
 interface QuestionPayload {
   id: string
   question_text: string
@@ -294,6 +362,14 @@ interface QuestionPayload {
   hint?: string
 }
 
+interface SupportCore {
+  id: string
+  title: string
+  description: string
+  icon: string
+}
+
+type GameState = 'selecting_core' | 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 interface PointPopup {
   id: number
   value: number
@@ -305,12 +381,20 @@ interface PointPopup {
 type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 type ScoreFlash = 'correct' | 'wrong' | null
 
+// Constants
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const MATCH_DURATION = 60
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
+<<<<<<< HEAD
+=======
+const BASE_POINTS = 100
+<<<<<<< HEAD
+=======
+>>>>>>> b536b26f1af7969e9a57dacf5c1cc3562b927419
 // Score bar: treat 2000 pts as "full" bar — scales naturally beyond
 const SCORE_BAR_MAX = 2000
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
@@ -318,8 +402,19 @@ const THEME_MAP: Record<string, string> = {
   'travel': '/bg-travel.png'
 }
 
+<<<<<<< HEAD
+const MOCK_CORES: SupportCore[] = [
+  { id: 'core-time', title: 'Time Freeze', description: 'Pauses the timer for 5 seconds once per match.', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { id: 'core-score', title: 'Score Multiplier', description: 'Earn 1.5x points for the next 3 correct answers.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+  { id: 'core-hint', title: 'Hint Reveal', description: 'Automatically reveals the first letter of the target word.', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' }
+]
+
+// State
+const gameState = ref<GameState>('selecting_core')
+=======
 // ── State ───────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const timeLeft = ref(MATCH_DURATION)
 const score = ref(0)
 const scoreFlash = ref<ScoreFlash>(null)
@@ -343,15 +438,22 @@ const activeCoreId = computed<string | null>({
   set: (val) => { gameStore.activeCoreId = val }
 })
 
+<<<<<<< HEAD
+const supportCores = ref<SupportCore[]>([])
+const activeCore = ref<SupportCore | null>(null)
+=======
 // Floating point popups
 const pointPopups = ref<PointPopup[]>([])
 let popupIdCounter = 0
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 const playerAvatarUrl = computed(() =>
   authStore.profile?.avatar_url ||
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authStore.profile?.username || 'Player')}`
 )
 
+<<<<<<< HEAD
+=======
 // Score bar derived state
 const scoreBarPercent = computed(() => Math.min(100, (score.value / SCORE_BAR_MAX) * 100))
 const scoreBarColor = computed(() => {
@@ -362,6 +464,7 @@ const scoreBarColor = computed(() => {
 })
 
 // ── Question queue ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const questionQueue = ref<QuestionPayload[]>([])
 const isFetchingBatch = ref(false)
 const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_word: '' })
@@ -369,13 +472,38 @@ const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target
 let matchTimer: ReturnType<typeof setInterval> | null = null
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 
+<<<<<<< HEAD
+// Support Core Logic
+async function fetchSupportCores() {
+  gameState.value = 'selecting_core'
+  
+  const shuffledCores = [...MOCK_CORES].sort(() => 0.5 - Math.random())
+  supportCores.value = shuffledCores.slice(0, 2)
+}
+
+function confirmCoreSelection(core: SupportCore) {
+  activeCore.value = core
+  loadQuestion()
+  startMatchTimer()
+}
+
+// Helpers
+=======
 // ── Score flash helper ───────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function triggerScoreFlash(type: ScoreFlash) {
   if (flashTimer) clearTimeout(flashTimer)
   scoreFlash.value = type
   flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
 }
 
+<<<<<<< HEAD
+function getBackgroundImage(themeKey: string) {
+  return THEME_MAP[themeKey] || '/bg-daily-life.png'
+}
+
+// Timer
+=======
 // ── Floating popup helper ────────────────────────────────────────────────────
 function spawnPointPopup(value: number, type: 'correct' | 'wrong') {
   // Anchor to letter-slots element centre, fallback to viewport centre
@@ -396,6 +524,7 @@ function spawnPointPopup(value: number, type: 'correct' | 'wrong') {
 }
 
 // ── Timer ────────────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function startMatchTimer() {
   if (matchTimer) return
   matchTimer = setInterval(() => {
@@ -414,11 +543,15 @@ function stopMatchTimer() {
   if (matchTimer) { clearInterval(matchTimer); matchTimer = null }
 }
 
+<<<<<<< HEAD
+// API Methods
+=======
 function getBackgroundImage(themeKey: string) {
   return THEME_MAP[themeKey] || '/bg-daily-life.png'
 }
 
 // ── Session API ──────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function createSession() {
   try {
     const token = localStorage.getItem('arena_token')
@@ -465,7 +598,10 @@ async function callTimeoutEndpoint() {
   }
 }
 
+<<<<<<< HEAD
+=======
 // ── Batch fetching ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const MOCK_QUESTIONS: QuestionPayload[] = [
   { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
   { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
@@ -496,7 +632,11 @@ async function fetchBatch(): Promise<void> {
   }
 }
 
+<<<<<<< HEAD
+// Gameplay Logic
+=======
 // ── Question loading ─────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
@@ -518,9 +658,11 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
+<<<<<<< HEAD
+=======
 // ── Input handling ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function handleKeydown(e: KeyboardEvent) {
-  if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
 
@@ -608,7 +750,10 @@ function triggerTimeout() {
   callTimeoutEndpoint()
 }
 
+<<<<<<< HEAD
+=======
 // ── Match control ────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function restartMatch() {
   score.value = 0
   questionsAnswered.value = 0
@@ -616,12 +761,15 @@ async function restartMatch() {
   questionQueue.value = []
   currentCombo.value = 0
   scoreFlash.value = null
+<<<<<<< HEAD
+  activeCore.value = null
+=======
   pointPopups.value = []
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
   stopMatchTimer()
   await createSession()
   await fetchBatch()
-  await loadQuestion()
-  startMatchTimer()
+  await fetchSupportCores()
 }
 
 function goHome() {
@@ -630,6 +778,9 @@ function goHome() {
   router.push('/home')
 }
 
+<<<<<<< HEAD
+// Lifecycle Events
+=======
 async function abandonCurrentSession() {
   if (!sessionId.value || gameState.value === 'timeout') return
   try {
@@ -648,6 +799,7 @@ async function abandonCurrentSession() {
 }
 
 // ── Misc ─────────────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
@@ -655,15 +807,15 @@ function handleOutsideClick(e: MouseEvent) {
 }
 
 function refocusInput() {
-  if (gameState.value === 'timeout') return
-  if (!menuOpen.value && !confirmQuit.value) inputRef.value?.focus()
+  if (gameState.value === 'playing' && !menuOpen.value && !confirmQuit.value) {
+    inputRef.value?.focus()
+  }
 }
 
 onMounted(async () => {
   await createSession()
   await fetchBatch()
-  await loadQuestion()
-  startMatchTimer()
+  await fetchSupportCores()
   document.addEventListener('click', handleOutsideClick)
 })
 
@@ -717,62 +869,178 @@ onUnmounted(() => {
 }
 
 @keyframes scoreScaleCorrect {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.6); text-shadow: 0 0 15px rgba(255, 165, 0, 0.8); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.6);
+    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes scoreScaleWrong {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.4); text-shadow: 0 0 15px rgba(230, 57, 70, 0.9); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.4);
+    text-shadow: 0 0 15px rgba(230, 57, 70, 0.9);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
+<<<<<<< HEAD
+.slot--correct {
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.slot--wrong {
+  animation: shake 0.4s ease;
+}
+=======
 /* ── Letter slots ──────────────────────────────────────────────────────────── */
 .slot--correct { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .slot--wrong   { animation: shake 0.4s ease; }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25%       { transform: translateX(-6px); }
-  75%       { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
 }
 
+<<<<<<< HEAD
+.timeout-glitch {
+  animation: glitch 0.8s ease forwards;
+}
+=======
 /* ── Timeout overlay ───────────────────────────────────────────────────────── */
 .timeout-glitch { animation: glitch 0.8s ease forwards; }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 @keyframes glitch {
-  0%   { clip-path: inset(0 0 100% 0); opacity: 0; transform: skewX(-10deg) scale(1.1); color: #fff; }
-  30%  { clip-path: inset(0 0 0% 0);   opacity: 1; transform: skewX(5deg);              color: #E63946; }
-  60%  { transform: skewX(-2deg); color: #fff; }
-  100% { transform: skewX(0);    color: #E63946; }
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transform: skewX(-10deg) scale(1.1);
+    color: #fff;
+  }
+
+  30% {
+    clip-path: inset(0 0 0% 0);
+    opacity: 1;
+    transform: skewX(5deg);
+    color: #E63946;
+  }
+
+  60% {
+    transform: skewX(-2deg);
+    color: #fff;
+  }
+
+  100% {
+    transform: skewX(0);
+    color: #E63946;
+  }
 }
 
-.timeout-panel { animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.timeout-panel {
+  animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 
 @keyframes panel-in {
-  from { transform: scale(0.9) translateY(20px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);      opacity: 1; }
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
+<<<<<<< HEAD
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+=======
 /* ── Transitions ───────────────────────────────────────────────────────────── */
 .fade-enter-active, .fade-leave-active         { transition: opacity 0.2s, transform 0.2s; }
 .fade-enter-from,   .fade-leave-to             { opacity: 0; transform: translateY(10px); }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
-.dropdown-enter-active, .dropdown-leave-active { transition: opacity 0.2s, transform 0.2s; }
-.dropdown-enter-from,   .dropdown-leave-to     { opacity: 0; transform: translateY(-10px); }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
 
-.timeout-overlay-enter-active, .timeout-overlay-leave-active { transition: opacity 0.3s; }
-.timeout-overlay-enter-from,   .timeout-overlay-leave-to     { opacity: 0; }
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
 
-.overlay-enter-active, .overlay-leave-active { transition: opacity 0.2s; }
-.overlay-enter-from,   .overlay-leave-to     { opacity: 0; }
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.timeout-overlay-enter-active,
+.timeout-overlay-leave-active {
+  transition: opacity 0.3s;
+}
+
+.timeout-overlay-enter-from,
+.timeout-overlay-leave-to {
+  opacity: 0;
+}
+
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.3s backdrop-filter 0.3s;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+  backdrop-filter: blur(0px);
+}
 
 /* ── Hidden input ──────────────────────────────────────────────────────────── */
 .sr-only {
@@ -791,11 +1059,22 @@ onUnmounted(() => {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
-.card-flip-enter-from { opacity: 0; transform: rotateX(-90deg) scale(0.9); }
-.card-flip-leave-to   { opacity: 0; transform: rotateX(90deg)  scale(0.9); }
+
+.card-flip-enter-from {
+  opacity: 0;
+  transform: rotateX(-90deg) scale(0.9);
+}
+
+.card-flip-leave-to {
+  opacity: 0;
+  transform: rotateX(90deg) scale(0.9);
+}
 
 /* ── Correct letter glow ───────────────────────────────────────────────────── */
-.glow-sweep { animation: sweepWave 1s ease-in-out infinite; display: inline-block; }
+.glow-sweep {
+  animation: sweepWave 1s ease-in-out infinite;
+  display: inline-block;
+}
 
 @keyframes sweepWave {
   0%, 100% {
@@ -803,6 +1082,22 @@ onUnmounted(() => {
     text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
     transform: scale(1) translateY(0);
   }
+  50% {
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
+    transform: scale(1.15) translateY(-3px);
+  }
+}
+
+@keyframes sweepWave {
+
+  0%,
+  100% {
+    color: #22c55e;
+    text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
+    transform: scale(1) translateY(0);
+  }
+
   50% {
     color: #ffffff;
     text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
