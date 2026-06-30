@@ -68,6 +68,32 @@ MAIL_USER=
 MAIL_PASS=
 ```
 
+## Gameplay
+
+Each match is **60 seconds**. Players receive an infinite stream of fill-in-the-blank questions and earn points for every correct answer. Typing the correct word immediately loads the next question — no limit on questions per match.
+
+**Scoring:** `100 points per correct answer.`
+
+**Question loading:** The client pre-fetches a batch of 20 questions on match start. When the queue drops to 5 or fewer, a new batch is fetched in the background — ensuring zero latency between questions.
+
+## API Endpoints
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/register` | — | Register with email + OTP verification |
+| POST | `/auth/verify-otp` | — | Verify OTP and create account |
+| POST | `/auth/resend-otp` | — | Resend OTP |
+| POST | `/auth/login` | — | Email/password login |
+| POST | `/auth/token` | — | Exchange Supabase token for arena JWT (Google OAuth) |
+| GET | `/auth/check-email` | — | Check provider for an email address |
+| GET | `/api/user/profile` | JWT | Get full player profile |
+| PATCH | `/api/user/profile` | JWT | Update username and/or avatar |
+| GET | `/api/game/question` | JWT | Single random question (legacy) |
+| GET | `/api/game/questions` | JWT | Batch of 20 random questions |
+| POST | `/api/game/session` | JWT | Create active game session |
+| POST | `/api/game/timeout` | JWT | Lock session on timeout with final score |
+| GET | `/health` | — | Server status |
+
 ## Deployment (Render)
 
 **Server — Web Service:**
@@ -92,7 +118,7 @@ VITE_SERVER_URL=https://axonproject-1.onrender.com
 VITE_SITE_URL=https://naenra.xyz
 ```
 
-**Server ENV on Render:**
+**Server ENV on Render:**s
 ```
 SUPABASE_URL=
 SUPABASE_SERVICE_KEY=

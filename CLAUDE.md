@@ -17,7 +17,7 @@
 | `src/main.ts` | App bootstrap, Pinia, Router, Supabase auth listener + exchangeTokenAfterOAuth |
 | `src/router/index.ts` | Vue Router; guards check `localStorage.arena_token` + Supabase session |
 | `src/lib/supabase.ts` | Supabase client (anon key) |
-| `src/stores/authStore.ts` | Auth state: user, profile, login/register/logout, exchangeTokenAfterOAuth. **fetchProfile now calls `/api/user/profile` via arena JWT (not Supabase anon client) to bypass RLS.** |
+| `src/stores/authStore.ts` | Auth state: user, profile, login/register/logout, exchangeTokenAfterOAuth. **fetchProfile calls `/api/user/profile` via arena JWT (not Supabase anon client) to bypass RLS.** |
 | `src/stores/errorStore.ts` | Global toast notification store |
 | `src/stores/gameStore.ts` | Game session state |
 | `src/game/PhaserGame.ts` | Phaser 4 init (transparent, RESIZE mode) |
@@ -27,7 +27,7 @@
 | `src/views/VerifyOTPView.vue` | 6-digit OTP input; calls `POST /auth/verify-otp` |
 | `src/views/HomeView.vue` | Authenticated home / matchmaking stub; avatar clickable → /profile |
 | `src/views/ProfileView.vue` | View + edit username/avatar; shows elo, rank, wins, losses, matches |
-| `src/views/GameplayView.vue` | Full match UI: countdown timer, question display, letter slots, timeout overlay; calls `POST /api/game/session` on mount and `POST /api/game/timeout` on timer end |
+| `src/views/GameplayView.vue` | Full match UI: countdown timer, question display, letter slots, timeout overlay; **batch queue system** — fetches 20 questions at once via `GET /api/game/questions`, refetches when queue ≤ 5 remaining; calls `POST /api/game/session` on mount and `POST /api/game/timeout` on timer end |
 | `src/views/ForgotPasswordView.vue` | Supabase `resetPasswordForEmail` |
 | `src/views/ResetPasswordView.vue` | Supabase `updateUser` (handles `#access_token` hash) |
 | `src/views/SignupView.vue` | DEAD CODE — delete before Sprint 2 |
@@ -39,9 +39,9 @@
 | `src/index.ts` | Express + HTTP server on port 3000; mounts `/auth`, `/api/user`, `/api/game`; body limit 10mb; CORS configured for naenra.xyz, www.naenra.xyz, axonproject.onrender.com, localhost:5173 |
 | `src/routes/authRoutes.ts` | All auth endpoints incl. `GET /auth/check-email` |
 | `src/routes/userRoutes.ts` | Profile endpoints: GET/PATCH `/api/user/profile` |
-| `src/routes/gameRoutes.ts` | Game endpoints: GET `/api/game/question`, POST `/api/game/session`, POST `/api/game/timeout` |
+| `src/routes/gameRoutes.ts` | Game endpoints: GET `/api/game/question`, GET `/api/game/questions`, POST `/api/game/session`, POST `/api/game/timeout` |
 | `src/controllers/userController.ts` | getUserProfile, updateUserProfile; rank computed from elo |
-| `src/controllers/gameController.ts` | getQuestion, createSession, timeoutSession |
+| `src/controllers/gameController.ts` | getQuestion, getQuestions, createSession, timeoutSession |
 | `src/middleware/authMiddleware.ts` | JWT Bearer verification; attaches `req.user` |
 | `src/utils/jwt.ts` | `generateToken` / `verifyToken` (7d expiry) |
 | `src/utils/otp.ts` | In-memory OTP store (10-min TTL) |
@@ -93,10 +93,15 @@ Remember Me storage: `localStorage.arena_remember_me` + `localStorage.arena_save
 ```
 Find Match → HomeView triggers navigation to /gameplay
 
-Gameplay mount → POST /api/game/session
-  → creates game_sessions row (status: 'active') → returns session_id
-  → client stores session_id, starts 45s countdown timer
-  → GET /api/game/question → random question from questions table
+Gameplay mount →
+  POST /api/game/session → creates game_sessions row (status: 'active') → returns session_id
+  GET  /api/game/questions → fetches batch of 20 random questions → stored in local queue
+  First question popped from queue → 45s countdown starts
+
+During match (infinite loop until timeout) →
+  Player types answer → correct/wrong feedback (1s) → next question popped from queue
+  When queue ≤ 5 remaining → GET /api/game/questions fetched in background (no latency)
+  No limit on questions answered — gameplay continues until timer hits 0
 
 Timer hits 0 → triggerTimeout()
   → gameState = 'timeout' (blocks keyboard input, shows TIME OUT overlay)
@@ -121,7 +126,8 @@ Timer hits 0 → triggerTimeout()
 | GET | `/auth/profile` | JWT | Return players row (legacy) |
 | GET | `/api/user/profile` | JWT | Return full profile: username, avatar_url, elo, rank, wins, losses, total_matches |
 | PATCH | `/api/user/profile` | JWT | Update username and/or avatar_url |
-| GET | `/api/game/question` | JWT | Return random question from questions table |
+| GET | `/api/game/question` | JWT | Return 1 random question (legacy, kept for compatibility) |
+| GET | `/api/game/questions` | JWT | Return batch of 20 random questions, no duplicates within batch |
 | POST | `/api/game/session` | JWT | Create active game session, returns session_id |
 | POST | `/api/game/timeout` | JWT | Lock session on timeout; sets status='timeout', saves score |
 | GET | `/health` | — | Server status |
@@ -165,6 +171,7 @@ Table `questions`:
 | id | uuid | PK |
 | question_text | text | Sentence with blank (______) |
 | target_word | text | The answer word |
+| hint | text | nullable; displayed above the question card |
 
 RLS enabled. Server uses `SUPABASE_SERVICE_KEY` to bypass RLS for admin ops.
 
@@ -200,6 +207,7 @@ MAIL_PASS=
 - Avatar upload stores base64 in Supabase DB column — not ideal for large images. Move to Supabase Storage in future sprint.
 - **Dual auth architecture**: custom JWT (`arena_token`) for all API calls + Supabase session for OAuth/password reset. `fetchProfile` in authStore now always uses the arena JWT to call `/api/user/profile`, avoiding Supabase RLS issues that previously caused elo to show as 0.
 - `GET /auth/check-email` scans the players table then calls `admin.getUserById` — fine at small scale, but consider caching or a direct identity lookup before production scaling.
+- **Batch question loading**: `GET /api/game/questions` shuffles all IDs in memory — fine for current question bank size. For 10k+ questions, switch to `ORDER BY RANDOM() LIMIT 20` or a cursor-based approach.
 
 ---
 
@@ -238,13 +246,15 @@ MAIL_PASS=
 - Fixed: logout redirect, pendingRegistrations TTL, Google OAuth player row creation
 - Fixed (post): Google+email conflict detection, elo=0 bug, Remember Me for email login
 
-**Sprint 2 (in progress)**:
-- GameplayView: 45s match, letter-slot UI, correct/wrong feedback, TIME OUT overlay
+**Sprint 2 (complete)**:
+- GameplayView: 60s match, letter-slot UI, correct/wrong feedback, TIME OUT overlay
 - `POST /api/game/session` — creates active session on match start
 - `POST /api/game/timeout` — locks session with score on timer end; rejects duplicate calls with 409
-- `GET /api/game/question` — random question from DB (mock fallback removed)
+- `GET /api/game/question` — single random question from DB (legacy, kept for compatibility)
+- `GET /api/game/questions` — batch of 20 random questions (US-05); client uses local queue, refetches at ≤5 remaining
 - `GET /auth/check-email` — Google-only account detection on login email blur
-- Questions table integrated; mock questions removed from client
+- Questions table integrated; mock questions removed from client (fallback mocks remain for offline dev)
+- Infinite question stream: no question limit per match, gameplay runs until timer hits 0
 
 **Sprint 3 (next)**: Colyseus multiplayer rooms, matchmaking, real-time opponent sync, CoreSelectionView, ELO updates after match.
 
@@ -287,10 +297,10 @@ success: '#22C55E'
 - Custom Domain: https://naenra.xyz
 
 **Environment Variables:**
-- Client: VITE_SERVER_URL=https://axonproject-1.onrender.com
+- Client: VITE_SERVER_URL=https://axonprojsect-1.onrender.com
 - Client: VITE_SITE_URL=https://naenra.xyz
 
 ## Agent Instructions
 - Always use tools to read and write files directly
 - Never describe changes without making them
-- Never show JSON tool calls — execute them
+- Never show JSON tool calls — execute them.

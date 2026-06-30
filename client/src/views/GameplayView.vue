@@ -2,7 +2,6 @@
   <div class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white"
     @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" />
-
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
     <header
@@ -29,7 +28,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-              }}</span></p>
+                  }}</span></p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
@@ -69,8 +68,11 @@
 
         <div class="text-right hidden md:block">
           <p class="text-[10px] text-gray-400 uppercase tracking-widest drop-shadow-sm">Score</p>
-          <p class="font-black text-xl text-white drop-shadow-md inline-block transition-colors duration-200"
-            :class="{ 'score-pop text-orange': isScoreAnimating }">
+          <p class="font-black text-xl drop-shadow-md inline-block transition-colors duration-200" :class="{
+            'score-pop-correct text-orange': scoreFlash === 'correct',
+            'score-pop-wrong text-hexred': scoreFlash === 'wrong',
+            'text-white': scoreFlash === null
+          }">
             {{ score }}
           </p>
         </div>
@@ -79,10 +81,8 @@
 
     <main
       class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
-
       <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
-
-        <div v-if="gameState === 'loading'" class="w-full flex flex-col gap-10">
+        <div v-if="gameState === 'loading' || gameState === 'selecting_core'" class="w-full flex flex-col gap-10">
           <div class="bg-blue/10 backdrop-blur-xl border border-blue/20 rounded-2xl p-6 h-28 animate-pulse"></div>
           <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-14 h-44 animate-pulse"></div>
         </div>
@@ -122,10 +122,8 @@
               </div>
 
               <div class="w-full flex flex-col items-center gap-3 overflow-hidden">
-
                 <div
                   class="flex flex-nowrap items-center justify-center gap-2 md:gap-3 w-full overflow-x-auto pb-3 scrollbar-none">
-
                   <div v-for="(char, idx) in currentQuestion.target_word.split('')" :key="idx" class="flex-shrink-0">
                     <div
                       class="relative w-10 h-14 md:w-14 md:h-20 bg-black/40 backdrop-blur-md rounded-t-lg flex items-center justify-center border-b-4 transition-all duration-200"
@@ -146,12 +144,10 @@
                         }" :style="gameState === 'correct' ? { animationDelay: `${idx * 0.05}s` } : {}">
                         {{ typedLetters[idx] ?? '_' }}
                       </span>
-
                       <span v-if="idx === typedLetters.length && gameState === 'playing'"
                         class="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-1 bg-orange animate-pulse rounded-full"></span>
                     </div>
                   </div>
-
                 </div>
 
                 <div v-if="gameState === 'playing'"
@@ -168,17 +164,18 @@
                     'border-hexred/50 bg-hexred/20 text-red-300': gameState === 'wrong',
                   }">
                   <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
-                  <span v-else>✕ Correct word: <span class="uppercase text-white ml-1 font-black">{{
-                      currentQuestion.target_word }}</span></span>
+                  <span v-else>
+                    ✕ Correct word:
+                    <span class="uppercase text-white ml-1 font-black">{{ currentQuestion.target_word }}</span>
+                    <span class="ml-3 text-hexred font-black">−{{ pointsDeducted }} pts</span>
+                  </span>
                 </div>
               </transition>
 
             </div>
           </transition>
         </template>
-
       </section>
-
     </main>
 
     <div class="relative z-20 h-2 w-full flex bg-black/50">
@@ -187,6 +184,61 @@
         :style="{ width: `${(timeLeft / MATCH_DURATION) * 100}%` }"></div>
     </div>
 
+    <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
+
+    <transition name="overlay">
+      <div v-if="gameState === 'selecting_core'"
+        class="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
+        <div class="relative w-full max-w-4xl px-4 md:px-8 flex flex-col items-center">
+
+          <h2
+            class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
+            Tactical Support
+          </h2>
+          <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
+            Select 1 of 2 available cores for this round
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 w-full">
+            <div v-for="core in supportCores" :key="core.id" @click="confirmCoreSelection(core)"
+              class="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 hover:border-lightBlue/50 cursor-pointer transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:-translate-y-4 flex flex-col items-center text-center overflow-hidden">
+
+              <div
+                class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+              </div>
+
+              <div
+                class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 group-hover:from-blue/20 group-hover:to-lightBlue/10 transition-all duration-500 border border-white/10 group-hover:border-lightBlue shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                <svg
+                  class="w-12 h-12 text-gray-400 group-hover:text-lightBlue transition-colors duration-500 drop-shadow-md"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
+                </svg>
+              </div>
+
+              <h3
+                class="text-3xl font-black text-white mb-4 tracking-wide group-hover:text-lightBlue transition-colors duration-500">
+                {{ core.title }}</h3>
+
+              <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px]">{{ core.description }}</p>
+
+              <div
+                class="mt-10 opacity-0 group-hover:opacity-100 transition-all transform translate-y-6 group-hover:translate-y-0 duration-500">
+                <div
+                  class="relative px-8 py-3 bg-blue/20 rounded-full border border-lightBlue overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  <div class="absolute inset-0 bg-lightBlue/20 animate-pulse"></div>
+                  <span
+                    class="relative z-10 text-xs font-black text-lightBlue tracking-[0.2em] uppercase drop-shadow-md">
+                    Select
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
     <transition name="timeout-overlay">
       <div v-if="gameState === 'timeout'" class="absolute inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-darkNavy/80 backdrop-blur-xl"></div>
@@ -256,38 +308,67 @@
     </transition>
 
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="gameState === 'timeout'" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="gameState === 'timeout' || gameState === 'selecting_core'"
+      @keydown="handleKeydown" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
+import Avatar from '../components/Avatar.vue'
 
+// Dependencies
 const router = useRouter()
+const authStore = useAuthStore()
 
+// Types
 interface QuestionPayload {
+  id: string
   question_text: string
   target_word: string
   hint?: string
 }
 
-type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
+interface SupportCore {
+  id: string
+  title: string
+  description: string
+  icon: string
+}
 
+type GameState = 'selecting_core' | 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
+type ScoreFlash = 'correct' | 'wrong' | null
+
+// Constants
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-const MATCH_DURATION = 45
+const MATCH_DURATION = 60
 const FEEDBACK_MS = 1000
-// Refetch batch khi queue còn ≤ ngưỡng này
 const REFETCH_THRESHOLD = 5
+const BASE_POINTS = 100
 
-// ── State ────────────────────────────────────────────────────────────────────
-const gameState = ref<GameState>('loading')
+const THEME_MAP: Record<string, string> = {
+  'daily-life': '/bg-daily-life.png',
+  'cafe': '/bg-cafe.png',
+  'travel': '/bg-travel.png'
+}
+
+const MOCK_CORES: SupportCore[] = [
+  { id: 'core-time', title: 'Time Freeze', description: 'Pauses the timer for 5 seconds once per match.', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { id: 'core-score', title: 'Score Multiplier', description: 'Earn 1.5x points for the next 3 correct answers.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+  { id: 'core-hint', title: 'Hint Reveal', description: 'Automatically reveals the first letter of the target word.', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' }
+]
+
+// State
+const gameState = ref<GameState>('selecting_core')
 const timeLeft = ref(MATCH_DURATION)
 const score = ref(0)
-const isScoreAnimating = ref(false)
+const scoreFlash = ref<ScoreFlash>(null)
 const questionsAnswered = ref(0)
 const pointsEarned = ref(0)
+const pointsDeducted = ref(0)
 const typedLetters = ref<string[]>([])
 const inputRef = ref<HTMLInputElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
@@ -297,14 +378,47 @@ const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
 
-// ── Question queue ────────────────────────────────────────────────────────────
+const supportCores = ref<SupportCore[]>([])
+const activeCore = ref<SupportCore | null>(null)
+
+const playerAvatarUrl = computed(() =>
+  authStore.profile?.avatar_url ||
+  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authStore.profile?.username || 'Player')}`
+)
+
 const questionQueue = ref<QuestionPayload[]>([])
 const isFetchingBatch = ref(false)
-const currentQuestion = ref<QuestionPayload>({ question_text: '', target_word: '' })
+const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_word: '' })
 
 let matchTimer: ReturnType<typeof setInterval> | null = null
+let flashTimer: ReturnType<typeof setTimeout> | null = null
 
-// ── Timer ─────────────────────────────────────────────────────────────────────
+// Support Core Logic
+async function fetchSupportCores() {
+  gameState.value = 'selecting_core'
+  
+  const shuffledCores = [...MOCK_CORES].sort(() => 0.5 - Math.random())
+  supportCores.value = shuffledCores.slice(0, 2)
+}
+
+function confirmCoreSelection(core: SupportCore) {
+  activeCore.value = core
+  loadQuestion()
+  startMatchTimer()
+}
+
+// Helpers
+function triggerScoreFlash(type: ScoreFlash) {
+  if (flashTimer) clearTimeout(flashTimer)
+  scoreFlash.value = type
+  flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
+}
+
+function getBackgroundImage(themeKey: string) {
+  return THEME_MAP[themeKey] || '/bg-daily-life.png'
+}
+
+// Timer
 function startMatchTimer() {
   if (matchTimer) return
   matchTimer = setInterval(() => {
@@ -323,7 +437,7 @@ function stopMatchTimer() {
   if (matchTimer) { clearInterval(matchTimer); matchTimer = null }
 }
 
-// ── Session API ───────────────────────────────────────────────────────────────
+// API Methods
 async function createSession() {
   try {
     const token = localStorage.getItem('arena_token')
@@ -337,6 +451,7 @@ async function createSession() {
     if (!res.ok) return
     const data = await res.json()
     sessionId.value = data.session_id
+    if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
   } catch (err) {
     console.error(err)
   }
@@ -366,17 +481,15 @@ async function callTimeoutEndpoint() {
   }
 }
 
-// ── Batch fetching ────────────────────────────────────────────────────────────
 const MOCK_QUESTIONS: QuestionPayload[] = [
-  { question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
-  { question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
-  { question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_word: 'analyze', hint: 'Examine methodically and in detail' },
-  { question_text: 'The team celebrated their ________ after months of hard work.', target_word: 'victory', hint: 'Winning a competition' },
-  { question_text: 'She showed great ________ in the face of adversity.', target_word: 'resilience', hint: 'Ability to recover quickly' },
+  { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
+  { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
+  { id: 'm3', question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_word: 'analyze', hint: 'Examine methodically and in detail' },
+  { id: 'm4', question_text: 'The team celebrated their ________ after months of hard work.', target_word: 'victory', hint: 'Winning a competition' },
+  { id: 'm5', question_text: 'She showed great ________ in the face of adversity.', target_word: 'resilience', hint: 'Ability to recover quickly' },
 ]
 
 async function fetchBatch(): Promise<void> {
-  // Không fetch nếu đang fetch dở hoặc game đã timeout
   if (isFetchingBatch.value || gameState.value === 'timeout') return
   isFetchingBatch.value = true
   try {
@@ -389,10 +502,8 @@ async function fetchBatch(): Promise<void> {
     })
     if (!res.ok) throw new Error('fetch failed')
     const data = await res.json()
-    // Đẩy toàn bộ batch vào cuối queue
     questionQueue.value.push(...(data.questions as QuestionPayload[]))
   } catch {
-    // Fallback mock khi DB không kết nối được
     const shuffled = [...MOCK_QUESTIONS].sort(() => Math.random() - 0.5)
     questionQueue.value.push(...shuffled)
   } finally {
@@ -400,21 +511,19 @@ async function fetchBatch(): Promise<void> {
   }
 }
 
-// ── Question loading ──────────────────────────────────────────────────────────
+// Gameplay Logic
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
 
-  // Khi queue còn ≤ REFETCH_THRESHOLD câu → fetch batch mới (background nếu có thể)
   if (questionQueue.value.length <= REFETCH_THRESHOLD) {
-    await fetchBatch()
+    fetchBatch()
   }
 
-  // Lấy câu đầu tiên ra khỏi queue
   const next = questionQueue.value.shift()
   if (!next) {
-    // Không nên xảy ra sau fetchBatch, nhưng guard cho chắc
     currentQuestion.value = MOCK_QUESTIONS[Math.floor(Math.random() * MOCK_QUESTIONS.length)]
+    fetchBatch()
   } else {
     currentQuestion.value = next
   }
@@ -424,9 +533,7 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
-// ── Input handling ────────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
-  if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
 
@@ -445,22 +552,52 @@ function handleKeydown(e: KeyboardEvent) {
 
 function checkAnswer() {
   const typed = typedLetters.value.join('')
-  questionsAnswered.value++
+  const target = currentQuestion.value.target_word
+  const isCorrect = typed === target
 
-  if (typed === currentQuestion.value.target_word) {
-    pointsEarned.value = 100 + Math.floor(timeLeft.value * 3)
-    score.value += pointsEarned.value
+  if (isCorrect) {
     gameState.value = 'correct'
-
-    isScoreAnimating.value = true
-    setTimeout(() => { isScoreAnimating.value = false }, 300)
+    pointsEarned.value = BASE_POINTS
+    score.value += pointsEarned.value
+    questionsAnswered.value++
+    triggerScoreFlash('correct')
+    syncAnswer(typed)
   } else {
     gameState.value = 'wrong'
+    let wrongCount = 0
+    for (let i = 0; i < target.length; i++) {
+      if (typed[i] !== target[i]) wrongCount++
+    }
+    const penalty = Math.min(25, Math.max(5, wrongCount * 5))
+    pointsDeducted.value = penalty
+    score.value = Math.max(0, score.value - penalty)
+    triggerScoreFlash('wrong')
   }
 
   setTimeout(() => {
     if (gameState.value !== 'timeout') loadQuestion()
   }, FEEDBACK_MS)
+}
+
+async function syncAnswer(answer: string) {
+  if (!sessionId.value || !currentQuestion.value.id) return
+  try {
+    const token = localStorage.getItem('arena_token')
+    await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        session_id: sessionId.value,
+        question_id: currentQuestion.value.id,
+        answer: answer
+      })
+    })
+  } catch (err) {
+    console.error('Failed to sync answer:', err)
+  }
 }
 
 function triggerTimeout() {
@@ -469,17 +606,17 @@ function triggerTimeout() {
   callTimeoutEndpoint()
 }
 
-// ── Match control ─────────────────────────────────────────────────────────────
 async function restartMatch() {
   score.value = 0
   questionsAnswered.value = 0
   timeLeft.value = MATCH_DURATION
   questionQueue.value = []
+  scoreFlash.value = null
+  activeCore.value = null
   stopMatchTimer()
   await createSession()
   await fetchBatch()
-  await loadQuestion()
-  startMatchTimer()
+  await fetchSupportCores()
 }
 
 function goHome() {
@@ -487,7 +624,7 @@ function goHome() {
   router.push('/home')
 }
 
-// ── Misc ──────────────────────────────────────────────────────────────────────
+// Lifecycle Events
 function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
@@ -495,20 +632,21 @@ function handleOutsideClick(e: MouseEvent) {
 }
 
 function refocusInput() {
-  if (gameState.value === 'timeout') return
-  if (!menuOpen.value && !confirmQuit.value) inputRef.value?.focus()
+  if (gameState.value === 'playing' && !menuOpen.value && !confirmQuit.value) {
+    inputRef.value?.focus()
+  }
 }
 
 onMounted(async () => {
   await createSession()
-  await fetchBatch()   // pre-fill queue với 20 câu đầu
-  await loadQuestion()
-  startMatchTimer()
+  await fetchBatch()
+  await fetchSupportCores()
   document.addEventListener('click', handleOutsideClick)
 })
 
 onUnmounted(() => {
   stopMatchTimer()
+  if (flashTimer) clearTimeout(flashTimer)
   document.removeEventListener('click', handleOutsideClick)
 })
 </script>
@@ -521,58 +659,170 @@ onUnmounted(() => {
   background-size: 64px 64px;
 }
 
-.score-pop {
-  animation: scoreScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.score-pop-correct {
+  animation: scoreScaleCorrect 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes scoreScale {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.6); text-shadow: 0 0 15px rgba(255, 165, 0, 0.8); }
-  100% { transform: scale(1); }
+.score-pop-wrong {
+  animation: scoreScaleWrong 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.slot--correct { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.slot--wrong   { animation: shake 0.4s ease; }
+@keyframes scoreScaleCorrect {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.6);
+    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes scoreScaleWrong {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.4);
+    text-shadow: 0 0 15px rgba(230, 57, 70, 0.9);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.slot--correct {
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.slot--wrong {
+  animation: shake 0.4s ease;
+}
 
 @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25%       { transform: translateX(-6px); }
-  75%       { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
 }
 
-.timeout-glitch { animation: glitch 0.8s ease forwards; }
+.timeout-glitch {
+  animation: glitch 0.8s ease forwards;
+}
 
 @keyframes glitch {
-  0%   { clip-path: inset(0 0 100% 0); opacity: 0; transform: skewX(-10deg) scale(1.1); color: #fff; }
-  30%  { clip-path: inset(0 0 0% 0);   opacity: 1; transform: skewX(5deg);              color: #E63946; }
-  60%  { transform: skewX(-2deg); color: #fff; }
-  100% { transform: skewX(0);    color: #E63946; }
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transform: skewX(-10deg) scale(1.1);
+    color: #fff;
+  }
+
+  30% {
+    clip-path: inset(0 0 0% 0);
+    opacity: 1;
+    transform: skewX(5deg);
+    color: #E63946;
+  }
+
+  60% {
+    transform: skewX(-2deg);
+    color: #fff;
+  }
+
+  100% {
+    transform: skewX(0);
+    color: #E63946;
+  }
 }
 
-.timeout-panel { animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.timeout-panel {
+  animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 
 @keyframes panel-in {
-  from { transform: scale(0.9) translateY(20px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);      opacity: 1; }
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
-.fade-enter-active, .fade-leave-active         { transition: opacity 0.2s, transform 0.2s; }
-.fade-enter-from,   .fade-leave-to             { opacity: 0; transform: translateY(10px); }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
 
-.dropdown-enter-active, .dropdown-leave-active { transition: opacity 0.2s, transform 0.2s; }
-.dropdown-enter-from,   .dropdown-leave-to     { opacity: 0; transform: translateY(-10px); }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
 
-.timeout-overlay-enter-active, .timeout-overlay-leave-active { transition: opacity 0.3s; }
-.timeout-overlay-enter-from,   .timeout-overlay-leave-to     { opacity: 0; }
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
 
-.overlay-enter-active, .overlay-leave-active { transition: opacity 0.2s; }
-.overlay-enter-from,   .overlay-leave-to     { opacity: 0; }
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.timeout-overlay-enter-active,
+.timeout-overlay-leave-active {
+  transition: opacity 0.3s;
+}
+
+.timeout-overlay-enter-from,
+.timeout-overlay-leave-to {
+  opacity: 0;
+}
+
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.3s backdrop-filter 0.3s;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+  backdrop-filter: blur(0px);
+}
 
 .sr-only {
   position: absolute;
@@ -585,21 +835,36 @@ onUnmounted(() => {
   border: 0;
 }
 
-.card-flip-enter-active, .card-flip-leave-active {
+.card-flip-enter-active,
+.card-flip-leave-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
-.card-flip-enter-from { opacity: 0; transform: rotateX(-90deg) scale(0.9); }
-.card-flip-leave-to   { opacity: 0; transform: rotateX(90deg)  scale(0.9); }
 
-.glow-sweep { animation: sweepWave 1s ease-in-out infinite; display: inline-block; }
+.card-flip-enter-from {
+  opacity: 0;
+  transform: rotateX(-90deg) scale(0.9);
+}
+
+.card-flip-leave-to {
+  opacity: 0;
+  transform: rotateX(90deg) scale(0.9);
+}
+
+.glow-sweep {
+  animation: sweepWave 1s ease-in-out infinite;
+  display: inline-block;
+}
 
 @keyframes sweepWave {
-  0%, 100% {
+
+  0%,
+  100% {
     color: #22c55e;
     text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
     transform: scale(1) translateY(0);
   }
+
   50% {
     color: #ffffff;
     text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);

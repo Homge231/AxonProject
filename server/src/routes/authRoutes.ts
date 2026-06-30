@@ -32,6 +32,34 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000)
 
+// ── Helper: check provider type from players table (fast, no admin API) ──────
+// hashed_password === '' means Google-only (set during OAuth upsert)
+// hashed_password is a bcrypt hash means email account exists
+async function getPlayerProviderInfo(email: string): Promise<{
+  exists: boolean
+  hasEmailAuth: boolean
+  hasGoogleAuth: boolean
+  playerId: string | null
+}> {
+  const { data: player } = await supabase
+    .from('players')
+    .select('id, hashed_password')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (!player) return { exists: false, hasEmailAuth: false, hasGoogleAuth: false, playerId: null }
+
+  // hashed_password is '' for pure Google accounts
+  // hashed_password is a bcrypt hash for email-registered accounts
+  const hasEmailAuth = player.hashed_password !== '' && player.hashed_password !== null
+  // If the account exists but has no password hash, it was created via Google
+  // If it has a password hash, it was email-registered (may also have Google linked)
+  // We determine Google by checking identities only when needed
+  const hasGoogleAuth = !hasEmailAuth
+
+  return { exists: true, hasEmailAuth, hasGoogleAuth, playerId: player.id }
+}
+
 // POST /auth/register
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password, username } = req.body
@@ -51,16 +79,10 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 
   try {
-    const { data: existingPlayer } = await supabase
-      .from('players')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
+    const { exists, hasEmailAuth, hasGoogleAuth } = await getPlayerProviderInfo(email)
 
-    if (existingPlayer) {
-      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
-      const isOAuthOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
-      if (isOAuthOnly) {
+    if (exists) {
+      if (hasGoogleAuth && !hasEmailAuth) {
         res.status(409).json({ error: 'This email is linked to a Google account. Please sign in with Google.' })
       } else {
         res.status(409).json({ error: 'Email already registered' })
@@ -226,23 +248,18 @@ router.get('/check-email', async (req: Request, res: Response) => {
   }
 
   try {
-    const { data: existingPlayer } = await supabase
-      .from('players')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
+    const { exists, hasEmailAuth, hasGoogleAuth } = await getPlayerProviderInfo(email)
 
-    if (!existingPlayer) {
+    if (!exists) {
       res.json({ exists: false, provider: null })
       return
     }
 
-    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
-    const isGoogleOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
-
+    // Dual-auth: has both email password and Google → treat as email provider for login
+    // Pure Google: no password hash → provider = 'google'
     res.json({
       exists: true,
-      provider: isGoogleOnly ? 'google' : 'email'
+      provider: hasEmailAuth ? 'email' : 'google'
     })
   } catch {
     res.status(500).json({ error: 'Internal server error' })
@@ -264,21 +281,16 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   try {
-    const { data: existingPlayer } = await supabase
-      .from('players')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle()
+    // Fast check using hashed_password column — no admin API call needed
+    const { exists, hasEmailAuth, hasGoogleAuth } = await getPlayerProviderInfo(email)
 
-    if (existingPlayer) {
-      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(existingPlayer.id)
-      const isOAuthOnly = !authUser?.identities?.some((id: any) => id.provider === 'email')
-      if (isOAuthOnly) {
-        res.status(401).json({ error: 'This account uses Google sign-in. Please use the Google button to log in.' })
-        return
-      }
+    if (exists && hasGoogleAuth && !hasEmailAuth) {
+      // Pure Google account — no password set
+      res.status(401).json({ error: 'This account uses Google sign-in. Please use the Google button to log in.' })
+      return
     }
 
+    // Attempt Supabase email login (works for email-only AND dual-auth accounts)
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -313,12 +325,13 @@ router.post('/login', async (req: Request, res: Response) => {
       }
     })
 
-  } catch {
+  } catch (err) {
+    console.error('login error:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
 })
 
-// POST /auth/token
+// POST /auth/token  (Google OAuth → arena JWT)
 router.post('/token', async (req: Request, res: Response) => {
   const { supabase_token } = req.body
   if (!supabase_token) {
@@ -339,11 +352,12 @@ router.post('/token', async (req: Request, res: Response) => {
       .single()
 
     if (!profile) {
+      // Brand-new Google user — insert player row
       const { error: insertError } = await supabase.from('players').insert({
         id: user.id,
         email: user.email,
         username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Player',
-        hashed_password: '',
+        hashed_password: '',   // empty string = Google-only marker
         avatar_url: user.user_metadata?.avatar_url || null,
         elo: 0,
         wins: 0,
@@ -353,13 +367,15 @@ router.post('/token', async (req: Request, res: Response) => {
       if (insertError) {
         console.error('players insert error in /auth/token:', insertError)
       }
-    } else if (profile.elo === 1000 && profile.wins === 0 && profile.losses === 0 && profile.total_matches === 0) {
-      // Likely created by DB trigger with default elo=1000, reset to 0
+    } else if (profile.hashed_password === '' && user.user_metadata?.avatar_url && !profile.avatar_url) {
+      // Existing Google account — update avatar if missing
       await supabase
         .from('players')
-        .update({ elo: 0 })
+        .update({ avatar_url: user.user_metadata.avatar_url })
         .eq('id', user.id)
     }
+    // NOTE: if profile.hashed_password is a bcrypt hash, the user registered with
+    // email first and then linked Google — keep everything as-is, don't overwrite.
 
     const { data: freshProfile } = await supabase
       .from('players')
@@ -374,7 +390,8 @@ router.post('/token', async (req: Request, res: Response) => {
     })
 
     res.json({ token, user: freshProfile })
-  } catch {
+  } catch (err) {
+    console.error('token error:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
 })
@@ -384,7 +401,7 @@ router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
   res.json({ user: req.user })
 })
 
-// GET /auth/profile
+// GET /auth/profile  (legacy)
 router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { data: profile } = await supabase
     .from('players')
