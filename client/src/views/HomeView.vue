@@ -112,7 +112,7 @@
             Leaderboard
           </button>
 
-          <button @click="router.push('/core')"
+          <button @click="startMatchmaking"
             class="px-8 py-3 bg-purple-900/30 hover:bg-purple-800/50 border border-purple-500/30 text-purple-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors">
             Single Player (Test)
           </button>

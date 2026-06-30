@@ -31,8 +31,8 @@
 
       <p v-else-if="errorMsg" class="text-hexred text-sm font-bold text-center uppercase tracking-wider mb-6">{{ errorMsg }}</p>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 w-full">
-        <div v-for="core in supportCores" :key="core.id"
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 w-full max-w-3xl mx-auto">
+        <div v-for="core in randomCores" :key="core.id"
              @click="selectCore(core)"
              class="group relative bg-white/5 backdrop-blur-xl border rounded-[2.5rem] p-8 md:p-12 hover:bg-white/10 cursor-pointer transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-4 flex flex-col items-center text-center overflow-hidden"
              :class="selectedCoreId === core.id
@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/gameStore'
 
@@ -118,6 +118,12 @@ const supportCores = ref<CoreOption[]>([])
 const selectedCoreId = ref<string | null>(null)
 const loading = ref(true)
 const errorMsg = ref('')
+const randomCores = ref<CoreOption[]>([])
+
+function getRandomCores(cores: CoreOption[], count: number): CoreOption[] {
+  const shuffled = [...cores].sort(() => 0.5 - Math.random())
+  return shuffled.slice(0, count)
+}
 
 async function fetchSupportCores() {
   loading.value = true
@@ -139,8 +145,9 @@ async function fetchSupportCores() {
       icon: ICON_MAP[c.name?.toLowerCase()] || DEFAULT_ICON
     }))
 
-    const noCore = supportCores.value.find(c => c.name.toLowerCase() === 'no core')
-    selectedCoreId.value = (noCore ?? supportCores.value[0])?.id ?? null
+    randomCores.value = getRandomCores(supportCores.value, 2)
+    selectedCoreId.value = randomCores.value.length > 0 ? randomCores.value[0].id : null
+
   } catch (err) {
     console.error('fetchSupportCores error:', err)
     errorMsg.value = 'Failed to load Support Cores.'
@@ -155,7 +162,7 @@ function selectCore(core: CoreOption) {
 
 function confirmAndStart() {
   if (!selectedCoreId.value) return
-  const core = supportCores.value.find(c => c.id === selectedCoreId.value)
+  const core = randomCores.value.find(c => c.id === selectedCoreId.value)
   gameStore.activeCoreId = selectedCoreId.value
   gameStore.activeCoreName = core?.name ?? null
   router.push('/game')
