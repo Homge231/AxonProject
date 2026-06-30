@@ -4,6 +4,21 @@
     <PhaserBackground :image-url="currentBgImage" />
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
+    <!-- Floating points popup container -->
+    <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+      <transition-group name="float-pts" tag="div">
+        <div
+          v-for="popup in pointPopups"
+          :key="popup.id"
+          class="float-pts-item absolute font-black text-2xl tracking-widest drop-shadow-lg"
+          :class="popup.type === 'correct' ? 'text-success' : 'text-hexred'"
+          :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
+        >
+          {{ popup.type === 'correct' ? '+' : '-' }}{{ popup.value }} PTS
+        </div>
+      </transition-group>
+    </div>
+
     <header
       class="relative z-30 flex justify-between items-center px-8 lg:px-12 py-5 bg-darkNavy/30 backdrop-blur-md border-b border-white/10 shadow-lg">
       <div class="relative" ref="menuRef">
@@ -65,6 +80,7 @@
           <span class="font-mono font-black text-3xl tabular-nums drop-shadow-lg"
             :class="timeLeft <= 10 ? 'animate-pulse' : ''">{{ String(timeLeft).padStart(2, '0') }}</span>
         </div>
+<<<<<<< HEAD
 
         <div class="text-right hidden md:block">
           <p class="text-[10px] text-gray-400 uppercase tracking-widest drop-shadow-sm">Score</p>
@@ -76,6 +92,8 @@
             {{ score }}
           </p>
         </div>
+=======
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
       </div>
     </header>
 
@@ -121,7 +139,8 @@
                 </p>
               </div>
 
-              <div class="w-full flex flex-col items-center gap-3 overflow-hidden">
+              <!-- Letter slots (anchor for popup position) -->
+              <div class="w-full flex flex-col items-center gap-3 overflow-hidden" ref="letterSlotsRef">
                 <div
                   class="flex flex-nowrap items-center justify-center gap-2 md:gap-3 w-full overflow-x-auto pb-3 scrollbar-none">
                   <div v-for="(char, idx) in currentQuestion.target_word.split('')" :key="idx" class="flex-shrink-0">
@@ -165,9 +184,9 @@
                   }">
                   <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
                   <span v-else>
-                    ✕ Correct word:
+                    ✗ Correct word:
                     <span class="uppercase text-white ml-1 font-black">{{ currentQuestion.target_word }}</span>
-                    <span class="ml-3 text-hexred font-black">−{{ pointsDeducted }} pts</span>
+                    <span class="ml-3 text-hexred font-black">-{{ pointsDeducted }} pts</span>
                   </span>
                 </div>
               </transition>
@@ -178,11 +197,14 @@
       </section>
     </main>
 
+    <!-- Timer progress bar -->
     <div class="relative z-20 h-2 w-full flex bg-black/50">
       <div class="h-full transition-all duration-1000 ease-linear rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
         :class="timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-orange to-lightOrange'"
         :style="{ width: `${(timeLeft / MATCH_DURATION) * 100}%` }"></div>
     </div>
+
+    <!-- Player Avatar -->
 
     <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
 
@@ -340,6 +362,15 @@ interface SupportCore {
 }
 
 type GameState = 'selecting_core' | 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
+interface PointPopup {
+  id: number
+  value: number
+  type: 'correct' | 'wrong'
+  x: number
+  y: number
+}
+
+type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 type ScoreFlash = 'correct' | 'wrong' | null
 
 // Constants
@@ -348,6 +379,11 @@ const MATCH_DURATION = 60
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
 const BASE_POINTS = 100
+<<<<<<< HEAD
+=======
+// Score bar: treat 2000 pts as "full" bar — scales naturally beyond
+const SCORE_BAR_MAX = 2000
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
@@ -355,6 +391,7 @@ const THEME_MAP: Record<string, string> = {
   'travel': '/bg-travel.png'
 }
 
+<<<<<<< HEAD
 const MOCK_CORES: SupportCore[] = [
   { id: 'core-time', title: 'Time Freeze', description: 'Pauses the timer for 5 seconds once per match.', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
   { id: 'core-score', title: 'Score Multiplier', description: 'Earn 1.5x points for the next 3 correct answers.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
@@ -363,6 +400,10 @@ const MOCK_CORES: SupportCore[] = [
 
 // State
 const gameState = ref<GameState>('selecting_core')
+=======
+// ── State ───────────────────────────────────────────────────────────────────
+const gameState = ref<GameState>('loading')
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const timeLeft = ref(MATCH_DURATION)
 const score = ref(0)
 const scoreFlash = ref<ScoreFlash>(null)
@@ -372,20 +413,40 @@ const pointsDeducted = ref(0)
 const typedLetters = ref<string[]>([])
 const inputRef = ref<HTMLInputElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
+const letterSlotsRef = ref<HTMLElement | null>(null)
 const menuOpen = ref(false)
 const confirmQuit = ref(false)
 const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
 
+<<<<<<< HEAD
 const supportCores = ref<SupportCore[]>([])
 const activeCore = ref<SupportCore | null>(null)
+=======
+// Floating point popups
+const pointPopups = ref<PointPopup[]>([])
+let popupIdCounter = 0
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 const playerAvatarUrl = computed(() =>
   authStore.profile?.avatar_url ||
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authStore.profile?.username || 'Player')}`
 )
 
+<<<<<<< HEAD
+=======
+// Score bar derived state
+const scoreBarPercent = computed(() => Math.min(100, (score.value / SCORE_BAR_MAX) * 100))
+const scoreBarColor = computed(() => {
+  const pct = scoreBarPercent.value
+  if (pct >= 80) return 'bg-gradient-to-r from-success to-emerald-400'
+  if (pct >= 50) return 'bg-gradient-to-r from-orange to-lightOrange'
+  return 'bg-gradient-to-r from-blue to-lightBlue'
+})
+
+// ── Question queue ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const questionQueue = ref<QuestionPayload[]>([])
 const isFetchingBatch = ref(false)
 const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_word: '' })
@@ -393,6 +454,7 @@ const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target
 let matchTimer: ReturnType<typeof setInterval> | null = null
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 
+<<<<<<< HEAD
 // Support Core Logic
 async function fetchSupportCores() {
   gameState.value = 'selecting_core'
@@ -408,17 +470,43 @@ function confirmCoreSelection(core: SupportCore) {
 }
 
 // Helpers
+=======
+// ── Score flash helper ───────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function triggerScoreFlash(type: ScoreFlash) {
   if (flashTimer) clearTimeout(flashTimer)
   scoreFlash.value = type
   flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
 }
 
+<<<<<<< HEAD
 function getBackgroundImage(themeKey: string) {
   return THEME_MAP[themeKey] || '/bg-daily-life.png'
 }
 
 // Timer
+=======
+// ── Floating popup helper ────────────────────────────────────────────────────
+function spawnPointPopup(value: number, type: 'correct' | 'wrong') {
+  // Anchor to letter-slots element centre, fallback to viewport centre
+  let x = window.innerWidth / 2 - 50
+  let y = window.innerHeight / 2 - 60
+  if (letterSlotsRef.value) {
+    const rect = letterSlotsRef.value.getBoundingClientRect()
+    x = rect.left + rect.width / 2 - 50
+    y = rect.top - 10
+  }
+
+  const id = popupIdCounter++
+  pointPopups.value.push({ id, value, type, x, y })
+  // Remove after animation completes (1.2 s)
+  setTimeout(() => {
+    pointPopups.value = pointPopups.value.filter(p => p.id !== id)
+  }, 1200)
+}
+
+// ── Timer ────────────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function startMatchTimer() {
   if (matchTimer) return
   matchTimer = setInterval(() => {
@@ -437,7 +525,15 @@ function stopMatchTimer() {
   if (matchTimer) { clearInterval(matchTimer); matchTimer = null }
 }
 
+<<<<<<< HEAD
 // API Methods
+=======
+function getBackgroundImage(themeKey: string) {
+  return THEME_MAP[themeKey] || '/bg-daily-life.png'
+}
+
+// ── Session API ──────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function createSession() {
   try {
     const token = localStorage.getItem('arena_token')
@@ -462,18 +558,19 @@ async function callTimeoutEndpoint() {
   savingSession.value = true
   try {
     const token = localStorage.getItem('arena_token')
-    await fetch(`${SERVER_URL}/api/game/timeout`, {
+    const res = await fetch(`${SERVER_URL}/api/game/timeout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify({
-        session_id: sessionId.value,
-        score: score.value,
-        questions_answered: questionsAnswered.value,
-      })
+      body: JSON.stringify({ session_id: sessionId.value })
     })
+    if (res.ok) {
+      const data = await res.json()
+      score.value = data.score ?? score.value
+      questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+    }
   } catch (err) {
     console.error(err)
   } finally {
@@ -481,6 +578,10 @@ async function callTimeoutEndpoint() {
   }
 }
 
+<<<<<<< HEAD
+=======
+// ── Batch fetching ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 const MOCK_QUESTIONS: QuestionPayload[] = [
   { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
   { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
@@ -511,7 +612,11 @@ async function fetchBatch(): Promise<void> {
   }
 }
 
+<<<<<<< HEAD
 // Gameplay Logic
+=======
+// ── Question loading ─────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
@@ -533,6 +638,10 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
+<<<<<<< HEAD
+=======
+// ── Input handling ───────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function handleKeydown(e: KeyboardEvent) {
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
@@ -558,10 +667,8 @@ function checkAnswer() {
   if (isCorrect) {
     gameState.value = 'correct'
     pointsEarned.value = BASE_POINTS
-    score.value += pointsEarned.value
-    questionsAnswered.value++
     triggerScoreFlash('correct')
-    syncAnswer(typed)
+    spawnPointPopup(BASE_POINTS, 'correct')
   } else {
     gameState.value = 'wrong'
     let wrongCount = 0
@@ -570,9 +677,12 @@ function checkAnswer() {
     }
     const penalty = Math.min(25, Math.max(5, wrongCount * 5))
     pointsDeducted.value = penalty
-    score.value = Math.max(0, score.value - penalty)
     triggerScoreFlash('wrong')
+    spawnPointPopup(penalty, 'wrong')
   }
+
+  // Immediately sync with backend; score state updated from API response
+  syncAnswer(typed)
 
   setTimeout(() => {
     if (gameState.value !== 'timeout') loadQuestion()
@@ -583,7 +693,7 @@ async function syncAnswer(answer: string) {
   if (!sessionId.value || !currentQuestion.value.id) return
   try {
     const token = localStorage.getItem('arena_token')
-    await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+    const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -595,6 +705,14 @@ async function syncAnswer(answer: string) {
         answer: answer
       })
     })
+    if (res.ok) {
+      const data = await res.json()
+      // Authoritative values from BE — triggers score bar transition
+      score.value = data.current_total_score ?? score.value
+      questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+      pointsEarned.value = data.points_earned ?? pointsEarned.value
+      pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
+    }
   } catch (err) {
     console.error('Failed to sync answer:', err)
   }
@@ -606,13 +724,21 @@ function triggerTimeout() {
   callTimeoutEndpoint()
 }
 
+<<<<<<< HEAD
+=======
+// ── Match control ────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 async function restartMatch() {
   score.value = 0
   questionsAnswered.value = 0
   timeLeft.value = MATCH_DURATION
   questionQueue.value = []
   scoreFlash.value = null
+<<<<<<< HEAD
   activeCore.value = null
+=======
+  pointPopups.value = []
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
   stopMatchTimer()
   await createSession()
   await fetchBatch()
@@ -621,10 +747,32 @@ async function restartMatch() {
 
 function goHome() {
   stopMatchTimer()
+  abandonCurrentSession()
   router.push('/home')
 }
 
+<<<<<<< HEAD
 // Lifecycle Events
+=======
+async function abandonCurrentSession() {
+  if (!sessionId.value || gameState.value === 'timeout') return
+  try {
+    const token = localStorage.getItem('arena_token')
+    await fetch(`${SERVER_URL}/api/game/abandon`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ session_id: sessionId.value })
+    })
+  } catch (err) {
+    console.error('Failed to abandon session:', err)
+  }
+}
+
+// ── Misc ─────────────────────────────────────────────────────────────────────
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
@@ -659,6 +807,32 @@ onUnmounted(() => {
   background-size: 64px 64px;
 }
 
+/* ── Score bar ─────────────────────────────────────────────────────────────── */
+.score-bar-fill {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Floating point popup ──────────────────────────────────────────────────── */
+.float-pts-item {
+  text-shadow: 0 0 12px currentColor;
+  white-space: nowrap;
+}
+
+.float-pts-enter-active {
+  animation: floatUp 1.2s ease-out forwards;
+}
+.float-pts-leave-active {
+  display: none; /* removed by JS after animation */
+}
+
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0) scale(1.2); }
+  20%  { opacity: 1; transform: translateY(-16px) scale(1.35); }
+  80%  { opacity: 0.7; transform: translateY(-56px) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.85); }
+}
+
+/* ── Score header flash ────────────────────────────────────────────────────── */
 .score-pop-correct {
   animation: scoreScaleCorrect 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -697,6 +871,7 @@ onUnmounted(() => {
   }
 }
 
+<<<<<<< HEAD
 .slot--correct {
   animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -704,6 +879,11 @@ onUnmounted(() => {
 .slot--wrong {
   animation: shake 0.4s ease;
 }
+=======
+/* ── Letter slots ──────────────────────────────────────────────────────────── */
+.slot--correct { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.slot--wrong   { animation: shake 0.4s ease; }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 @keyframes pop {
   0% {
@@ -735,9 +915,14 @@ onUnmounted(() => {
   }
 }
 
+<<<<<<< HEAD
 .timeout-glitch {
   animation: glitch 0.8s ease forwards;
 }
+=======
+/* ── Timeout overlay ───────────────────────────────────────────────────────── */
+.timeout-glitch { animation: glitch 0.8s ease forwards; }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 @keyframes glitch {
   0% {
@@ -781,10 +966,16 @@ onUnmounted(() => {
   }
 }
 
+<<<<<<< HEAD
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s, transform 0.2s;
 }
+=======
+/* ── Transitions ───────────────────────────────────────────────────────────── */
+.fade-enter-active, .fade-leave-active         { transition: opacity 0.2s, transform 0.2s; }
+.fade-enter-from,   .fade-leave-to             { opacity: 0; transform: translateY(10px); }
+>>>>>>> 8156a0fbc71a0b881dfbe87d437e11b6df0c075f
 
 .fade-enter-from,
 .fade-leave-to {
@@ -824,6 +1015,7 @@ onUnmounted(() => {
   backdrop-filter: blur(0px);
 }
 
+/* ── Hidden input ──────────────────────────────────────────────────────────── */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -835,8 +1027,8 @@ onUnmounted(() => {
   border: 0;
 }
 
-.card-flip-enter-active,
-.card-flip-leave-active {
+/* ── Card flip ─────────────────────────────────────────────────────────────── */
+.card-flip-enter-active, .card-flip-leave-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
@@ -851,9 +1043,23 @@ onUnmounted(() => {
   transform: rotateX(90deg) scale(0.9);
 }
 
+/* ── Correct letter glow ───────────────────────────────────────────────────── */
 .glow-sweep {
   animation: sweepWave 1s ease-in-out infinite;
   display: inline-block;
+}
+
+@keyframes sweepWave {
+  0%, 100% {
+    color: #22c55e;
+    text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
+    transform: scale(1.15) translateY(-3px);
+  }
 }
 
 @keyframes sweepWave {

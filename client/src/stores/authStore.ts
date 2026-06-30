@@ -17,6 +17,10 @@ export const useAuthStore = defineStore('auth', () => {
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user ?? null
 
+    if (session?.access_token) {
+      await exchangeTokenAfterOAuth()
+    }
+
     // Email login users have no Supabase session — restore from arena JWT
     if (!user.value && token) {
       try {
@@ -25,12 +29,13 @@ export const useAuthStore = defineStore('auth', () => {
       } catch {}
     }
 
-    if (user.value || token) await fetchProfile()
+    if (user.value || localStorage.getItem('arena_token')) await fetchProfile()
     loading.value = false
 
     supabase.auth.onAuthStateChange(async (event, session) => {
       user.value = session?.user ?? null
       if (event === 'SIGNED_IN' && user.value) {
+        await exchangeTokenAfterOAuth()
         await fetchProfile()
       }
       if (event === 'SIGNED_OUT') {

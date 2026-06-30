@@ -1,6 +1,15 @@
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'arena-eng-secret-key'
+dotenv.config()
+
+const jwtSecret = process.env.JWT_SECRET
+
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
+
+const JWT_SECRET: jwt.Secret = jwtSecret
 
 export function generateToken(payload: {
   id: string

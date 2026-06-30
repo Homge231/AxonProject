@@ -46,14 +46,15 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<a
     const userMeta = user?.user_metadata || {}
     const gmailAvatar = userMeta.avatar_url || userMeta.picture || ''
 
+    const username = profile?.username || userMeta.full_name || 'Player'
     const finalAvatar = profile?.avatar_url?.trim()
       ? profile.avatar_url
-      : gmailAvatar
+      : gmailAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`
 
     const elo = profile?.elo ?? 0
 
     return res.status(200).json({
-      username: profile?.username || userMeta.full_name || 'Player',
+      username,
       avatar_url: finalAvatar,
       elo,
       rank: getRankFromElo(elo),
@@ -92,12 +93,16 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
     }
 
     const elo = data?.elo ?? 0
+    const finalUsername = data.username || 'Player'
+    const finalAvatar = data.avatar_url?.trim()
+      ? data.avatar_url
+      : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(finalUsername)}`
 
     return res.status(200).json({
       message: 'Profile updated',
       profile: {
-        username: data.username,
-        avatar_url: data.avatar_url,
+        username: finalUsername,
+        avatar_url: finalAvatar,
         elo,
         rank: getRankFromElo(elo),
         wins: data.wins ?? 0,
