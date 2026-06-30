@@ -71,6 +71,34 @@
           <span class="text-xs font-bold text-lightOrange tracking-[0.2em] uppercase">Combo</span>
           <span class="text-xl font-black text-white">x{{ currentCombo }}</span>
         </div>
+        <div class="flex items-center gap-8">
+      <div
+        class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
+        <span class="text-xs font-bold text-orange tracking-[0.2em] uppercase">Score</span>
+        <span class="text-xl font-black text-white tabular-nums">{{ score }}</span>
+      </div>
+
+      <div
+        class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
+        <span class="text-xs font-bold text-lightOrange tracking-[0.2em] uppercase">Combo</span>
+        <span class="text-xl font-black text-white">x{{ currentCombo }}</span>
+      </div>
+
+      <div
+        class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
+        <span class="text-xs font-bold text-lightBlue tracking-[0.2em] uppercase">Q</span>
+        <span class="text-xl font-black text-white">{{ questionsAnswered }}</span>
+      </div>
+
+      <div class="flex items-center gap-2" :class="timeLeft <= 10 ? 'text-hexred' : 'text-lightOrange'">
+        <svg class="w-5 h-5 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="font-mono font-black text-3xl tabular-nums drop-shadow-lg"
+          :class="timeLeft <= 10 ? 'animate-pulse' : ''">{{ String(timeLeft).padStart(2, '0') }}</span>
+      </div>
+    </div>
 
         <div
           class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
