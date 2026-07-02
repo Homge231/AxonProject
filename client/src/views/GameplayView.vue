@@ -400,7 +400,7 @@ const isOracleCore = computed(() => gameStore.activeCoreId === ORACLE_CORE_ID)
 
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
-const ORACLE_COSTS = [10, 20, 30] // cost per level: -10, -20, -30
+const ORACLE_COSTS = [10, 25, 50] // cost per level: -10, -25, -50
 const oracleRevealLevel = ref(0)
 const oracleTotalPenalty = ref(0)
 
