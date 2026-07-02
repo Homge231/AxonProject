@@ -429,10 +429,11 @@ function useOracleHint() {
   oracleRevealLevel.value++
   oracleTotalPenalty.value += cost
 
-  // Deduct points immediately and show floating popup
-  score.value = Math.max(0, score.value - cost)
+  // Show immediate floating popup so player knows the cost
+  // But do NOT deduct from score.value — server is source of truth.
+  // Score will be corrected when submit-answer responds.
   spawnPointPopup(cost, 'wrong')
-  
+
   // Re-focus the hidden input so the player can continue typing without clicking the screen
   inputRef.value?.focus()
 }
@@ -676,8 +677,13 @@ async function checkAnswer() {
   if (typedLetters.value.length < maxLen) return
 
   const typed = typedLetters.value.join('')
-  
-  // Instant validation via Hash
+
+  // ── 1. Capture mutable state immediately before any async/timer resets ───
+  const questionId = currentQuestion.value.id
+  const capturedOracleLevel = oracleRevealLevel.value
+  const capturedCombo = currentCombo.value
+
+  // ── 2. Instant local validation via Hash ─────────────────────────────────
   const hashVal = await sha256(typed)
   const isCorrectLocal = hashVal === currentQuestion.value.target_hash
 
@@ -690,64 +696,69 @@ async function checkAnswer() {
     currentCombo.value = 0
     triggerScoreFlash('wrong')
   }
-  
-  if (!sessionId.value || !currentQuestion.value.id) return
-  try {
-    const token = localStorage.getItem('arena_token')
-    const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({
-        session_id: sessionId.value,
-        question_id: currentQuestion.value.id,
-        answer: typed,
-        current_combo: currentCombo.value,
-        active_core_id: activeCoreId.value,
-        oracle_reveal_level: oracleRevealLevel.value
+
+  // ── 3. Always advance to next question after FEEDBACK_MS ─────────────────
+  // This fires regardless of API success/failure so the game never freezes.
+  setTimeout(() => {
+    if (gameState.value !== 'timeout') loadQuestion()
+  }, FEEDBACK_MS)
+
+  // ── 4. Background sync with server (fire-and-forget) ─────────────────────
+  if (!sessionId.value || !questionId) return
+  ;(async () => {
+    try {
+      const token = localStorage.getItem('arena_token')
+      const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          session_id: sessionId.value,
+          question_id: questionId,
+          answer: typed,
+          current_combo: capturedCombo,
+          active_core_id: activeCoreId.value,
+          oracle_reveal_level: capturedOracleLevel  // use captured level, not the reset one
+        })
       })
-    })
 
-    if (res.status === 403) {
-      console.error('Core mismatch detected by server (anti-cheat)')
-      return
-    }
-
-    if (res.ok) {
-      const data = await res.json()
-      
-      const isCorrectServer = data.correct
-      
-      if (!isCorrectServer) {
-        if (data.correct_word) {
-          currentQuestion.value.correct_word = data.correct_word
-        }
+      if (res.status === 403) {
+        console.error('Core mismatch detected by server (anti-cheat)')
+        return
       }
 
-      score.value = data.new_total_score ?? score.value
-      questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
-      pointsEarned.value = data.points_earned ?? pointsEarned.value
-      pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
+      if (res.ok) {
+        const data = await res.json()
 
-      const popupType: 'correct' | 'wrong' | 'typo' = isCorrectServer
-        ? 'correct'
-        : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+        // Update score from server (source of truth)
+        score.value = data.new_total_score ?? score.value
+        questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+        pointsEarned.value = data.points_earned ?? pointsEarned.value
+        pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
 
-      spawnPointPopup(
-        isCorrectServer ? data.points_earned : data.points_deducted,
-        popupType
-      )
+        // Show correct_word if server says wrong
+        if (!data.correct && data.correct_word) {
+          currentQuestion.value.correct_word = data.correct_word
+        }
 
-      setTimeout(() => {
-        if (gameState.value !== 'timeout') loadQuestion()
-      }, FEEDBACK_MS)
+        // Spawn score popup (typo detection and oracle penalty require server response)
+        const popupType: 'correct' | 'wrong' | 'typo' = data.correct
+          ? 'correct'
+          : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+        spawnPointPopup(
+          data.correct ? data.points_earned : data.points_deducted,
+          popupType
+        )
+      }
+    } catch (err) {
+      console.error('Failed to sync answer:', err)
     }
-  } catch (err) {
-    console.error('Failed to sync answer:', err)
-  }
+  })()
 }
+
+
 
 function triggerTimeout() {
   gameState.value = 'timeout'
