@@ -123,36 +123,42 @@
                 </h1>
               </div>
 
-              <!-- Oracle Hint Box (only visible for Oracle core) -->
-              <div v-if="isOracleCore && gameState === 'playing'"
-                class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
-                <div class="oracle-glow-ring"></div>
-                <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
-                  <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
-                  </svg>
-                  <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision</span>
-                </div>
-                <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
-                  {{ oracleHintText }}
-                </p>
-              </div>
+              <!-- Oracle: Click-to-reveal hint button (only for Oracle core) -->
+              <div v-if="isOracleCore && gameState === 'playing'" class="w-full flex flex-col items-center gap-3">
+                <!-- Revealed hint box (shown after first click) -->
+                <transition name="fade">
+                  <div v-if="oracleRevealLevel > 0"
+                    class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+                    <div class="oracle-glow-ring"></div>
+                    <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
+                      <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
+                      </svg>
+                      <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision · Lv{{ oracleRevealLevel }}</span>
+                    </div>
+                    <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
+                      {{ oracleHintText }}
+                    </p>
+                  </div>
+                </transition>
 
-              <!-- Oracle Hint Box (only visible for Oracle core) -->
-              <div v-if="isOracleCore && gameState === 'playing'"
-                class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
-                <div class="oracle-glow-ring"></div>
-                <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
-                  <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+                <!-- Reveal button (hidden when max level reached) -->
+                <button v-if="oracleRevealLevel < ORACLE_MAX_LEVEL"
+                  @click.stop="useOracleHint"
+                  class="oracle-reveal-btn group relative flex items-center gap-2 px-5 py-2.5 bg-purple-500/15 hover:bg-purple-500/25 backdrop-blur-md border border-purple-400/30 hover:border-purple-400/60 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]">
+                  <svg class="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
                     <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
                   </svg>
-                  <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision</span>
-                </div>
-                <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
-                  {{ oracleHintText }}
-                </p>
+                  <span class="text-xs font-bold text-purple-300 group-hover:text-purple-200 tracking-widest uppercase transition-colors">
+                    {{ oracleRevealLevel === 0 ? 'Use Oracle' : 'Reveal More' }}
+                  </span>
+                  <span class="text-[10px] font-mono text-purple-400/80 bg-purple-500/20 px-2 py-0.5 rounded-full">
+                    -{{ oracleNextCost }} pts
+                  </span>
+                </button>
+                <span v-else class="text-[10px] font-bold text-purple-400/60 tracking-widest uppercase">Max vision reached</span>
               </div>
 
               <div
@@ -392,14 +398,61 @@ const isComboCore = computed(() => gameStore.activeCoreId === COMBO_CORE_ID)
 const ORACLE_CORE_ID = '00000000-0000-0000-0000-000000000006'
 const isOracleCore = computed(() => gameStore.activeCoreId === ORACLE_CORE_ID)
 
+// Oracle progressive reveal: 3 levels, increasing cost
+const ORACLE_MAX_LEVEL = 3
+const ORACLE_COSTS = [10, 20, 30] // cost per level: -10, -20, -30
+const oracleRevealLevel = ref(0)
+const oracleTotalPenalty = ref(0)
+
+const oracleNextCost = computed(() => ORACLE_COSTS[oracleRevealLevel.value] ?? 0)
+
+/**
+ * Progressive hint: each level reveals more letters.
+ * Lv1: first + last letter
+ * Lv2: first + last + 2nd letter + 2nd-to-last
+ * Lv3: first + last + every other letter
+ */
 const oracleHintText = computed(() => {
   const word = currentQuestion.value.target_word
-  if (!word || word.length <= 2) return word.toUpperCase()
-  const first = word[0].toUpperCase()
-  const last = word[word.length - 1].toUpperCase()
-  const middle = Array(word.length - 2).fill('\u00b7').join(' ')
-  return `${first} ${middle} ${last}`
+  if (!word) return ''
+  const level = oracleRevealLevel.value
+  if (level === 0) return ''
+
+  const len = word.length
+  const revealed = new Set<number>()
+
+  // Level 1: first + last
+  if (level >= 1) {
+    revealed.add(0)
+    if (len > 1) revealed.add(len - 1)
+  }
+  // Level 2: + 2nd and 2nd-to-last
+  if (level >= 2) {
+    if (len > 2) revealed.add(1)
+    if (len > 3) revealed.add(len - 2)
+  }
+  // Level 3: + every other remaining letter
+  if (level >= 3) {
+    for (let i = 0; i < len; i += 2) revealed.add(i)
+  }
+
+  return word.split('').map((ch, i) =>
+    revealed.has(i) ? ch.toUpperCase() : '\u00b7'
+  ).join(' ')
 })
+
+function useOracleHint() {
+  if (oracleRevealLevel.value >= ORACLE_MAX_LEVEL) return
+  if (gameState.value !== 'playing') return
+
+  const cost = ORACLE_COSTS[oracleRevealLevel.value]
+  oracleRevealLevel.value++
+  oracleTotalPenalty.value += cost
+
+  // Deduct points immediately and show floating popup
+  score.value = Math.max(0, score.value - cost)
+  spawnPointPopup(cost, 'wrong')
+}
 
 
 // Floating point popups
@@ -559,6 +612,8 @@ async function fetchBatch(): Promise<void> {
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
+  oracleRevealLevel.value = 0
+  oracleTotalPenalty.value = 0
 
   if (questionQueue.value.length <= REFETCH_THRESHOLD) {
     fetchBatch()
