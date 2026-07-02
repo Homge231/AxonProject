@@ -429,10 +429,13 @@ function useOracleHint() {
   oracleRevealLevel.value++
   oracleTotalPenalty.value += cost
 
-  // Show immediate floating popup so player knows the cost
-  // But do NOT deduct from score.value — server is source of truth.
-  // Score will be corrected when submit-answer responds.
-  spawnPointPopup(cost, 'wrong')
+  // Optimistically deduct from FE score so the bar updates immediately.
+  // When submit-answer responds, server's new_total_score will overwrite
+  // this value with the authoritative result (no double-counting risk).
+  score.value = Math.max(0, score.value - cost)
+
+  // No popup here — the net score change (oracle + answer) will be shown
+  // in a single popup from the server's submit-answer response.
 
   // Re-focus the hidden input so the player can continue typing without clicking the screen
   inputRef.value?.focus()
