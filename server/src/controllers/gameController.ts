@@ -126,7 +126,7 @@ function calculateScore(
   combo: number,
   core: CoreRow,
   wrongPenalty: number,
-  oracleHintUsed: boolean
+  oracleRevealLevel: number
 ): { pointsDelta: number; breakdown: Record<string, number> } {
   if (!isCorrect) {
     return {
@@ -144,9 +144,12 @@ function calculateScore(
   const beforeMultiplier = BASE_POINTS + comboBonus + core.flat_buff
   let total = Math.floor(beforeMultiplier * core.multiplier_buff)
 
-  // Oracle penalty only applies when Oracle hint was actually used.
-  if (isOracleCore && oracleHintUsed) {
-    total = Math.floor(total * ORACLE_PENALTY_MULTIPLIER)
+  let oraclePenalty = 0
+  if (isOracleCore && oracleRevealLevel > 0) {
+    const oracleCosts = [10, 25, 50]
+    const levelIndex = Math.min(Math.max(oracleRevealLevel, 1), oracleCosts.length) - 1
+    oraclePenalty = oracleCosts[levelIndex]
+    total = Math.max(0, total - oraclePenalty)
   }
 
   return {
@@ -156,7 +159,7 @@ function calculateScore(
       combo_bonus: comboBonus,
       flat_buff: core.flat_buff,
       multiplier_buff: core.multiplier_buff,
-      oracle_penalty: isOracleCore && oracleHintUsed ? ORACLE_PENALTY_MULTIPLIER : 1,
+      oracle_penalty: oraclePenalty,
       penalty: 0
     }
   }
@@ -391,8 +394,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
     }
 
     // ── 7. Calculate score ────────────────────────────────────────────────────
-    const oracleHintUsed = oracleRevealLevel > 0
-    const { pointsDelta, breakdown } = calculateScore(isCorrect, combo, core, wrongPenalty, oracleHintUsed)
+    const { pointsDelta, breakdown } = calculateScore(isCorrect, combo, core, wrongPenalty, oracleRevealLevel)
 
     // ── 8. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
@@ -435,7 +437,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       correct: isCorrect,
       points_earned: pointsEarned,
       points_deducted: pointsDeducted,
-      new_total_score: newScore,      
+      new_total_score: newScore,
       penalty_type: penaltyType,
       accuracy: Math.round(accuracy * 1000) / 1000,
       questions_answered: newQuestionsAnswered,
@@ -444,9 +446,9 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
         combo_bonus: breakdown.combo_bonus,
         flat_buff: breakdown.flat_buff,
         multiplier_buff: breakdown.multiplier_buff,
+        oracle_penalty: breakdown.oracle_penalty,
         penalty: breakdown.penalty,
         core_name: core.name,
-      oracle_hint_used: oracleHintUsed
       }
     })
   } catch (err) {
