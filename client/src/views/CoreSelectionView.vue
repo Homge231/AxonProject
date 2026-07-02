@@ -16,7 +16,6 @@
         {{ String(timeLeft).padStart(2, '0') }}
       </span>
     </div>
- 
     <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full">
       <h2 class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Support
@@ -24,7 +23,6 @@
       <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
         Select a Support Core for this match
       </p>
- 
       <div v-if="loading && randomCores.length === 0" class="flex justify-center py-16">
         <svg class="animate-spin w-10 h-10 text-lightBlue" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -51,14 +49,12 @@
                ]">
             
             <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
- 
             <div class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
                  :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
               <svg class="w-12 h-12 transition-colors duration-500 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
               </svg>
             </div>
- 
             <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
                 :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
               {{ core.name }}
@@ -93,7 +89,6 @@
         :class="timeLeft <= 5 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-orange to-lightOrange'"
         :style="{ width: `${(timeLeft / SELECTION_DURATION) * 100}%` }"></div>
     </div>
- 
   </div>
 </template>
  
@@ -115,14 +110,12 @@ interface CoreOption {
   multiplier_buff: number
   icon: string
 }
- 
 const DEFAULT_ICON = 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
 const ICON_MAP: Record<string, string> = {
   'time freeze': 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
   'score multiplier': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
   'hint reveal': 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
 }
- 
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
   'cafe': '/bg-cafe.png',
@@ -149,7 +142,6 @@ const rerollingIndex = ref<number | null>(null)
 const SELECTION_DURATION = 15
 const timeLeft = ref(SELECTION_DURATION)
 let selectionTimer: ReturnType<typeof setInterval> | null = null
- 
 // ── Individual Reroll Logic ─────────────────────────────────────────────────
 function handleCardReroll(index: number) {
   if (rerolledSlots.value[index] || rerollingIndex.value !== null || loading.value) return
@@ -177,7 +169,6 @@ function handleCardReroll(index: number) {
     rerollingIndex.value = null
   }, 600)
 }
- 
 // ── Triggers & Handlers ─────────────────────────────────────────────────────
 function startTimer() {
   if (selectionTimer) return
@@ -191,7 +182,6 @@ function startTimer() {
     }
   }, 1000)
 }
- 
 function stopTimer() {
   if (selectionTimer) {
     clearInterval(selectionTimer)
@@ -209,12 +199,10 @@ function triggerTimeout() {
     const randomIndex = Math.floor(Math.random() * randomCores.value.length)
     coreToSubmit = randomCores.value[randomIndex]
   }
- 
   if (coreToSubmit) {
     submitCore(coreToSubmit)
   }
 }
- 
 function getRandomCores(cores: CoreOption[], count: number): CoreOption[] {
   const shuffled = [...cores].sort(() => 0.5 - Math.random())
   return shuffled.slice(0, count)
@@ -244,14 +232,12 @@ async function fetchSupportCores() {
     loading.value = false
     
     startTimer()
- 
   } catch (err) {
     console.error('fetchSupportCores error:', err)
     errorMsg.value = 'Failed to load Support Cores.'
     loading.value = false
   }
 }
- 
 async function createSession(coreId: string) {
   try {
     const token = localStorage.getItem('arena_token')
@@ -308,12 +294,10 @@ onUnmounted(() => {
   background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 64px 64px;
 }
- 
 /* CSS Flip/Shuffle Animation applied to single card */
 .reroll-anim {
   animation: flip-shuffle 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
- 
 @keyframes flip-shuffle {
   0% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; filter: blur(0px); }
   50% { transform: perspective(1000px) rotateY(90deg) scale(0.8); opacity: 0; filter: blur(4px); }
