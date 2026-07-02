@@ -429,13 +429,8 @@ function useOracleHint() {
   oracleRevealLevel.value++
   oracleTotalPenalty.value += cost
 
-  // Optimistically deduct from FE score so the bar updates immediately.
-  // When submit-answer responds, server's new_total_score will overwrite
-  // this value with the authoritative result (no double-counting risk).
-  score.value = Math.max(0, score.value - cost)
-
-  // No popup here — the net score change (oracle + answer) will be shown
-  // in a single popup from the server's submit-answer response.
+  // Score bar will update when submit-answer responds (server is source of truth).
+  // Oracle cost is shown on the hint button label — no separate popup needed.
 
   // Re-focus the hidden input so the player can continue typing without clicking the screen
   inputRef.value?.focus()
@@ -451,6 +446,7 @@ const oracleMaxAllowed = computed(() => {
 // Floating point popups
 const pointPopups = ref<PointPopup[]>([])
 let popupIdCounter = 0
+let submitAnswerSeq = 0   // increments per answer submitted; used to discard out-of-order responses
 
 const playerAvatarUrl = computed(() =>
   authStore.profile?.avatar_url ||
@@ -629,18 +625,64 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
-// ── Skip Question Logic (US-14) ───────────────────────────────────────────
-function skipQuestion() {
+// ── Skip Question Logic (Enter key) ───────────────────────────────────────
+async function skipQuestion() {
   if (gameState.value !== 'playing') return
+  if (!sessionId.value || !currentQuestion.value.id) {
+    // No session (guest/mock): deduct locally only
+    score.value = Math.max(0, score.value - 10)
+    currentCombo.value = 0
+    typedLetters.value = []
+    spawnPointPopup(10, 'wrong')
+    triggerScoreFlash('wrong')
+    loadQuestion()
+    return
+  }
 
-  score.value = Math.max(0, score.value - 10)
+  // Capture state before reset
+  const questionId = currentQuestion.value.id
+  const capturedOracleLevel = oracleRevealLevel.value
+  const capturedCombo = currentCombo.value
+
+  // Immediate local feedback
+  gameState.value = 'wrong'
   currentCombo.value = 0
   typedLetters.value = []
-
-  spawnPointPopup(10, 'wrong')
   triggerScoreFlash('wrong')
 
+  // Advance immediately (skip = instant move to next)
   loadQuestion()
+
+  // Notify server: send empty string as answer (server treats it as a full skip/wrong)
+  const mySeq = ++submitAnswerSeq
+  ;(async () => {
+    try {
+      const token = localStorage.getItem('arena_token')
+      const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          session_id: sessionId.value,
+          question_id: questionId,
+          answer: '',            // empty = full skip
+          current_combo: capturedCombo,
+          active_core_id: activeCoreId.value,
+          oracle_reveal_level: capturedOracleLevel
+        })
+      })
+      if (res.ok && mySeq === submitAnswerSeq) {
+        const data = await res.json()
+        score.value = data.new_total_score ?? score.value
+        questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+        spawnPointPopup(data.points_deducted, 'wrong')
+      }
+    } catch (err) {
+      console.error('Failed to sync skip:', err)
+    }
+  })()
 }
 
 // ── Input handling ────────────────────────────────────────────────────────
@@ -708,6 +750,7 @@ async function checkAnswer() {
 
   // ── 4. Background sync with server (fire-and-forget) ─────────────────────
   if (!sessionId.value || !questionId) return
+  const mySeq = ++submitAnswerSeq   // capture sequence number for this specific answer
   ;(async () => {
     try {
       const token = localStorage.getItem('arena_token')
@@ -732,7 +775,7 @@ async function checkAnswer() {
         return
       }
 
-      if (res.ok) {
+      if (res.ok && mySeq === submitAnswerSeq) {  // discard stale out-of-order responses
         const data = await res.json()
 
         // Update score from server (source of truth)
