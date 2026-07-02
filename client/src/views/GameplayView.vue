@@ -6,23 +6,23 @@
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
     <!-- Floating points popup container -->
-   <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
-  <transition-group name="float-pts" tag="div">
-    <div
-      v-for="popup in pointPopups"
-      :key="popup.id"
-      class="float-pts-item absolute font-black text-2xl tracking-widest drop-shadow-lg"
-      :class="{
-        'text-success': popup.type === 'correct',
-        'text-hexred': popup.type === 'wrong',
-        'text-yellow-400': popup.type === 'typo'
-      }"
-      :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
-    >
-      {{ popup.type === 'correct' ? '+' : '-' }}{{ popup.value }}{{ popup.type === 'typo' ? ' (Typo)' : ' PTS' }}
+    <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+      <transition-group name="float-pts" tag="div">
+        <div
+          v-for="popup in pointPopups"
+          :key="popup.id"
+          class="float-pts-item absolute font-black text-2xl tracking-widest drop-shadow-lg"
+          :class="{
+            'text-success': popup.type === 'correct',
+            'text-hexred': popup.type === 'wrong',
+            'text-yellow-400': popup.type === 'typo'
+          }"
+          :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
+        >
+          {{ popup.type === 'correct' ? '+' : '-' }}{{ popup.value }}{{ popup.type === 'typo' ? ' (Typo)' : ' PTS' }}
+        </div>
+      </transition-group>
     </div>
-  </transition-group>
-</div>
 
     <header
       class="relative z-30 flex justify-between items-center px-8 lg:px-12 py-5 bg-darkNavy/30 backdrop-blur-md border-b border-white/10 shadow-lg">
@@ -179,7 +179,7 @@
                     'border-success/50 bg-success/20 text-green-300': gameState === 'correct',
                     'border-hexred/50 bg-hexred/20 text-red-300': gameState === 'wrong',
                   }">
-                  <span v-if="gameState === 'correct'">✓ Brilliant! +{{ pointsEarned }} pts</span>
+                  <span v-if="gameState === 'correct'">★ Brilliant! +{{ pointsEarned }} pts</span>
                   <span v-else>
                     ✗ Correct word:
                     <span class="uppercase text-white ml-1 font-black">{{ currentQuestion.target_word }}</span>
@@ -329,7 +329,7 @@ const THEME_MAP: Record<string, string> = {
   'travel': '/bg-travel.png'
 }
 
-// ── State ───────────────────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
 const timeLeft = ref(MATCH_DURATION)
 const score = ref(0)
@@ -376,7 +376,7 @@ const scoreBarColor = computed(() => {
   return 'bg-gradient-to-r from-blue to-lightBlue'
 })
 
-// ── Question queue ───────────────────────────────────────────────────────────
+// ── Question queue ────────────────────────────────────────────────────────
 const questionQueue = ref<QuestionPayload[]>([])
 const isFetchingBatch = ref(false)
 const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_word: '' })
@@ -384,14 +384,14 @@ const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target
 let matchTimer: ReturnType<typeof setInterval> | null = null
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 
-// ── Score flash helper ───────────────────────────────────────────────────────
+// ── Score flash helper ────────────────────────────────────────────────────
 function triggerScoreFlash(type: ScoreFlash) {
   if (flashTimer) clearTimeout(flashTimer)
   scoreFlash.value = type
   flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
 }
 
-// ── Floating popup helper ────────────────────────────────────────────────────
+// ── Floating popup helper ─────────────────────────────────────────────────
 function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo') {
   let x = window.innerWidth / 2 - 50
   let y = window.innerHeight / 2 - 60
@@ -408,7 +408,7 @@ function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo') {
   }, 1200)
 }
 
-// ── Timer ────────────────────────────────────────────────────────────────────
+// ── Timer ──────────────────────────────────────────────────────────────────
 function startMatchTimer() {
   if (matchTimer) return
   matchTimer = setInterval(() => {
@@ -431,7 +431,7 @@ function getBackgroundImage(themeKey: string) {
   return THEME_MAP[themeKey] || '/bg-daily-life.png'
 }
 
-// ── Session API ──────────────────────────────────────────────────────────────
+// ── Session API ────────────────────────────────────────────────────────────
 async function createSession() {
   try {
     const token = localStorage.getItem('arena_token')
@@ -478,7 +478,7 @@ async function callTimeoutEndpoint() {
   }
 }
 
-// ── Batch fetching ───────────────────────────────────────────────────────────
+// ── Batch fetching ─────────────────────────────────────────────────────────
 const MOCK_QUESTIONS: QuestionPayload[] = [
   { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_word: 'discovery', hint: 'The act of finding something new' },
   { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_word: 'confidence', hint: 'A feeling of self-assurance' },
@@ -509,7 +509,7 @@ async function fetchBatch(): Promise<void> {
   }
 }
 
-// ── Question loading ─────────────────────────────────────────────────────────
+// ── Question loading ──────────────────────────────────────────────────────
 async function loadQuestion() {
   gameState.value = 'loading'
   typedLetters.value = []
@@ -531,7 +531,7 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
-// ── Input handling ───────────────────────────────────────────────────────────
+// ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
@@ -611,8 +611,8 @@ async function syncAnswer(answer: string, isCorrect: boolean) {
       spawnPointPopup(
         isCorrect ? data.points_earned : data.points_deducted,
         popupType
-  )
-}
+      )
+    }
   } catch (err) {
     console.error('Failed to sync answer:', err)
   }
@@ -624,7 +624,7 @@ function triggerTimeout() {
   callTimeoutEndpoint()
 }
 
-// ── Match control ────────────────────────────────────────────────────────────
+// ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
   score.value = 0
   questionsAnswered.value = 0
@@ -663,7 +663,7 @@ async function abandonCurrentSession() {
   }
 }
 
-// ── Misc ─────────────────────────────────────────────────────────────────────
+// ── Misc ───────────────────────────────────────────────────────────────────
 function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
