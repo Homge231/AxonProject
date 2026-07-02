@@ -418,6 +418,8 @@ const oracleHintText = computed(() => {
   if (level === 0) return ''
   return currentQuestion.value.oracle_hints?.[level - 1] || ''
 })
+// ── Skip Question Logic  ───────────────────────────────────────────
+
 
 function useOracleHint() {
   if (oracleRevealLevel.value >= oracleMaxAllowed.value) return
@@ -430,11 +432,9 @@ function useOracleHint() {
   // Deduct points immediately and show floating popup
   score.value = Math.max(0, score.value - cost)
   spawnPointPopup(cost, 'wrong')
-  setTimeout(() => {
-    if (typeof refocusInput === 'function') {
-      refocusInput();
-    }
-  }, 50);
+  
+  // Re-focus the hidden input so the player can continue typing without clicking the screen
+  inputRef.value?.focus()
 }
 const oracleMaxAllowed = computed(() => {
   const len = currentQuestion.value.target_length
@@ -625,16 +625,37 @@ async function loadQuestion() {
   inputRef.value?.focus()
 }
 
+// ── Skip Question Logic (US-14) ───────────────────────────────────────────
+function skipQuestion() {
+  if (gameState.value !== 'playing') return
+
+  score.value = Math.max(0, score.value - 10)
+  currentCombo.value = 0
+  typedLetters.value = []
+
+  spawnPointPopup(10, 'wrong')
+  triggerScoreFlash('wrong')
+
+  loadQuestion()
+}
+
 // ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
 
+  // Skip question when Enter is pressed
+  if (e.key === 'Enter') {
+    skipQuestion()
+    return
+  }
+
   if (e.key === 'Backspace') {
     typedLetters.value = typedLetters.value.slice(0, -1)
     return
   }
+  
   if (/^[a-zA-Z]$/.test(e.key)) {
     const maxLen = currentQuestion.value.target_length
     if (typedLetters.value.length >= maxLen) return
@@ -643,7 +664,6 @@ function handleKeydown(e: KeyboardEvent) {
     if (typedLetters.value.length === maxLen) checkAnswer()
   }
 }
-
 async function sha256(message: string) {
   const msgBuffer = new TextEncoder().encode(message)
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)

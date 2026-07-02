@@ -503,6 +503,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
       penalty_type: penaltyType,
       accuracy: Math.round(accuracy * 1000) / 1000,
       questions_answered: newQuestionsAnswered,
+      correct_word: !isCorrect ? question.target_word : undefined,
       breakdown: {
         base_score: breakdown.base,
         combo_bonus: breakdown.combo_bonus,
@@ -510,8 +511,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
         multiplier_buff: breakdown.multiplier_buff,
         oracle_penalty: breakdown.oracle_penalty,
         penalty: breakdown.penalty,
-        core_name: core.name,
-        correct_word: !isCorrect ? question.target_word : undefined
+        core_name: core.name
       }
     })
   } catch (err) {
