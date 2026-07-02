@@ -123,6 +123,38 @@
                 </h1>
               </div>
 
+              <!-- Oracle Hint Box (only visible for Oracle core) -->
+              <div v-if="isOracleCore && gameState === 'playing'"
+                class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+                <div class="oracle-glow-ring"></div>
+                <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
+                  <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision</span>
+                </div>
+                <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
+                  {{ oracleHintText }}
+                </p>
+              </div>
+
+              <!-- Oracle Hint Box (only visible for Oracle core) -->
+              <div v-if="isOracleCore && gameState === 'playing'"
+                class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+                <div class="oracle-glow-ring"></div>
+                <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
+                  <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision</span>
+                </div>
+                <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
+                  {{ oracleHintText }}
+                </p>
+              </div>
+
               <div
                 class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300">
                 <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
@@ -357,6 +389,18 @@ const activeCoreId = computed<string | null>({
 
 const isComboCore = computed(() => gameStore.activeCoreId === COMBO_CORE_ID)
 
+const ORACLE_CORE_ID = '00000000-0000-0000-0000-000000000006'
+const isOracleCore = computed(() => gameStore.activeCoreId === ORACLE_CORE_ID)
+
+const oracleHintText = computed(() => {
+  const word = currentQuestion.value.target_word
+  if (!word || word.length <= 2) return word.toUpperCase()
+  const first = word[0].toUpperCase()
+  const last = word[word.length - 1].toUpperCase()
+  const middle = Array(word.length - 2).fill('\u00b7').join(' ')
+  return `${first} ${middle} ${last}`
+})
+
 
 // Floating point popups
 const pointPopups = ref<PointPopup[]>([])
@@ -440,7 +484,7 @@ async function createSession() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        ...(token ? { Authorization: 'Bearer ' + token } : {})
       },
       body: JSON.stringify({ active_core_id: activeCoreId.value })
     })
@@ -448,6 +492,7 @@ async function createSession() {
     const data = await res.json()
     sessionId.value = data.session_id
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
+    if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
   } catch (err) {
     console.error(err)
@@ -816,5 +861,28 @@ onUnmounted(() => {
     text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
     transform: scale(1.15) translateY(-3px);
   }
+}
+
+.oracle-hint-box {
+  animation: oracleBreath 3s ease-in-out infinite;
+}
+
+.oracle-glow-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, transparent, rgba(168,85,247,0.4), transparent, rgba(139,92,246,0.3), transparent);
+  animation: oracleRotate 4s linear infinite;
+  z-index: -1;
+  filter: blur(8px);
+}
+
+@keyframes oracleBreath {
+  0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.15), inset 0 0 20px rgba(168,85,247,0.05); }
+  50% { box-shadow: 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(168,85,247,0.1); }
+}
+
+@keyframes oracleRotate {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -11,6 +11,7 @@ const BASE_POINTS = 100
 const COMBO_BONUS_PER_STREAK = 10   // +10 pts per combo level (combo 5 → +50)
 const MAX_COMBO_BONUS = 100         // cap combo bonus at +100 pts
 const DEFAULT_CORE_ID = '00000000-0000-0000-0000-000000000001' // "No Core"
+const ORACLE_PENALTY_MULTIPLIER = 0.5  // Oracle core: -50% score for correct answers
 
 const TYPO_ACCURACY_THRESHOLD = 0.8   // >= 80% similarity counts as a "typo"
 const TYPO_PENALTY_PER_LETTER = 2     // -2 pts per wrong letter for close misses
@@ -134,12 +135,18 @@ function calculateScore(
   }
 
   const isComboCore = core.name?.toLowerCase().includes('combo')
+  const isOracleCore = core.name?.toLowerCase().includes('oracle')
   const comboBonus = isComboCore
     ? Math.min(combo * COMBO_BONUS_PER_STREAK, MAX_COMBO_BONUS)
     : 0
 
   const beforeMultiplier = BASE_POINTS + comboBonus + core.flat_buff
-  const total = Math.floor(beforeMultiplier * core.multiplier_buff)
+  let total = Math.floor(beforeMultiplier * core.multiplier_buff)
+
+  // Oracle penalty: halve final score for correct answers
+  if (isOracleCore) {
+    total = Math.floor(total * ORACLE_PENALTY_MULTIPLIER)
+  }
 
   return {
     pointsDelta: total,
@@ -148,6 +155,7 @@ function calculateScore(
       combo_bonus: comboBonus,
       flat_buff: core.flat_buff,
       multiplier_buff: core.multiplier_buff,
+      oracle_penalty: isOracleCore ? ORACLE_PENALTY_MULTIPLIER : 1,
       penalty: 0
     }
   }

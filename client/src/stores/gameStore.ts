@@ -10,10 +10,11 @@ export const useGameStore = defineStore('game', () => {
   const opponentScore = ref<number>(0)
   const kp            = ref<number>(0)
   const activeCoreId  = ref<string | null>(null)
+  const activeCoreName = ref<string | null>(null)
 
   return {
     roomCode, playerName, players,
     gameState, myScore, opponentScore, kp,
-    activeCoreId
+    activeCoreId, activeCoreName
   }
 })

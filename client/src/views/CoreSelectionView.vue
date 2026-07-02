@@ -114,7 +114,8 @@ const ICON_MAP: Record<string, string> = {
   'speed core': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
   'power core': 'M13 2L3 14h7v8l10-12h-7V2z',
   'balanced core': 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
-  'combo core': 'M9 9V7a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2h-2M9 9H7a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2v-2M9 9l6 6'
+  'combo core': 'M9 9V7a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2h-2M9 9H7a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2v-2M9 9l6 6',
+  'oracle core': 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
 }
 const DEFAULT_ICON = 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
 
@@ -196,6 +197,7 @@ function confirmAndStart() {
     selectedCore.value = randomCores.value[Math.floor(Math.random() * randomCores.value.length)]
   }
   gameStore.activeCoreId = selectedCore.value.id
+  gameStore.activeCoreName = selectedCore.value.name
   router.push('/game')
 }
 
