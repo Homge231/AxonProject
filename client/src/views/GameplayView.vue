@@ -430,6 +430,11 @@ function useOracleHint() {
   // Deduct points immediately and show floating popup
   score.value = Math.max(0, score.value - cost)
   spawnPointPopup(cost, 'wrong')
+  setTimeout(() => {
+    if (typeof refocusInput === 'function') {
+      refocusInput();
+    }
+  }, 50);
 }
 const oracleMaxAllowed = computed(() => {
   const len = currentQuestion.value.target_length
