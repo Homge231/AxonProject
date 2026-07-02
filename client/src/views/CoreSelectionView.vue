@@ -3,19 +3,11 @@
     
     <PhaserBackground :image-url="currentBgImage" />
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
-<<<<<<< HEAD
  
     <button @click="$router.push('/home')" class="absolute top-8 left-8 text-white/50 hover:text-white transition-colors z-20 font-bold tracking-widest uppercase">
       &larr; Back
     </button>
  
-=======
-
-    <button @click="$router.push('/home')" class="absolute top-8 left-8 text-white/50 hover:text-white transition-colors z-20 font-bold tracking-widest uppercase">
-      &larr; Back
-    </button>
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
     <div class="absolute top-8 right-8 z-20 flex items-center gap-2" :class="timeLeft <= 5 ? 'text-hexred animate-pulse' : 'text-lightOrange'">
       <svg class="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -24,11 +16,7 @@
         {{ String(timeLeft).padStart(2, '0') }}
       </span>
     </div>
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
     <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full">
       <h2 class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Support
@@ -36,30 +24,18 @@
       <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
         Select a Support Core for this match
       </p>
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
       <div v-if="loading && randomCores.length === 0" class="flex justify-center py-16">
         <svg class="animate-spin w-10 h-10 text-lightBlue" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c..."></path>
         </svg>
       </div>
-<<<<<<< HEAD
  
       <div v-else-if="errorMsg" class="text-hexred font-bold py-8">
         {{ errorMsg }}
       </div>
  
-=======
-
-      <div v-else-if="errorMsg" class="text-hexred font-bold py-8">
-        {{ errorMsg }}
-      </div>
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full px-4 md:px-0 items-stretch" :class="{ 'pointer-events-none': loading }">
         
         <div v-for="(core, index) in randomCores" :key="index" class="flex flex-col items-center gap-6 w-full h-full">
@@ -67,35 +43,22 @@
           <div @click="submitCore(core)"
                class="group flex-1 w-full relative backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
                :class="[
-<<<<<<< HEAD
                   selectedCore?.id === core.id
                     ? 'bg-white/10 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105'
-=======
-                  selectedCore?.id === core.id 
-                    ? 'bg-white/10 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105' 
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
                     : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
                   rerollingIndex === index ? 'reroll-anim pointer-events-none' : '',
                   loading && selectedCore?.id !== core.id ? 'opacity-40 grayscale' : '' // Dims the unselected card when submitting
                ]">
             
             <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
             <div class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
                  :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
               <svg class="w-12 h-12 transition-colors duration-500 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
               </svg>
             </div>
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
             <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
                 :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
               {{ core.name }}
@@ -103,7 +66,6 @@
             <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px] mb-6">{{ core.description }}</p>
             
             </div>
-<<<<<<< HEAD
  
           <button @click="handleCardReroll(index)"
                   :disabled="rerolledSlots[index] || rerollingIndex !== null || loading"
@@ -113,17 +75,6 @@
                     : 'bg-black/40 backdrop-blur-md border border-white/20 hover:border-lightBlue hover:bg-white/10 cursor-pointer'">
             <svg class="w-4 h-4 transition-transform duration-500 text-gray-400 group-hover:text-lightBlue"
                  :class="{ 'animate-spin': rerollingIndex === index }"
-=======
-
-          <button @click="handleCardReroll(index)"
-                  :disabled="rerolledSlots[index] || rerollingIndex !== null || loading"
-                  class="group relative px-6 py-2.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg disabled:cursor-not-allowed"
-                  :class="rerolledSlots[index] 
-                    ? 'bg-black/60 border border-gray-700 opacity-40 blur-[1px] grayscale' 
-                    : 'bg-black/40 backdrop-blur-md border border-white/20 hover:border-lightBlue hover:bg-white/10 cursor-pointer'">
-            <svg class="w-4 h-4 transition-transform duration-500 text-gray-400 group-hover:text-lightBlue" 
-                 :class="{ 'animate-spin': rerollingIndex === index }" 
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -133,27 +84,16 @@
             </span>
           </button>
         </div>
-<<<<<<< HEAD
  
       </div>
     </main>
  
-=======
-
-      </div>
-    </main>
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
     <div class="relative z-20 h-2 w-full flex bg-black/50">
       <div class="h-full transition-all duration-1000 ease-linear rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
         :class="timeLeft <= 5 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-orange to-lightOrange'"
         :style="{ width: `${(timeLeft / SELECTION_DURATION) * 100}%` }"></div>
     </div>
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   </div>
 </template>
  
@@ -162,19 +102,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/gameStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
-<<<<<<< HEAD
  
 const router = useRouter()
 const gameStore = useGameStore()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
  
-=======
-
-const router = useRouter()
-const gameStore = useGameStore()
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 interface CoreOption {
   id: string
   name: string
@@ -183,28 +115,19 @@ interface CoreOption {
   multiplier_buff: number
   icon: string
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 const DEFAULT_ICON = 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
 const ICON_MAP: Record<string, string> = {
   'time freeze': 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
   'score multiplier': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
   'hint reveal': 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
   'cafe': '/bg-cafe.png',
   'travel': '/bg-travel.png'
 }
-<<<<<<< HEAD
  
 const currentBgImage = ref('/bg-daily-life.png')
  
@@ -212,61 +135,32 @@ function getBackgroundImage(themeKey: string) {
   return THEME_MAP[themeKey] || '/bg-daily-life.png'
 }
  
-=======
-
-const currentBgImage = ref('/bg-daily-life.png')
-
-function getBackgroundImage(themeKey: string) {
-  return THEME_MAP[themeKey] || '/bg-daily-life.png'
-}
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 const supportCores = ref<CoreOption[]>([])
 const randomCores = ref<CoreOption[]>([])
 const selectedCore = ref<CoreOption | null>(null)
 const loading = ref(true)
 const errorMsg = ref('')
-<<<<<<< HEAD
  
 // ── Reroll State (Independent per card) ─────────────────────────────────────
 const rerolledSlots = ref([false, false])
 const rerollingIndex = ref<number | null>(null)
  
-=======
-
-// ── Reroll State (Independent per card) ─────────────────────────────────────
-const rerolledSlots = ref([false, false]) 
-const rerollingIndex = ref<number | null>(null) 
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 // ── Timer State ─────────────────────────────────────────────────────────────
 const SELECTION_DURATION = 15
 const timeLeft = ref(SELECTION_DURATION)
 let selectionTimer: ReturnType<typeof setInterval> | null = null
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 // ── Individual Reroll Logic ─────────────────────────────────────────────────
 function handleCardReroll(index: number) {
   if (rerolledSlots.value[index] || rerollingIndex.value !== null || loading.value) return
   
   rerolledSlots.value[index] = true
   rerollingIndex.value = index
-<<<<<<< HEAD
  
   if (selectedCore.value?.id === randomCores.value[index].id) {
     selectedCore.value = null
   }
  
-=======
-
-  if (selectedCore.value?.id === randomCores.value[index].id) {
-    selectedCore.value = null 
-  }
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   setTimeout(() => {
     const currentIds = randomCores.value.map(c => c.id)
     let availableCores = supportCores.value.filter(c => !currentIds.includes(c.id))
@@ -277,22 +171,13 @@ function handleCardReroll(index: number) {
     
     const newCore = getRandomCores(availableCores, 1)[0]
     randomCores.value.splice(index, 1, newCore)
-<<<<<<< HEAD
   }, 300)
  
-=======
-  }, 300) 
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   setTimeout(() => {
     rerollingIndex.value = null
   }, 600)
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 // ── Triggers & Handlers ─────────────────────────────────────────────────────
 function startTimer() {
   if (selectionTimer) return
@@ -306,26 +191,16 @@ function startTimer() {
     }
   }, 1000)
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 function stopTimer() {
   if (selectionTimer) {
     clearInterval(selectionTimer)
     selectionTimer = null
   }
 }
-<<<<<<< HEAD
  
 function triggerTimeout() {
   if (loading.value) return
-=======
-
-function triggerTimeout() {
-  if (loading.value) return 
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   
   let coreToSubmit = selectedCore.value
   
@@ -334,20 +209,12 @@ function triggerTimeout() {
     const randomIndex = Math.floor(Math.random() * randomCores.value.length)
     coreToSubmit = randomCores.value[randomIndex]
   }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   if (coreToSubmit) {
     submitCore(coreToSubmit)
   }
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 function getRandomCores(cores: CoreOption[], count: number): CoreOption[] {
   const shuffled = [...cores].sort(() => 0.5 - Math.random())
   return shuffled.slice(0, count)
@@ -377,22 +244,14 @@ async function fetchSupportCores() {
     loading.value = false
     
     startTimer()
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
   } catch (err) {
     console.error('fetchSupportCores error:', err)
     errorMsg.value = 'Failed to load Support Cores.'
     loading.value = false
   }
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 async function createSession(coreId: string) {
   try {
     const token = localStorage.getItem('arena_token')
@@ -409,11 +268,7 @@ async function createSession(coreId: string) {
     const data = await res.json()
     
     if (data.session_id) {
-<<<<<<< HEAD
       gameStore.sessionId = data.session_id
-=======
-      gameStore.sessionId = data.session_id 
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
     }
     if (data.theme) {
       currentBgImage.value = getBackgroundImage(data.theme)
@@ -421,7 +276,6 @@ async function createSession(coreId: string) {
   } catch (err) {
     console.error('Error creating Session:', err)
   }
-<<<<<<< HEAD
 }
  
 async function submitCore(core: CoreOption) {
@@ -446,32 +300,6 @@ onMounted(() => {
  
 onUnmounted(() => {
   stopTimer()
-=======
-}
-
-async function submitCore(core: CoreOption) {
-  if (loading.value) return
-  
-  // Instantly highlight the selected card for visual feedback
-  selectedCore.value = core
-  loading.value = true
-  stopTimer() 
-
-  gameStore.activeCoreId = core.id
-  gameStore.activeCoreName = core.name
-  
-  await createSession(core.id)
-
-  router.push('/game') 
-}
-
-onMounted(() => {
-  fetchSupportCores()
-})
-
-onUnmounted(() => {
-  stopTimer() 
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 })
 </script>
  
@@ -480,20 +308,12 @@ onUnmounted(() => {
   background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 64px 64px;
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 /* CSS Flip/Shuffle Animation applied to single card */
 .reroll-anim {
   animation: flip-shuffle 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-<<<<<<< HEAD
  
-=======
-
->>>>>>> ac0b5294aa026a21f793ad3573afd5e9d6b655a6
 @keyframes flip-shuffle {
   0% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; filter: blur(0px); }
   50% { transform: perspective(1000px) rotateY(90deg) scale(0.8); opacity: 0; filter: blur(4px); }
