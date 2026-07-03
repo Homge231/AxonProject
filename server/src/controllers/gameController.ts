@@ -11,7 +11,7 @@ const supabase = createClient(
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DEFAULT_CORE_ID = '00000000-0000-0000-0000-000000000001' // "No Core"
-const MATCH_DURATION_MS = 60_000                              // 60-second match
+const MATCH_DURATION_MS = 90_000                              // 90-second match
 
 const TYPO_ACCURACY_THRESHOLD = 0.8   // >= 80% similarity counts as a "typo"
 const TYPO_PENALTY_PER_LETTER = 2     // -2 pts per wrong letter for close misses
