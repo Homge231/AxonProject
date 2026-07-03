@@ -975,18 +975,27 @@ function refocusInput() {
   if (!menuOpen.value && !confirmQuit.value) inputRef.value?.focus()
 }
 
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (gameState.value === 'playing') {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
 onMounted(async () => {
   await createSession()
   await fetchBatch()
   await loadQuestion()
   startMatchTimer()
   document.addEventListener('click', handleOutsideClick)
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
   stopMatchTimer()
   if (flashTimer) clearTimeout(flashTimer)
   document.removeEventListener('click', handleOutsideClick)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>
 
