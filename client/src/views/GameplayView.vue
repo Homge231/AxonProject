@@ -178,7 +178,8 @@
               </div>
 
               <div
-                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300">
+                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300"
+                :class="{ 'burning-edge-active': isBurningComboActive }">
                 <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
                   <span v-if="currentQuestion.question_text.split(/_+/)[0]">
                     {{ currentQuestion.question_text.split(/_+/)[0] }}
@@ -426,6 +427,7 @@ const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
 const currentCombo = ref(0)
+const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 
 // active_core_id / name sourced from gameStore (set in CoreSelectionView)
 const activeCoreId = computed<string | null>({
@@ -785,68 +787,68 @@ async function checkAnswer() {
 
   if (!sessionId.value || !questionId) return
   const timeTaken = Date.now() - questionStartTime.value
-  const mySeq = ++submitAnswerSeq 
+  const mySeq = ++submitAnswerSeq
 
-  ;(async () => {
-    try {
-      const token = localStorage.getItem('arena_token')
-      const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          session_id: sessionId.value,
-          question_id: questionId,
-          answer: typed,
-          current_combo: capturedCombo,
-          active_core_id: activeCoreId.value,
-          oracle_reveal_level: capturedOracleLevel,
-          time_taken: timeTaken
+    ; (async () => {
+      try {
+        const token = localStorage.getItem('arena_token')
+        const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            session_id: sessionId.value,
+            question_id: questionId,
+            answer: typed,
+            current_combo: capturedCombo,
+            active_core_id: activeCoreId.value,
+            oracle_reveal_level: capturedOracleLevel,
+            time_taken: timeTaken
+          })
         })
-      })
 
-      if (res.ok && mySeq === submitAnswerSeq) {
-        const data = await res.json()
+        if (res.ok && mySeq === submitAnswerSeq) {
+          const data = await res.json()
 
-        const startScore = score.value
-        const targetScore = data.new_total_score ?? score.value
-        const duration = 500 
-        const startTime = performance.now()
+          const startScore = score.value
+          const targetScore = data.new_total_score ?? score.value
+          const duration = 500
+          const startTime = performance.now()
 
-        function animateScore(currentTime: number) {
-          const elapsed = currentTime - startTime
-          const progress = Math.min(elapsed / duration, 1)
-          score.value = Math.floor(startScore + (targetScore - startScore) * progress)
-          if (progress < 1) requestAnimationFrame(animateScore)
+          function animateScore(currentTime: number) {
+            const elapsed = currentTime - startTime
+            const progress = Math.min(elapsed / duration, 1)
+            score.value = Math.floor(startScore + (targetScore - startScore) * progress)
+            if (progress < 1) requestAnimationFrame(animateScore)
+          }
+          requestAnimationFrame(animateScore)
+
+          questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+          pointsEarned.value = data.points_earned ?? pointsEarned.value
+          pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
+
+          if (!data.correct && data.correct_word) {
+            currentQuestion.value.correct_word = data.correct_word
+          }
+
+          if (data.correct && isSpeedsterCore.value) {
+            spawnPointPopup(data.points_earned, 'speedster')
+          } else {
+            const popupType: 'correct' | 'wrong' | 'typo' = data.correct
+              ? 'correct'
+              : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+            spawnPointPopup(
+              data.correct ? data.points_earned : data.points_deducted,
+              popupType
+            )
+          }
         }
-        requestAnimationFrame(animateScore)
-
-        questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
-        pointsEarned.value = data.points_earned ?? pointsEarned.value
-        pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
-
-        if (!data.correct && data.correct_word) {
-          currentQuestion.value.correct_word = data.correct_word
-        }
-
-        if (data.correct && isSpeedsterCore.value) {
-          spawnPointPopup(data.points_earned, 'speedster')
-        } else {
-          const popupType: 'correct' | 'wrong' | 'typo' = data.correct
-            ? 'correct'
-            : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
-          spawnPointPopup(
-            data.correct ? data.points_earned : data.points_deducted,
-            popupType
-          )
-        }
+      } catch (err) {
+        console.error('Failed to sync answer:', err)
       }
-    } catch (err) {
-      console.error('Failed to sync answer:', err)
-    }
-  })()
+    })()
 }
 
 
@@ -1396,6 +1398,78 @@ onUnmounted(() => {
 @keyframes oracleRotate {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ── INTENSE WILDFIRE EFFECT (Thuần CSS) ────────────────────────────── */
+.burning-edge-active {
+  position: relative;
+  border-color: rgba(255, 69, 0, 0.8) !important;
+  box-shadow: inset 0 0 40px rgba(255, 69, 0, 0.6) !important;
+}
+
+/* Layer lửa bốc rộng ra xung quanh */
+.burning-edge-active::before,
+.burning-edge-active::after {
+  content: '';
+  position: absolute;
+  /* Kéo dài lửa ra khỏi viền 50px */
+  inset: -50px; 
+  border-radius: 40px;
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(15px);
+}
+
+/* Lớp lửa màu đỏ/cam chớp nháy dưới nền */
+.burning-edge-active::before {
+  background: 
+    radial-gradient(circle at 20% 100%, rgba(255, 0, 0, 0.8) 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(255, 69, 0, 0.8) 0%, transparent 50%),
+    radial-gradient(circle at 50% -20%, rgba(255, 140, 0, 0.6) 0%, transparent 60%);
+  animation: wildFireBase 0.3s infinite alternate ease-in-out;
+}
+
+/* Lớp lửa màu vàng rực bốc cao lên trên */
+/* ── BURNING EDGE (Box nằm im, Lửa chỉ cháy bên ngoài) ───────────────── */
+
+.burning-edge-active {
+  position: relative;
+  /* Đổi màu viền box thành cam cho đồng bộ với lửa */
+  border-color: rgba(255, 100, 0, 0.8) !important;
+  /* KHÔNG có transform rung lắc, KHÔNG có inset shadow để bên trong sạch sẽ */
+}
+
+/* Layer lửa bám sát vòng quanh mép ngoài của box */
+.burning-edge-active::before {
+  content: '';
+  position: absolute;
+  /* inset: 0 giúp layer này to đúng bằng cái box, không tràn vào trong */
+  inset: 0; 
+  border-radius: inherit;
+  z-index: -1; /* Nằm dưới cái box */
+  pointer-events: none;
+
+  /* Hiệu ứng ngọn lửa chỉ tỏa ra ngoài */
+  animation: outerFlames 0.4s infinite alternate ease-in-out;
+}
+
+@keyframes outerFlames {
+  0% {
+    box-shadow: 
+      0 -10px 15px rgba(255, 165, 0, 0.6), /* Lửa trên */
+      0 10px 15px rgba(255, 69, 0, 0.5),   /* Lửa dưới */
+      10px 0 15px rgba(255, 69, 0, 0.5),   /* Lửa phải */
+      -10px 0 15px rgba(255, 165, 0, 0.5); /* Lửa trái */
+  }
+  100% {
+    box-shadow: 
+      0 -40px 45px rgba(255, 100, 0, 0.9), /* Lửa bốc cao mạnh lên phía trên */
+      0 20px 30px rgba(255, 0, 0, 0.7),    /* Lửa dưới tỏa ra */
+      25px 0 35px rgba(255, 100, 0, 0.8),  /* Lửa hắt sang 2 bên */
+      -25px 0 35px rgba(255, 0, 0, 0.8),
+      0 0 20px rgba(255, 255, 255, 0.3);   /* Lõi sáng chớp nhẹ ở mép */
   }
 }
 </style>
