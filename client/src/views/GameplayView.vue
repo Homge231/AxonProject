@@ -310,7 +310,7 @@
           <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-[0_0_40px_rgba(250,204,21,0.8)] tracking-widest uppercase mb-4 scale-up-center">
             Mission Accomplished!
           </h1>
-          <p class="text-3xl font-bold text-white drop-shadow-md">+5000 PTS</p>
+          <p class="text-3xl font-bold text-white drop-shadow-md">+500 PTS</p>
         </div>
       </div>
     </transition>
