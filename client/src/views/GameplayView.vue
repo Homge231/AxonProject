@@ -538,10 +538,6 @@ function startMatchTimer() {
   matchStartTime = Date.now()
   
   const tick = () => {
-    if (gameState.value !== 'playing') {
-      matchTimerFrame = null
-      return
-    }
     
     const elapsed = Date.now() - matchStartTime
     const remainingMs = Math.max(0, (MATCH_DURATION * 1000) - elapsed)
