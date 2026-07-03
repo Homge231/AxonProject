@@ -716,6 +716,7 @@ async function skipQuestion() {
     // No session (guest/mock): deduct locally only
     score.value = Math.max(0, score.value - 10)
     currentCombo.value = 0
+    if (isMissionCore.value) missionProgress.value = 0
     typedLetters.value = []
     spawnPointPopup(10, 'wrong')
     triggerScoreFlash('wrong')
@@ -731,6 +732,7 @@ async function skipQuestion() {
   // Immediate local feedback
   gameState.value = 'wrong'
   currentCombo.value = 0
+  if (isMissionCore.value) missionProgress.value = 0
   typedLetters.value = []
   triggerScoreFlash('wrong')
 
