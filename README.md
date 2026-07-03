@@ -4,7 +4,7 @@ A web-based typing esports arena built with Vue 3 + TypeScript frontend and an E
 
 ## Overview
 
-**Naenra** is a competitive typing game where players race against a 60-second timer, answering fill-in-the-blank vocabulary questions. Before each match, players choose a **Support Core** — a power-up that changes how their score is calculated for the entire session.
+**Naenra** is a competitive typing game where players race against a 90-second timer, answering fill-in-the-blank vocabulary questions. Before each match, players choose a **Support Core** — a power-up that changes how their score is calculated for the entire session.
 
 - `client/` — Vue 3 SPA (Vite, Phaser, Pinia, Tailwind CSS)
 - `server/` — Express API with Supabase (auth, DB, storage)
@@ -91,7 +91,7 @@ MAIL_FROM=
 
 ## Gameplay
 
-Each match is **60 seconds**. Players receive an infinite stream of fill-in-the-blank questions. Correct answers earn points; wrong answers lose points based on how many letters were wrong (Levenshtein distance). A **Support Core** chosen before the match changes how points are calculated for the entire session.
+Each match is **90 seconds**. Players receive an infinite stream of fill-in-the-blank questions. Correct answers earn points; wrong answers lose points based on how many letters were wrong (Levenshtein distance). A **Support Core** chosen before the match changes how points are calculated for the entire session.
 
 ### Support Core System
 
@@ -103,6 +103,7 @@ Cores are the central mechanic that differentiates player strategies. Each core 
 | **Combo Core** | Same as No Core + up to +100 bonus for answer streaks | `00000000-0000-0000-0000-000000000005` |
 | **Oracle Core** | Lets you reveal letter hints at −10/−30/−60 point cost per level | `00000000-0000-0000-0000-000000000006` |
 | **Speedster** | `100 + max(0, floor( (1 − timeTaken/8s) × 150 ))` — faster = more points | `00000000-0000-0000-0000-000000000007` |
+| **Mission Core**| Answer 5 correctly in a row for a flat bonus of +500 points | *(Custom UUID via SQL script)* |
 
 The chosen core is **locked at session creation** and validated on every answer submission (anti-cheat: mismatches return 403).
 
@@ -170,7 +171,7 @@ export class YourCoreStrategy extends BaseCore {
     const total = /* your formula */ - oraclePenalty
     return {
       pointsDelta: total,
-      breakdown: { base: BASE_POINTS, combo_bonus: 0, flat_buff: 0, multiplier_buff: 1, oracle_penalty: oraclePenalty, penalty: 0 }
+      breakdown: { base: BASE_POINTS, combo_bonus: 0, flat_buff: 0, multiplier_buff: 1, oracle_penalty: oraclePenalty, penalty: 0, mission_completed: 0 }
     }
   }
 }
