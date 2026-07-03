@@ -28,7 +28,7 @@ export class MissionCoreStrategy extends BaseCore {
       const recent = hist.slice(-this.requiredPattern.length)
       const isMatch = recent.every((val, idx) => val === this.requiredPattern[idx])
       if (isMatch) {
-        missionBonus = ctx.flatBuff || 5000 // massive flat bonus score
+        missionBonus = ctx.flatBuff || 500 // massive flat bonus score
         missionCompleted = 1
       }
     }
