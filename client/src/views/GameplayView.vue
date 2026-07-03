@@ -8,18 +8,13 @@
     <!-- Floating points popup container -->
     <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
       <transition-group name="float-pts" tag="div">
-        <div
-          v-for="popup in pointPopups"
-          :key="popup.id"
-          class="float-pts-item absolute font-black tracking-widest drop-shadow-lg"
-          :class="{
+        <div v-for="popup in pointPopups" :key="popup.id"
+          class="float-pts-item absolute font-black tracking-widest drop-shadow-lg" :class="{
             'text-2xl text-success': popup.type === 'correct',
             'text-2xl text-hexred': popup.type === 'wrong',
             'text-2xl text-yellow-400': popup.type === 'typo',
             'speedster-popup': popup.type === 'speedster'
-          }"
-          :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
-        >
+          }" :style="{ left: popup.x + 'px', top: popup.y + 'px' }">
           <template v-if="popup.type === 'speedster'">
             <span class="speedster-fast-text">+{{ popup.value }} FAST!</span>
           </template>
@@ -53,7 +48,9 @@
             class="absolute top-full left-0 mt-3 w-56 bg-darkNavy/90 backdrop-blur-xl border border-white/10 shadow-2xl z-50 rounded-b-lg overflow-hidden">
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
-              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score }}</span></p>
+              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
+                  }}</span>
+              </p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
@@ -89,19 +86,15 @@
         </div>
 
         <div class="flex items-center gap-2" :class="timeLeft <= 10 ? 'text-hexred' : activeCoreModule.timerColor">
-          <svg
-            class="w-5 h-5 drop-shadow-md"
-            :class="activeCoreModule.timerIconClass || undefined"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 drop-shadow-md" :class="activeCoreModule.timerIconClass || undefined" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span
-            class="font-mono font-black text-3xl tabular-nums drop-shadow-lg"
-            :class="[
-              timeLeft <= 10 ? 'animate-pulse' : '',
-              activeCoreModule.timerClass || ''
-            ]">
+          <span class="font-mono font-black text-3xl tabular-nums drop-shadow-lg" :class="[
+            timeLeft <= 10 ? 'animate-pulse' : '',
+            activeCoreModule.timerClass || ''
+          ]">
             {{ String(timeLeft).padStart(2, '0') }}
           </span>
         </div>
@@ -124,7 +117,8 @@
 
               <div v-if="currentQuestion.hint"
                 class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent"></div>
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+                </div>
                 <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
                   <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -147,10 +141,13 @@
                     <div class="oracle-glow-ring"></div>
                     <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
                       <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fill-rule="evenodd"
+                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z"
+                          clip-rule="evenodd" />
                       </svg>
-                      <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision · Lv{{ oracleRevealLevel }}</span>
+                      <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision ·
+                        Lv{{ oracleRevealLevel }}</span>
                     </div>
                     <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
                       {{ oracleHintText }}
@@ -159,21 +156,25 @@
                 </transition>
 
                 <!-- Reveal button (hidden when max level reached) -->
-                <button v-if="oracleRevealLevel < oracleMaxAllowed"
-                  @click.stop="useOracleHint"
+                <button v-if="oracleRevealLevel < oracleMaxAllowed" @click.stop="useOracleHint"
                   class="oracle-reveal-btn group relative flex items-center gap-2 px-5 py-2.5 bg-purple-500/15 hover:bg-purple-500/25 backdrop-blur-md border border-purple-400/30 hover:border-purple-400/60 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]">
-                  <svg class="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clip-rule="evenodd"/>
+                  <svg class="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fill-rule="evenodd"
+                      d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z"
+                      clip-rule="evenodd" />
                   </svg>
-                  <span class="text-xs font-bold text-purple-300 group-hover:text-purple-200 tracking-widest uppercase transition-colors">
+                  <span
+                    class="text-xs font-bold text-purple-300 group-hover:text-purple-200 tracking-widest uppercase transition-colors">
                     {{ oracleRevealLevel === 0 ? 'Use Oracle' : 'Reveal More' }}
                   </span>
                   <span class="text-[10px] font-mono text-purple-400/80 bg-purple-500/20 px-2 py-0.5 rounded-full">
                     -{{ oracleNextCost }} pts
                   </span>
                 </button>
-                <span v-else class="text-[10px] font-bold text-purple-400/60 tracking-widest uppercase">Max vision reached</span>
+                <span v-else class="text-[10px] font-bold text-purple-400/60 tracking-widest uppercase">Max vision
+                  reached</span>
               </div>
 
               <div
@@ -194,7 +195,8 @@
 
                 <!-- Speedster wind streak overlay -->
                 <transition name="wind-fade">
-                  <div v-if="activeCoreModule.showWindOverlay && gameState === 'playing'" class="speedster-wind-container" aria-hidden="true">
+                  <div v-if="activeCoreModule.showWindOverlay && gameState === 'playing'"
+                    class="speedster-wind-container" aria-hidden="true">
                     <span class="wind-streak ws1"></span>
                     <span class="wind-streak ws2"></span>
                     <span class="wind-streak ws3"></span>
@@ -264,12 +266,14 @@
 
     <!-- Timer progress bar -->
     <div class="relative z-20 h-2 w-full flex bg-black/50">
-      <div class="h-full transition-all duration-1000 ease-linear rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
-        :class="timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : scoreBarColor"
-        :style="{ width: `${(timeLeft / MATCH_DURATION) * 100}%` }"></div>
+      <div class="h-full transition-all duration-600 ease-out rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
+        :class="[
+          timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : scoreBarColor
+        ]" :style="{ width: `${scoreBarPercent}%` }">
+      </div>
     </div>
 
-  <!-- Combo indicator: only visible when active core is the Combo Core -->
+    <!-- Combo indicator: only visible when active core is the Combo Core -->
     <div v-if="isComboCore" class="absolute top-28 right-8 z-20 flex justify-end transition-all duration-300">
       <div
         class="flex items-center gap-3 bg-darkNavy/40 backdrop-blur-md border border-lightOrange/30 px-5 py-2 rounded-2xl shadow-[0_0_15px_rgba(255,165,0,0.2)]">
@@ -435,8 +439,8 @@ const activeCoreId = computed<string | null>({
 const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreId))
 
 // Convenience booleans — still used by Oracle-specific template logic
-const isComboCore     = computed(() => activeCoreModule.value.name === 'Combo Core')
-const isOracleCore    = computed(() => activeCoreModule.value.name === 'Oracle Core')
+const isComboCore = computed(() => activeCoreModule.value.name === 'Combo Core')
+const isOracleCore = computed(() => activeCoreModule.value.name === 'Oracle Core')
 const isSpeedsterCore = computed(() => activeCoreModule.value.name === 'Speedster')
 
 // Oracle progressive reveal: 3 levels, increasing cost
@@ -590,7 +594,7 @@ async function callTimeoutEndpoint() {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         session_id: sessionId.value,
         active_core_id: activeCoreId.value,
         oracle_reveal_level: oracleRevealLevel.value
@@ -610,11 +614,11 @@ async function callTimeoutEndpoint() {
 
 // ── Batch fetching ─────────────────────────────────────────────────────────
 const MOCK_QUESTIONS: QuestionPayload[] = [
-  { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_length: 9, target_hash: '', oracle_hints: ['D·······Y','D·S···E·Y','D·S·O·E·Y'], hint: 'The act of finding something new' },
-  { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_length: 10, target_hash: '', oracle_hints: ['C········E','C·N····C·E','C·N·I·E·C·E'], hint: 'A feeling of self-assurance' },
-  { id: 'm3', question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_length: 7, target_hash: '', oracle_hints: ['A·····E','A·A··Z·E','A·A·Y·Z·E'], hint: 'Examine methodically and in detail' },
-  { id: 'm4', question_text: 'The team celebrated their ________ after months of hard work.', target_length: 7, target_hash: '', oracle_hints: ['V·····Y','V·C··R·Y','V·C·O·R·Y'], hint: 'Winning a competition' },
-  { id: 'm5', question_text: 'She showed great ________ in the face of adversity.', target_length: 10, target_hash: '', oracle_hints: ['R········E','R·S····N·E','R·S·L·E·N·E'], hint: 'Ability to recover quickly' },
+  { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_length: 9, target_hash: '', oracle_hints: ['D·······Y', 'D·S···E·Y', 'D·S·O·E·Y'], hint: 'The act of finding something new' },
+  { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_length: 10, target_hash: '', oracle_hints: ['C········E', 'C·N····C·E', 'C·N·I·E·C·E'], hint: 'A feeling of self-assurance' },
+  { id: 'm3', question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_length: 7, target_hash: '', oracle_hints: ['A·····E', 'A·A··Z·E', 'A·A·Y·Z·E'], hint: 'Examine methodically and in detail' },
+  { id: 'm4', question_text: 'The team celebrated their ________ after months of hard work.', target_length: 7, target_hash: '', oracle_hints: ['V·····Y', 'V·C··R·Y', 'V·C·O·R·Y'], hint: 'Winning a competition' },
+  { id: 'm5', question_text: 'She showed great ________ in the face of adversity.', target_length: 10, target_hash: '', oracle_hints: ['R········E', 'R·S····N·E', 'R·S·L·E·N·E'], hint: 'Ability to recover quickly' },
 ]
 
 async function fetchBatch(): Promise<void> {
@@ -697,35 +701,35 @@ async function skipQuestion() {
   // Notify server: send empty string as answer (server treats it as a full skip/wrong)
   const timeTaken = Date.now() - questionStartTime.value
   const mySeq = ++submitAnswerSeq
-  ;(async () => {
-    try {
-      const token = localStorage.getItem('arena_token')
-      const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          session_id: sessionId.value,
-          question_id: questionId,
-          answer: '',            // empty = full skip
-          current_combo: capturedCombo,
-          active_core_id: activeCoreId.value,
-          oracle_reveal_level: capturedOracleLevel,
-          time_taken: timeTaken
+    ; (async () => {
+      try {
+        const token = localStorage.getItem('arena_token')
+        const res = await fetch(`${SERVER_URL}/api/game/submit-answer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            session_id: sessionId.value,
+            question_id: questionId,
+            answer: '',            // empty = full skip
+            current_combo: capturedCombo,
+            active_core_id: activeCoreId.value,
+            oracle_reveal_level: capturedOracleLevel,
+            time_taken: timeTaken
+          })
         })
-      })
-      if (res.ok && mySeq === submitAnswerSeq) {
-        const data = await res.json()
-        score.value = data.new_total_score ?? score.value
-        questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
-        spawnPointPopup(data.points_deducted, 'wrong')
+        if (res.ok && mySeq === submitAnswerSeq) {
+          const data = await res.json()
+          score.value = data.new_total_score ?? score.value
+          questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+          spawnPointPopup(data.points_deducted, 'wrong')
+        }
+      } catch (err) {
+        console.error('Failed to sync skip:', err)
       }
-    } catch (err) {
-      console.error('Failed to sync skip:', err)
-    }
-  })()
+    })()
 }
 
 // ── Input handling ────────────────────────────────────────────────────────
@@ -744,7 +748,7 @@ function handleKeydown(e: KeyboardEvent) {
     typedLetters.value = typedLetters.value.slice(0, -1)
     return
   }
-  
+
   if (/^[a-zA-Z]$/.test(e.key)) {
     const maxLen = currentQuestion.value.target_length
     if (typedLetters.value.length >= maxLen) return
@@ -766,12 +770,10 @@ async function checkAnswer() {
 
   const typed = typedLetters.value.join('')
 
-  // ── 1. Capture mutable state immediately before any async/timer resets ───
   const questionId = currentQuestion.value.id
   const capturedOracleLevel = oracleRevealLevel.value
   const capturedCombo = currentCombo.value
 
-  // ── 2. Instant local validation via Hash ─────────────────────────────────
   const hashVal = await sha256(typed)
   const isCorrectLocal = hashVal === currentQuestion.value.target_hash
 
@@ -785,16 +787,14 @@ async function checkAnswer() {
     triggerScoreFlash('wrong')
   }
 
-  // ── 3. Always advance to next question after FEEDBACK_MS ─────────────────
-  // This fires regardless of API success/failure so the game never freezes.
   setTimeout(() => {
     if (gameState.value !== 'timeout') loadQuestion()
   }, FEEDBACK_MS)
 
-  // ── 4. Background sync with server (fire-and-forget) ─────────────────────
   if (!sessionId.value || !questionId) return
   const timeTaken = Date.now() - questionStartTime.value
-  const mySeq = ++submitAnswerSeq   // capture sequence number for this specific answer
+  const mySeq = ++submitAnswerSeq 
+
   ;(async () => {
     try {
       const token = localStorage.getItem('arena_token')
@@ -810,32 +810,35 @@ async function checkAnswer() {
           answer: typed,
           current_combo: capturedCombo,
           active_core_id: activeCoreId.value,
-          oracle_reveal_level: capturedOracleLevel,  // use captured level, not the reset one
-          time_taken: timeTaken                       // ms elapsed since question loaded
+          oracle_reveal_level: capturedOracleLevel,
+          time_taken: timeTaken
         })
       })
 
-      if (res.status === 403) {
-        console.error('Core mismatch detected by server (anti-cheat)')
-        return
-      }
-
-      if (res.ok && mySeq === submitAnswerSeq) {  // discard stale out-of-order responses
+      if (res.ok && mySeq === submitAnswerSeq) {
         const data = await res.json()
 
-        // Update score from server (source of truth)
-        score.value = data.new_total_score ?? score.value
+        const startScore = score.value
+        const targetScore = data.new_total_score ?? score.value
+        const duration = 500 
+        const startTime = performance.now()
+
+        function animateScore(currentTime: number) {
+          const elapsed = currentTime - startTime
+          const progress = Math.min(elapsed / duration, 1)
+          score.value = Math.floor(startScore + (targetScore - startScore) * progress)
+          if (progress < 1) requestAnimationFrame(animateScore)
+        }
+        requestAnimationFrame(animateScore)
+
         questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
         pointsEarned.value = data.points_earned ?? pointsEarned.value
         pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
 
-        // Show correct_word if server says wrong
         if (!data.correct && data.correct_word) {
           currentQuestion.value.correct_word = data.correct_word
         }
 
-        // Spawn score popup
-        // Speedster core gets a specialised "+N FAST!" popup when answering correctly
         if (data.correct && isSpeedsterCore.value) {
           spawnPointPopup(data.points_earned, 'speedster')
         } else {
@@ -950,15 +953,31 @@ onUnmounted(() => {
 .float-pts-enter-active {
   animation: floatUp 1.2s ease-out forwards;
 }
+
 .float-pts-leave-active {
   display: none;
 }
 
 @keyframes floatUp {
-  0%   { opacity: 1; transform: translateY(0) scale(1.2); }
-  20%  { opacity: 1; transform: translateY(-16px) scale(1.35); }
-  80%  { opacity: 0.7; transform: translateY(-56px) scale(1); }
-  100% { opacity: 0; transform: translateY(-80px) scale(0.85); }
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1.2);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-16px) scale(1.35);
+  }
+
+  80% {
+    opacity: 0.7;
+    transform: translateY(-56px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-80px) scale(0.85);
+  }
 }
 
 /* ── Speedster FAST! popup ──────────────────────────────────────────────── */
@@ -977,20 +996,41 @@ onUnmounted(() => {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: none;
-  filter: drop-shadow(0 0 12px rgba(6,182,212,0.9)) drop-shadow(0 0 24px rgba(103,232,249,0.6));
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.9)) drop-shadow(0 0 24px rgba(103, 232, 249, 0.6));
   animation: shimmerFast 0.6s linear infinite;
 }
 
 @keyframes shimmerFast {
-  to { background-position: 200% center; }
+  to {
+    background-position: 200% center;
+  }
 }
 
 @keyframes fastPopup {
-  0%   { opacity: 0;   transform: translateY(10px)  scale(0.6)  skewX(-8deg); }
-  10%  { opacity: 1;   transform: translateY(-10px) scale(1.5)  skewX(4deg);  }
-  25%  { opacity: 1;   transform: translateY(-30px) scale(1.2)  skewX(-2deg); }
-  70%  { opacity: 0.9; transform: translateY(-80px) scale(1.05) skewX(0deg);  }
-  100% { opacity: 0;   transform: translateY(-120px) scale(0.8) skewX(0deg);  }
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6) skewX(-8deg);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.5) skewX(4deg);
+  }
+
+  25% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.2) skewX(-2deg);
+  }
+
+  70% {
+    opacity: 0.9;
+    transform: translateY(-80px) scale(1.05) skewX(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.8) skewX(0deg);
+  }
 }
 
 /* ── Speedster timer glow ───────────────────────────────────────────────── */
@@ -1002,17 +1042,20 @@ onUnmounted(() => {
 .speedster-timer-icon {
   animation: speedTimerPulse 0.8s ease-in-out infinite;
   color: #67e8f9;
-  filter: drop-shadow(0 0 6px rgba(6,182,212,0.8));
+  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8));
 }
 
 @keyframes speedTimerPulse {
-  0%, 100% {
-    text-shadow: 0 0 8px rgba(6,182,212,0.6), 0 0 16px rgba(103,232,249,0.3);
-    filter: drop-shadow(0 0 6px rgba(6,182,212,0.8));
+
+  0%,
+  100% {
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.6), 0 0 16px rgba(103, 232, 249, 0.3);
+    filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8));
   }
+
   50% {
-    text-shadow: 0 0 20px rgba(6,182,212,1), 0 0 40px rgba(103,232,249,0.8), 0 0 60px rgba(255,255,255,0.3);
-    filter: drop-shadow(0 0 14px rgba(6,182,212,1)) drop-shadow(0 0 28px rgba(103,232,249,0.6));
+    text-shadow: 0 0 20px rgba(6, 182, 212, 1), 0 0 40px rgba(103, 232, 249, 0.8), 0 0 60px rgba(255, 255, 255, 0.3);
+    filter: drop-shadow(0 0 14px rgba(6, 182, 212, 1)) drop-shadow(0 0 28px rgba(103, 232, 249, 0.6));
   }
 }
 
@@ -1031,35 +1074,94 @@ onUnmounted(() => {
   left: -160px;
   height: 2px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, transparent, rgba(103,232,249,0.7), rgba(255,255,255,0.9), transparent);
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.7), rgba(255, 255, 255, 0.9), transparent);
   animation: windMove 0.9s linear infinite;
   filter: blur(1px);
   opacity: 0;
 }
 
-.ws1 { top: 18%;  width: 160px; animation-delay: 0s;     animation-duration: 0.75s; }
-.ws2 { top: 35%;  width: 220px; animation-delay: 0.15s;  animation-duration: 0.90s; }
-.ws3 { top: 50%;  width: 140px; animation-delay: 0.05s;  animation-duration: 0.65s; }
-.ws4 { top: 62%;  width: 200px; animation-delay: 0.30s;  animation-duration: 0.80s; }
-.ws5 { top: 28%;  width: 100px; animation-delay: 0.42s;  animation-duration: 0.70s; }
-.ws6 { top: 75%;  width: 180px; animation-delay: 0.22s;  animation-duration: 0.95s; }
+.ws1 {
+  top: 18%;
+  width: 160px;
+  animation-delay: 0s;
+  animation-duration: 0.75s;
+}
+
+.ws2 {
+  top: 35%;
+  width: 220px;
+  animation-delay: 0.15s;
+  animation-duration: 0.90s;
+}
+
+.ws3 {
+  top: 50%;
+  width: 140px;
+  animation-delay: 0.05s;
+  animation-duration: 0.65s;
+}
+
+.ws4 {
+  top: 62%;
+  width: 200px;
+  animation-delay: 0.30s;
+  animation-duration: 0.80s;
+}
+
+.ws5 {
+  top: 28%;
+  width: 100px;
+  animation-delay: 0.42s;
+  animation-duration: 0.70s;
+}
+
+.ws6 {
+  top: 75%;
+  width: 180px;
+  animation-delay: 0.22s;
+  animation-duration: 0.95s;
+}
 
 @keyframes windMove {
-  0%   { transform: translateX(0);    opacity: 0; }
-  15%  { opacity: 0.9; }
-  80%  { opacity: 0.6; }
-  100% { transform: translateX(calc(100vw + 260px)); opacity: 0; }
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.9;
+  }
+
+  80% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translateX(calc(100vw + 260px));
+    opacity: 0;
+  }
 }
 
 .speedster-slots-glow {
-  filter: drop-shadow(0 0 8px rgba(6,182,212,0.35));
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.35));
   transition: filter 0.3s ease;
 }
 
-.wind-fade-enter-active { transition: opacity 0.4s ease; }
-.wind-fade-leave-active { transition: opacity 0.4s ease; }
-.wind-fade-enter-from   { opacity: 0; }
-.wind-fade-leave-to     { opacity: 0; }
+.wind-fade-enter-active {
+  transition: opacity 0.4s ease;
+}
+
+.wind-fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.wind-fade-enter-from {
+  opacity: 0;
+}
+
+.wind-fade-leave-to {
+  opacity: 0;
+}
 
 .score-pop-correct {
   animation: scoreScaleCorrect 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1070,59 +1172,160 @@ onUnmounted(() => {
 }
 
 @keyframes scoreScaleCorrect {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.6); text-shadow: 0 0 15px rgba(255, 165, 0, 0.8); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.6);
+    text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes scoreScaleWrong {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.4); text-shadow: 0 0 15px rgba(230, 57, 70, 0.9); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.4);
+    text-shadow: 0 0 15px rgba(230, 57, 70, 0.9);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
-.slot--correct { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.slot--wrong   { animation: shake 0.4s ease; }
+.slot--correct {
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.slot--wrong {
+  animation: shake 0.4s ease;
+}
 
 @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25%       { transform: translateX(-6px); }
-  75%       { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
 }
 
-.timeout-glitch { animation: glitch 0.8s ease forwards; }
+.timeout-glitch {
+  animation: glitch 0.8s ease forwards;
+}
 
 @keyframes glitch {
-  0%   { clip-path: inset(0 0 100% 0); opacity: 0; transform: skewX(-10deg) scale(1.1); color: #fff; }
-  30%  { clip-path: inset(0 0 0% 0);   opacity: 1; transform: skewX(5deg);              color: #E63946; }
-  60%  { transform: skewX(-2deg); color: #fff; }
-  100% { transform: skewX(0);    color: #E63946; }
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transform: skewX(-10deg) scale(1.1);
+    color: #fff;
+  }
+
+  30% {
+    clip-path: inset(0 0 0% 0);
+    opacity: 1;
+    transform: skewX(5deg);
+    color: #E63946;
+  }
+
+  60% {
+    transform: skewX(-2deg);
+    color: #fff;
+  }
+
+  100% {
+    transform: skewX(0);
+    color: #E63946;
+  }
 }
 
-.timeout-panel { animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.timeout-panel {
+  animation: panel-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 
 @keyframes panel-in {
-  from { transform: scale(0.9) translateY(20px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);      opacity: 1; }
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
-.fade-enter-active, .fade-leave-active         { transition: opacity 0.2s, transform 0.2s; }
-.fade-enter-from,   .fade-leave-to             { opacity: 0; transform: translateY(10px); }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
 
-.dropdown-enter-active, .dropdown-leave-active { transition: opacity 0.2s, transform 0.2s; }
-.dropdown-enter-from,   .dropdown-leave-to     { opacity: 0; transform: translateY(-10px); }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
 
-.timeout-overlay-enter-active, .timeout-overlay-leave-active { transition: opacity 0.3s; }
-.timeout-overlay-enter-from,   .timeout-overlay-leave-to     { opacity: 0; }
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
 
-.overlay-enter-active, .overlay-leave-active { transition: opacity 0.2s; }
-.overlay-enter-from,   .overlay-leave-to     { opacity: 0; }
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.timeout-overlay-enter-active,
+.timeout-overlay-leave-active {
+  transition: opacity 0.3s;
+}
+
+.timeout-overlay-enter-from,
+.timeout-overlay-leave-to {
+  opacity: 0;
+}
+
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.2s;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+}
 
 .sr-only {
   position: absolute;
@@ -1135,21 +1338,36 @@ onUnmounted(() => {
   border: 0;
 }
 
-.card-flip-enter-active, .card-flip-leave-active {
+.card-flip-enter-active,
+.card-flip-leave-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
 }
-.card-flip-enter-from { opacity: 0; transform: rotateX(-90deg) scale(0.9); }
-.card-flip-leave-to   { opacity: 0; transform: rotateX(90deg)  scale(0.9); }
 
-.glow-sweep { animation: sweepWave 1s ease-in-out infinite; display: inline-block; }
+.card-flip-enter-from {
+  opacity: 0;
+  transform: rotateX(-90deg) scale(0.9);
+}
+
+.card-flip-leave-to {
+  opacity: 0;
+  transform: rotateX(90deg) scale(0.9);
+}
+
+.glow-sweep {
+  animation: sweepWave 1s ease-in-out infinite;
+  display: inline-block;
+}
 
 @keyframes sweepWave {
-  0%, 100% {
+
+  0%,
+  100% {
     color: #22c55e;
     text-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
     transform: scale(1) translateY(0);
   }
+
   50% {
     color: #ffffff;
     text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 25px rgba(34, 197, 94, 0.8), 0 0 35px rgba(255, 255, 255, 0.5);
@@ -1165,18 +1383,27 @@ onUnmounted(() => {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: conic-gradient(from 0deg, transparent, rgba(168,85,247,0.4), transparent, rgba(139,92,246,0.3), transparent);
+  background: conic-gradient(from 0deg, transparent, rgba(168, 85, 247, 0.4), transparent, rgba(139, 92, 246, 0.3), transparent);
   animation: oracleRotate 4s linear infinite;
   z-index: -1;
   filter: blur(8px);
 }
 
 @keyframes oracleBreath {
-  0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.15), inset 0 0 20px rgba(168,85,247,0.05); }
-  50% { box-shadow: 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(168,85,247,0.1); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.05);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.35), inset 0 0 30px rgba(168, 85, 247, 0.1);
+  }
 }
 
 @keyframes oracleRotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
