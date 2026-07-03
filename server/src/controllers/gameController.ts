@@ -385,7 +385,22 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       accuracy = result.accuracy
     }
 
-    // ── 7. Calculate score via core strategy registry ────────────────────────
+    // ── 7. Fetch answer history for pattern-based cores ───────────────────────
+    let answerHistory: boolean[] = []
+    if (core.name.toLowerCase() === 'mission core') {
+      const { data: historyData } = await supabase
+        .from('game_session_answers')
+        .select('correct')
+        .eq('session_id', session_id)
+        .order('created_at', { ascending: true })
+      
+      if (historyData) {
+        answerHistory = historyData.map(r => r.correct)
+      }
+    }
+    answerHistory.push(isCorrect)
+
+    // ── 8. Calculate score via core strategy registry ────────────────────────
     const timeTaken = typeof time_taken === 'number' && time_taken >= 0 ? Math.floor(time_taken) : 0
     const { pointsDelta, breakdown } = runScoring(isCorrect, core.name, {
       timeTaken,
@@ -395,9 +410,10 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       oracleRevealLevel,
       flatBuff:          core.flat_buff,
       multiplierBuff:    core.multiplier_buff,
+      answerHistory,
     })
 
-    // ── 8. Record the answer (unique per session+question) ────────────────────
+    // ── 9. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
       .from('game_session_answers')
       .insert({
@@ -416,7 +432,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       throw answerErr
     }
 
-    // ── 9. Update session totals ──────────────────────────────────────────────
+    // ── 10. Update session totals ──────────────────────────────────────────────
     const newScore = Math.max(0, (session.score || 0) + pointsDelta)
     const newQuestionsAnswered = (session.questions_answered || 0) + 1
 
@@ -429,7 +445,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     if (updateErr) throw updateErr
 
-    // ── 10. Build response ────────────────────────────────────────────────────
+    // ── 11. Build response ────────────────────────────────────────────────────
     const pointsEarned = isCorrect ? pointsDelta : 0
     const pointsDeducted = isCorrect ? 0 : Math.abs(pointsDelta)
 
@@ -448,6 +464,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
         combo_bonus: breakdown.combo_bonus,
         flat_buff: breakdown.flat_buff,
         multiplier_buff: breakdown.multiplier_buff,
+        mission_completed: breakdown.mission_completed,
         oracle_penalty: breakdown.oracle_penalty,
         penalty: breakdown.penalty,
         core_name: core.name

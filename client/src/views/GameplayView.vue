@@ -284,6 +284,34 @@
       </div>
     </div>
 
+    <!-- Mission Tracker UI: only visible when active core is the Mission Core -->
+    <div v-if="isMissionCore" class="absolute top-28 left-8 z-20 flex transition-all duration-300">
+      <div
+        class="flex flex-col items-start gap-2 bg-darkNavy/40 backdrop-blur-md border border-lightBlue/30 px-5 py-3 rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+        <span class="text-[10px] font-bold text-lightBlue/80 tracking-[0.2em] uppercase">Mission Progress</span>
+        <div class="flex items-center gap-1.5">
+          <svg v-for="i in 5" :key="i" class="w-6 h-6 transition-all duration-300"
+            :class="i <= missionProgress ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] scale-110' : 'text-gray-600'"
+            fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Massive Celebratory Animation for Mission Core -->
+    <transition name="mission-celebration">
+      <div v-if="showMissionCelebration" class="absolute inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative z-10 flex flex-col items-center">
+          <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-[0_0_40px_rgba(250,204,21,0.8)] tracking-widest uppercase mb-4 scale-up-center">
+            Mission Accomplished!
+          </h1>
+          <p class="text-3xl font-bold text-white drop-shadow-md">+5000 PTS</p>
+        </div>
+      </div>
+    </transition>
+
     <!-- Player Avatar -->
 
     <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
@@ -427,6 +455,8 @@ const sessionId = ref<string | null>(null)
 const currentBgImage = ref('/bg-daily-life.png')
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
+const missionProgress = ref(0)
+const showMissionCelebration = ref(false)
 
 // active_core_id / name sourced from gameStore (set in CoreSelectionView)
 const activeCoreId = computed<string | null>({
@@ -440,9 +470,10 @@ const activeCoreId = computed<string | null>({
 const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreId))
 
 // Convenience booleans — still used by Oracle-specific template logic
-const isComboCore = computed(() => activeCoreModule.value.name === 'Combo Core')
-const isOracleCore = computed(() => activeCoreModule.value.name === 'Oracle Core')
-const isSpeedsterCore = computed(() => activeCoreModule.value.name === 'Speedster')
+const isComboCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'combo core')
+const isOracleCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'oracle core')
+const isSpeedsterCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speedster')
+const isMissionCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'mission core')
 
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
@@ -785,10 +816,15 @@ async function checkAnswer() {
   if (isCorrectLocal) {
     gameState.value = 'correct'
     currentCombo.value++
+    if (isMissionCore.value) {
+      missionProgress.value = (missionProgress.value + 1)
+      if (missionProgress.value > 5) missionProgress.value = 1
+    }
     triggerScoreFlash('correct')
   } else {
     gameState.value = 'wrong'
     currentCombo.value = 0
+    if (isMissionCore.value) missionProgress.value = 0
     triggerScoreFlash('wrong')
   }
 
@@ -844,6 +880,14 @@ async function checkAnswer() {
             currentQuestion.value.correct_word = data.correct_word
           }
 
+          if (data.breakdown?.mission_completed === 1) {
+            showMissionCelebration.value = true
+            setTimeout(() => {
+              showMissionCelebration.value = false
+              missionProgress.value = 0
+            }, 2000)
+          }
+
           if (data.correct && isSpeedsterCore.value) {
             spawnPointPopup(data.points_earned, 'speedster')
           } else {
@@ -855,6 +899,7 @@ async function checkAnswer() {
               popupType
             )
           }
+
         }
       } catch (err) {
         console.error('Failed to sync answer:', err)
@@ -880,6 +925,7 @@ async function restartMatch() {
   timerProgressPercent.value = 100
   questionQueue.value = []
   currentCombo.value = 0
+  missionProgress.value = 0
   scoreFlash.value = null
   pointPopups.value = []
   stopMatchTimer()
@@ -958,6 +1004,29 @@ onUnmounted(() => {
 
 .float-pts-enter-active {
   animation: floatUp 1.2s ease-out forwards;
+}
+
+.mission-celebration-enter-active {
+  animation: missionCelebIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.mission-celebration-leave-active {
+  transition: opacity 0.3s ease-in;
+}
+.mission-celebration-enter-from,
+.mission-celebration-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+@keyframes missionCelebIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .float-pts-leave-active {

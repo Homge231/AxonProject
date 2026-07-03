@@ -34,6 +34,8 @@ export interface ScoringContext {
   flatBuff: number
   /** multiplier_buff column from DB for this core */
   multiplierBuff: number
+  /** The sequence of correct/wrong answers in the current session (includes the current answer) */
+  answerHistory: boolean[]
 }
 
 /**
