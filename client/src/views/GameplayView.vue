@@ -49,7 +49,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-                  }}</span>
+              }}</span>
               </p>
             </div>
             <button @click.stop="goHome"
@@ -267,10 +267,9 @@
 
     <!-- Timer progress bar -->
     <div class="relative z-20 h-2 w-full flex bg-black/50">
-      <div class="h-full rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
-        :class="[
-          timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-blue to-lightBlue'
-        ]" :style="{ width: `${timerProgressPercent}%` }">
+      <div class="h-full rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]" :class="[
+        timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-blue to-lightBlue'
+      ]" :style="{ width: `${timerProgressPercent}%` }">
       </div>
     </div>
 
@@ -278,8 +277,7 @@
     <div v-if="isComboCore" class="absolute top-28 right-8 z-20 flex justify-end transition-all duration-300">
       <div
         class="flex items-center gap-3 bg-darkNavy/40 backdrop-blur-md border border-lightOrange/30 px-5 py-2 rounded-2xl shadow-[0_0_15px_rgba(255,165,0,0.2)]">
-        <span class="text-xs font-bold text-lightOrange/80 tracking-[0.2em] uppercase">Combo</span>
-        <span
+        <span class="text-xs font-bold text-lightOrange/80 tracking-[0.2em] uppercase">🔥 Combo</span> <span
           class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-lightOrange drop-shadow-md tabular-nums">
           x{{ currentCombo }}
         </span>
@@ -538,15 +536,15 @@ let matchStartTime = 0
 function startMatchTimer() {
   if (matchTimerFrame) return
   matchStartTime = Date.now()
-  
+
   const tick = () => {
-    
+
     const elapsed = Date.now() - matchStartTime
     const remainingMs = Math.max(0, (MATCH_DURATION * 1000) - elapsed)
-    
+
     timerProgressPercent.value = (remainingMs / (MATCH_DURATION * 1000)) * 100
     timeLeft.value = Math.ceil(remainingMs / 1000)
-    
+
     if (remainingMs > 0) {
       matchTimerFrame = requestAnimationFrame(tick)
     } else {
@@ -555,7 +553,7 @@ function startMatchTimer() {
       triggerTimeout()
     }
   }
-  
+
   matchTimerFrame = requestAnimationFrame(tick)
 }
 
@@ -1428,7 +1426,7 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   /* Kéo dài lửa ra khỏi viền 50px */
-  inset: -50px; 
+  inset: -50px;
   border-radius: 40px;
   z-index: -1;
   pointer-events: none;
@@ -1438,7 +1436,7 @@ onUnmounted(() => {
 
 /* Lớp lửa màu đỏ/cam chớp nháy dưới nền */
 .burning-edge-active::before {
-  background: 
+  background:
     radial-gradient(circle at 20% 100%, rgba(255, 0, 0, 0.8) 0%, transparent 50%),
     radial-gradient(circle at 80% 100%, rgba(255, 69, 0, 0.8) 0%, transparent 50%),
     radial-gradient(circle at 50% -20%, rgba(255, 140, 0, 0.6) 0%, transparent 60%);
@@ -1460,9 +1458,10 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   /* inset: 0 giúp layer này to đúng bằng cái box, không tràn vào trong */
-  inset: 0; 
+  inset: 0;
   border-radius: inherit;
-  z-index: -1; /* Nằm dưới cái box */
+  z-index: -1;
+  /* Nằm dưới cái box */
   pointer-events: none;
 
   /* Hiệu ứng ngọn lửa chỉ tỏa ra ngoài */
@@ -1471,19 +1470,28 @@ onUnmounted(() => {
 
 @keyframes outerFlames {
   0% {
-    box-shadow: 
-      0 -10px 15px rgba(255, 165, 0, 0.6), /* Lửa trên */
-      0 10px 15px rgba(255, 69, 0, 0.5),   /* Lửa dưới */
-      10px 0 15px rgba(255, 69, 0, 0.5),   /* Lửa phải */
-      -10px 0 15px rgba(255, 165, 0, 0.5); /* Lửa trái */
+    box-shadow:
+      0 -10px 15px rgba(255, 165, 0, 0.6),
+      /* Lửa trên */
+      0 10px 15px rgba(255, 69, 0, 0.5),
+      /* Lửa dưới */
+      10px 0 15px rgba(255, 69, 0, 0.5),
+      /* Lửa phải */
+      -10px 0 15px rgba(255, 165, 0, 0.5);
+    /* Lửa trái */
   }
+
   100% {
-    box-shadow: 
-      0 -40px 45px rgba(255, 100, 0, 0.9), /* Lửa bốc cao mạnh lên phía trên */
-      0 20px 30px rgba(255, 0, 0, 0.7),    /* Lửa dưới tỏa ra */
-      25px 0 35px rgba(255, 100, 0, 0.8),  /* Lửa hắt sang 2 bên */
+    box-shadow:
+      0 -40px 45px rgba(255, 100, 0, 0.9),
+      /* Lửa bốc cao mạnh lên phía trên */
+      0 20px 30px rgba(255, 0, 0, 0.7),
+      /* Lửa dưới tỏa ra */
+      25px 0 35px rgba(255, 100, 0, 0.8),
+      /* Lửa hắt sang 2 bên */
       -25px 0 35px rgba(255, 0, 0, 0.8),
-      0 0 20px rgba(255, 255, 255, 0.3);   /* Lõi sáng chớp nhẹ ở mép */
+      0 0 20px rgba(255, 255, 255, 0.3);
+    /* Lõi sáng chớp nhẹ ở mép */
   }
 }
 </style>
