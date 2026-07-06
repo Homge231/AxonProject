@@ -156,49 +156,14 @@
               </div>
 
               <!-- Oracle: Click-to-reveal hint button (only for Oracle core) -->
-              <div v-if="isOracleCore && gameState === 'playing'" class="w-full flex flex-col items-center gap-3">
-                <!-- Revealed hint box (shown after first click) -->
-                <transition name="fade">
-                  <div v-if="oracleRevealLevel > 0"
-                    class="oracle-hint-box relative overflow-hidden bg-purple-500/10 backdrop-blur-xl border border-purple-400/40 rounded-2xl p-5 text-center w-full shadow-[0_0_30px_rgba(168,85,247,0.25)]">
-                    <div class="oracle-glow-ring"></div>
-                    <div class="flex items-center justify-center gap-1.5 mb-2 opacity-90">
-                      <svg class="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                        <path fill-rule="evenodd"
-                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z"
-                          clip-rule="evenodd" />
-                      </svg>
-                      <span class="text-[10px] font-bold text-purple-300 tracking-[0.25em] uppercase">Oracle Vision ·
-                        Lv{{ oracleRevealLevel }}</span>
-                    </div>
-                    <p class="text-3xl font-black text-purple-200 tracking-[0.5em] font-mono">
-                      {{ oracleHintText }}
-                    </p>
-                  </div>
-                </transition>
-
-                <!-- Reveal button (hidden when max level reached) -->
-                <button v-if="oracleRevealLevel < oracleMaxAllowed" @click.stop="useOracleHint"
-                  class="oracle-reveal-btn group relative flex items-center gap-2 px-5 py-2.5 bg-purple-500/15 hover:bg-purple-500/25 backdrop-blur-md border border-purple-400/30 hover:border-purple-400/60 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]">
-                  <svg class="w-4 h-4 text-purple-300 group-hover:text-purple-200 transition-colors" fill="currentColor"
-                    viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fill-rule="evenodd"
-                      d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  <span
-                    class="text-xs font-bold text-purple-300 group-hover:text-purple-200 tracking-widest uppercase transition-colors">
-                    {{ oracleRevealLevel === 0 ? 'Use Oracle' : 'Reveal More' }}
-                  </span>
-                  <span class="text-[10px] font-mono text-purple-400/80 bg-purple-500/20 px-2 py-0.5 rounded-full">
-                    -{{ oracleNextCost }} pts
-                  </span>
-                </button>
-                <span v-else class="text-[10px] font-bold text-purple-400/60 tracking-widest uppercase">Max vision
-                  reached</span>
-              </div>
+              <OracleCoreIndicator
+                v-if="isOracleCore && gameState === 'playing'"
+                :oracle-reveal-level="oracleRevealLevel"
+                :oracle-max-allowed="oracleMaxAllowed"
+                :oracle-hint-text="oracleHintText"
+                :oracle-next-cost="oracleNextCost"
+                @use-hint="useOracleHint"
+              />
 
               <div
                 class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300"
@@ -297,15 +262,11 @@
     </div>
 
     <!-- Combo indicator: only visible when active core is the Combo Core -->
-    <div v-if="isComboCore" class="absolute top-28 right-8 z-20 flex justify-end transition-all duration-300">
-      <div
-        class="flex items-center gap-3 bg-darkNavy/40 backdrop-blur-md border border-lightOrange/30 px-5 py-2 rounded-2xl shadow-[0_0_15px_rgba(255,165,0,0.2)]">
-        <span class="text-xs font-bold text-lightOrange/80 tracking-[0.2em] uppercase">🔥 Combo</span> <span
-          class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-lightOrange drop-shadow-md tabular-nums">
-          x{{ currentCombo }}
-        </span>
+    <transition name="fade-scale">
+      <div v-if="isComboCore" class="absolute top-28 right-8 z-20 flex justify-end transition-all duration-300">
+        <ComboCoreIndicator :current-combo="currentCombo" />
       </div>
-    </div>
+    </transition>
 
     <!-- Aegis Shield Mode Indicator -->
     <transition name="fade-scale">
@@ -315,33 +276,12 @@
     </transition>
 
     <!-- Mission Tracker UI: only visible when active core is the Mission Core -->
-    <div v-if="isMissionCore" class="absolute top-28 left-8 z-20 flex transition-all duration-300">
-      <div
-        class="flex flex-col items-start gap-2 bg-darkNavy/40 backdrop-blur-md border border-lightBlue/30 px-5 py-3 rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-        <div class="flex items-center justify-between w-full">
-          <span class="text-[10px] font-bold text-lightBlue/80 tracking-[0.2em] uppercase">Mission Progress</span>
-          <span class="text-xs font-black text-white tabular-nums">{{ missionProgress }}/5</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <svg v-for="i in 5" :key="i" class="w-6 h-6 transition-all duration-300"
-            :class="i <= missionProgress ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] scale-110' : 'text-gray-600'"
-            fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Massive Celebratory Animation for Mission Core -->
-    <transition name="mission-celebration">
-      <div v-if="showMissionCelebration" class="absolute inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative z-10 flex flex-col items-center">
-          <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-[0_0_40px_rgba(250,204,21,0.8)] tracking-widest uppercase mb-4 scale-up-center">
-            Mission Accomplished!
-          </h1>
-          <p class="text-3xl font-bold text-white drop-shadow-md">+500 PTS</p>
-        </div>
+    <transition name="fade-scale">
+      <div v-if="isMissionCore" class="absolute top-28 left-8 z-20 flex transition-all duration-300">
+        <MissionCoreIndicator 
+          :mission-progress="missionProgress" 
+          :show-celebration="showMissionCelebration" 
+        />
       </div>
     </transition>
 
@@ -427,6 +367,9 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
+import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
+import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
+import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
 import { useGameStore } from '../stores/gameStore'
@@ -1578,37 +1521,6 @@ onUnmounted(() => {
   }
 }
 
-.oracle-hint-box {
-  animation: oracleBreath 3s ease-in-out infinite;
-}
-
-.oracle-glow-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: conic-gradient(from 0deg, transparent, rgba(168, 85, 247, 0.4), transparent, rgba(139, 92, 246, 0.3), transparent);
-  animation: oracleRotate 4s linear infinite;
-  z-index: -1;
-  filter: blur(8px);
-}
-
-@keyframes oracleBreath {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.05);
-  }
-
-  50% {
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.35), inset 0 0 30px rgba(168, 85, 247, 0.1);
-  }
-}
-
-@keyframes oracleRotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 /* ── INTENSE WILDFIRE EFFECT (Thuần CSS) ────────────────────────────── */
 .burning-edge-active {
