@@ -8,8 +8,15 @@ export function initQuestionCron() {
     console.log('Running weekly AI question generation cron job...')
     try {
       // 1. Generate 50 new questions
-      // We use a diverse set of topics based on your preferences
-      const newQuestions = await generateQuestions('Daily Life & Habits, Food & Cafe Culture, and Travel & Vacations', 'Medium', 50)
+      // 1. Generate 150 new questions (50 for A1, 50 for B1, 50 for B2)
+      const topic = 'Daily Life & Habits, Food & Cafe Culture, and Travel & Vacations'
+      const levels = ['A1', 'B1', 'B2']
+      let allNewQuestions: any[] = []
+      
+      for (const level of levels) {
+        const questions = await generateQuestions(topic, level, 50)
+        allNewQuestions = allNewQuestions.concat(questions)
+      }
       
       // 2. Wipe existing questions (optional depending on your exact preference, 
       //    but since the instruction was "delete all questions", we truncate/delete them here).
@@ -26,12 +33,12 @@ export function initQuestionCron() {
       // 3. Insert new questions
       const { error: insertErr } = await supabase
         .from('questions')
-        .insert(newQuestions)
+        .insert(allNewQuestions)
 
       if (insertErr) {
         console.error('Failed to insert new questions:', insertErr)
       } else {
-        console.log(`Successfully generated and inserted ${newQuestions.length} new AI questions!`)
+        console.log(`Successfully generated and inserted ${allNewQuestions.length} new AI questions across levels A1, B1, and B2!`)
       }
     } catch (err) {
       console.error('Error during weekly question generation cron job:', err)
