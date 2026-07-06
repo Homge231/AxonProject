@@ -16,7 +16,7 @@ import {
  * This strategy exists to handle that edge case gracefully and provide base points.
  */
 export class PandoraCoreStrategy extends BaseCore {
-  readonly coreName = 'pandora''s box'
+  readonly coreName = "pandora's box"
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)

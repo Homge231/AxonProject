@@ -28,7 +28,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'speedster':  new SpeedsterCoreStrategy(),
   'mission core': new MissionCoreStrategy(),
   'aegis shield': new AegisCoreStrategy(),
-  'pandora''s box': new PandoraCoreStrategy(),
+  "pandora's box": new PandoraCoreStrategy(),
   // ↑ Add new cores here — nothing else needs to change.
 }
 

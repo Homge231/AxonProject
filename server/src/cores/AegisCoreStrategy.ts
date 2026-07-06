@@ -64,7 +64,7 @@ export class AegisCoreStrategy extends BaseCore {
           multiplier_buff: 1,
           oracle_penalty: oraclePenalty,
           penalty: 0, // penalty reduced to 0
-          shield_blocked: true,
+          shield_blocked: 1,
           finalShieldCount: Math.max(0, currentShields - 1)
         },
       }
@@ -80,7 +80,7 @@ export class AegisCoreStrategy extends BaseCore {
         multiplier_buff: 1,
         oracle_penalty: oraclePenalty,
         penalty: ctx.wrongPenalty,
-        shield_blocked: false,
+        shield_blocked: 0,
         finalShieldCount: 0
       },
     }
