@@ -326,7 +326,7 @@
               <div
                 class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
               </div>
-              <span class="relative z-10 text-white">Play Again</span>
+              <span class="relative z-10 text-white">Next Round ({{ timeoutCountdown }}s)</span>
             </button>
           </div>
         </div>
@@ -582,6 +582,16 @@ const questionStartTime = ref<number>(Date.now())
 // ── Timer ──────────────────────────────────────────────────────────────────
 let matchTimerFrame: number | null = null
 let matchStartTime = 0
+
+const timeoutCountdown = ref(15)
+let timeoutInterval: ReturnType<typeof setInterval> | null = null
+
+function stopTimeoutInterval() {
+  if (timeoutInterval) {
+    clearInterval(timeoutInterval)
+    timeoutInterval = null
+  }
+}
 
 function startMatchTimer() {
   if (matchTimerFrame) return
@@ -937,6 +947,17 @@ async function checkAnswer() {
 function triggerTimeout() {
   gameState.value = 'timeout'
   inputRef.value?.blur()
+  
+  timeoutCountdown.value = 15
+  stopTimeoutInterval()
+  timeoutInterval = setInterval(() => {
+    timeoutCountdown.value--
+    if (timeoutCountdown.value <= 0) {
+      stopTimeoutInterval()
+      restartMatch()
+    }
+  }, 1000)
+
   // Small delay to let any in-flight submit-answer requests write to DB first
   // before timeout endpoint reads session.score, preventing a race condition.
   setTimeout(() => callTimeoutEndpoint(), 300)
@@ -944,6 +965,7 @@ function triggerTimeout() {
 
 // ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
+  stopTimeoutInterval()
   score.value = 0
   questionsAnswered.value = 0
   timeLeft.value = MATCH_DURATION
@@ -962,6 +984,7 @@ async function restartMatch() {
 
 function goHome() {
   stopMatchTimer()
+  stopTimeoutInterval()
   abandonCurrentSession()
   router.push('/home')
 }
@@ -1013,6 +1036,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopMatchTimer()
+  stopTimeoutInterval()
   if (flashTimer) clearTimeout(flashTimer)
   document.removeEventListener('click', handleOutsideClick)
   window.removeEventListener('beforeunload', handleBeforeUnload)
