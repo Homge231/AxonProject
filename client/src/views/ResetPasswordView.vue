@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
@@ -86,7 +86,11 @@ async function handleReset() {
   try {
     const { error: err } = await supabase.auth.updateUser({ password: password.value })
     if (err) {
-      error.value = err.message
+      if (err.message === 'Auth session missing!') {
+        error.value = 'Session missing! Please make sure to open the reset link in the EXACT SAME browser (no incognito/in-app browsers) you requested it from.'
+      } else {
+        error.value = err.message
+      }
       return
     }
     done.value = true
@@ -94,6 +98,23 @@ async function handleReset() {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    if (!data.session) {
+      error.value = 'Validating link...'
+      setTimeout(() => {
+        supabase.auth.getSession().then(({ data }) => {
+          if (!data.session) {
+            error.value = 'No active session. If you clicked a link from an email, ensure it opened in the SAME browser you used to request it.'
+          } else {
+            error.value = ''
+          }
+        })
+      }, 2000)
+    }
+  })
+})
 
 </script>
 
