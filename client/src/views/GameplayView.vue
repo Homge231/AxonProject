@@ -289,6 +289,33 @@
 
     <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
 
+    <!-- US-24: 15-second timeout phase banner — shown while isTimeoutPhase is true -->
+    <transition name="timeout-phase-banner">
+      <div v-if="isTimeoutPhase"
+        class="absolute inset-0 z-[45] flex flex-col items-center justify-center pointer-events-none">
+        <!-- Dim backdrop (lighter than the full overlay so the game is still visible underneath) -->
+        <div class="absolute inset-0 bg-darkNavy/60 backdrop-blur-sm"></div>
+        <!-- Countdown pill -->
+        <div class="relative flex flex-col items-center gap-4">
+          <p class="text-[11px] font-bold text-hexred/80 tracking-[0.45em] uppercase">Match Ended · Calculating…</p>
+          <div
+            class="flex items-center justify-center w-36 h-36 rounded-full border-4 border-hexred/70 bg-darkNavy/80 shadow-[0_0_40px_rgba(230,57,70,0.5)] timeout-phase-ring">
+            <span class="font-mono font-black text-6xl text-white tabular-nums drop-shadow-lg timeout-phase-digits">{{
+              String(timeoutCountdown).padStart(2, '0') }}</span>
+          </div>
+          <!-- INPUT LOCKED badge -->
+          <div
+            class="flex items-center gap-2 px-5 py-2 rounded-full bg-hexred/20 border border-hexred/40 backdrop-blur-md">
+            <svg class="w-4 h-4 text-hexred" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span class="text-xs font-bold text-hexred tracking-[0.3em] uppercase">Input Locked</span>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <transition name="timeout-overlay">
       <div v-if="gameState === 'timeout'" class="absolute inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-darkNavy/80 backdrop-blur-xl"></div>
@@ -357,8 +384,9 @@
       </div>
     </transition>
 
+    <!-- US-24: input is disabled during the 15s timeout phase AND in the final timeout state -->
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="gameState === 'timeout'" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="isTimeoutPhase || gameState === 'timeout'" @keydown="handleKeydown" />
   </div>
 </template>
 
@@ -401,7 +429,7 @@ type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 type ScoreFlash = 'correct' | 'wrong' | null
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-const MATCH_DURATION = 100
+const MATCH_DURATION = 90
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
 const SCORE_BAR_MAX = 2000
@@ -429,6 +457,15 @@ const menuOpen = ref(false)
 const confirmQuit = ref(false)
 const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
+
+// ── US-24: 15-second timeout phase ───────────────────────────────────────
+// isTimeoutPhase: true during the 15s grace window after gameplay ends.
+// The input is disabled and a countdown is shown until timeoutCountdown reaches 0.
+const TIMEOUT_PHASE_DURATION = 15
+const isTimeoutPhase = ref(false)
+const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
+let timeoutPhaseFrame: number | null = null
+let timeoutPhaseStart = 0
 const currentBgImage = ref('/bg-daily-life.png')
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
@@ -821,7 +858,7 @@ async function skipQuestion() {
 
 // ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
-  if (gameState.value === 'timeout') return
+  if (isTimeoutPhase.value || gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
 
@@ -966,12 +1003,45 @@ async function checkAnswer() {
 
 
 
-function triggerTimeout() {
-  gameState.value = 'timeout'
+// ── US-24: Start 15-second timeout phase countdown ───────────────────────
+// Called when the 1m30s gameplay timer reaches 0.
+// Initialises the countdown state and schedules callTimeoutEndpoint once the
+// 15s window has elapsed (or immediately completes the phase if it finishes).
+function startTimeoutPhase() {
+  isTimeoutPhase.value = true
+  timeoutCountdown.value = TIMEOUT_PHASE_DURATION
+  timeoutPhaseStart = Date.now()
   inputRef.value?.blur()
-  // Small delay to let any in-flight submit-answer requests write to DB first
-  // before timeout endpoint reads session.score, preventing a race condition.
+
+  // Small delay to let any in-flight submit-answer requests write to DB first.
   setTimeout(() => callTimeoutEndpoint(), 300)
+
+  const tick = () => {
+    const elapsed = Date.now() - timeoutPhaseStart
+    const remaining = Math.max(0, TIMEOUT_PHASE_DURATION - Math.floor(elapsed / 1000))
+    timeoutCountdown.value = remaining
+
+    if (remaining > 0) {
+      timeoutPhaseFrame = requestAnimationFrame(tick)
+    } else {
+      timeoutPhaseFrame = null
+      // Transition to the final 'timeout' state (shows the result overlay)
+      gameState.value = 'timeout'
+      isTimeoutPhase.value = false
+    }
+  }
+
+  timeoutPhaseFrame = requestAnimationFrame(tick)
+}
+
+function stopTimeoutPhaseTimer() {
+  if (timeoutPhaseFrame) { cancelAnimationFrame(timeoutPhaseFrame); timeoutPhaseFrame = null }
+}
+
+function triggerTimeout() {
+  // Stop typing input and begin the 15-second timeout phase.
+  // After the countdown the 'timeout' overlay is revealed.
+  startTimeoutPhase()
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
@@ -985,6 +1055,9 @@ async function restartMatch() {
   missionProgress.value = 0
   scoreFlash.value = null
   pointPopups.value = []
+  isTimeoutPhase.value = false
+  timeoutCountdown.value = TIMEOUT_PHASE_DURATION
+  stopTimeoutPhaseTimer()
   stopMatchTimer()
   await createSession()
   await fetchBatch()
@@ -1023,7 +1096,7 @@ function handleOutsideClick(e: MouseEvent) {
 }
 
 function refocusInput() {
-  if (gameState.value === 'timeout') return
+  if (isTimeoutPhase.value || gameState.value === 'timeout') return
   if (!menuOpen.value && !confirmQuit.value) inputRef.value?.focus()
 }
 
@@ -1050,6 +1123,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopMatchTimer()
+  stopTimeoutPhaseTimer()
   if (flashTimer) clearTimeout(flashTimer)
   document.removeEventListener('click', handleOutsideClick)
   window.removeEventListener('beforeunload', handleBeforeUnload)
@@ -1451,6 +1525,44 @@ onUnmounted(() => {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* ── US-24: 15-second timeout phase banner ─────────────────────────────── */
+.timeout-phase-banner-enter-active {
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.timeout-phase-banner-leave-active {
+  transition: opacity 0.25s ease;
+}
+.timeout-phase-banner-enter-from,
+.timeout-phase-banner-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* Pulsing red ring around the countdown circle */
+.timeout-phase-ring {
+  animation: phaseRingPulse 1s ease-in-out infinite;
+}
+
+@keyframes phaseRingPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(230, 57, 70, 0.4), 0 0 40px rgba(230, 57, 70, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(230, 57, 70, 0.8), 0 0 80px rgba(230, 57, 70, 0.4), 0 0 120px rgba(230, 57, 70, 0.15);
+  }
+}
+
+/* Subtle scale-tick on every digit change */
+.timeout-phase-digits {
+  animation: phaseTick 1s steps(1, end) infinite;
+}
+
+@keyframes phaseTick {
+  0% { transform: scale(1); }
+  5% { transform: scale(1.15); }
+  15% { transform: scale(1); }
 }
 
 .timeout-overlay-enter-active,
