@@ -135,57 +135,36 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   }
 
   try {
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    console.log('Calling createUser'); const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: pending.email,
       password: pending.password,
       email_confirm: true,
       user_metadata: { full_name: pending.username }
     })
 
-    if (authError) {
+    if (authError) { console.log('AuthError:', authError.message);
       res.status(400).json({ error: authError.message })
       return
     }
 
-    const { data: existingPlayer } = await supabase
+    // Use upsert to avoid race conditions with the trigger
+    const { error: upsertError } = await supabase
       .from('players')
-      .select('id')
-      .eq('id', authData.user.id)
-      .single()
+      .upsert({
+        id: authData.user.id,
+        email: pending.email,
+        username: pending.username,
+        hashed_password: pending.hashedPassword,
+        elo: 0,
+        wins: 0,
+        losses: 0,
+        total_matches: 0
+      }, { onConflict: 'id' })
 
-    if (existingPlayer) {
-      const { error: updateError } = await supabase
-        .from('players')
-        .update({
-          email: pending.email,
-          username: pending.username,
-          hashed_password: pending.hashedPassword,
-          elo: 0
-        })
-        .eq('id', authData.user.id)
-
-      if (updateError) {
-        res.status(400).json({ error: updateError.message })
-        return
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from('players')
-        .insert({
-          id: authData.user.id,
-          email: pending.email,
-          username: pending.username,
-          hashed_password: pending.hashedPassword,
-          elo: 0,
-          wins: 0,
-          losses: 0,
-          total_matches: 0
-        })
-
-      if (insertError) {
-        res.status(400).json({ error: insertError.message })
-        return
-      }
+    if (upsertError) {
+      res.status(400).json({ error: upsertError.message })
+      return
+    }
     }
 
     pendingRegistrations.delete(email)
