@@ -487,7 +487,13 @@ const pandoraPool = ref<any[]>([])
 
 async function fetchPandoraPool() {
   try {
-    const res = await fetch(`${SERVER_URL}/api/game/cores`)
+    const token = localStorage.getItem('arena_token')
+    const res = await fetch(`${SERVER_URL}/api/game/cores`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    })
     if (!res.ok) return
     const data = await res.json()
     // Pandora shifts into anything except itself
