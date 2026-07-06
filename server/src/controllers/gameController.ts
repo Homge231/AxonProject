@@ -246,7 +246,7 @@ export async function createSession(req: AuthRequest, res: Response): Promise<vo
 
     const { data: player } = await supabase
       .from('players')
-      .select('username, avatar_url, aegis_shield_count')
+      .select('username, avatar_url')
       .eq('id', playerId)
       .single()
 
@@ -258,8 +258,7 @@ export async function createSession(req: AuthRequest, res: Response): Promise<vo
       .insert({ 
         player_id: playerId, 
         status: 'active', 
-        active_core_id: active_core_id,
-        initial_shield_count: player?.aegis_shield_count || 0
+        active_core_id: active_core_id
       })
       .select('id')
       .single()
@@ -273,8 +272,7 @@ export async function createSession(req: AuthRequest, res: Response): Promise<vo
       session_id: data.id,
       theme: randomTheme,
       avatar_url: finalAvatarUrl,
-      active_core: { id: core.id, name: core.name },
-      aegis_shield_count: player?.aegis_shield_count || 0
+      active_core: { id: core.id, name: core.name }
     })
   } catch (err) {
     console.error('createSession error:', err)
@@ -325,7 +323,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 2. Fetch session (verify ownership & status) ──────────────────────────
     const { data: session, error: sessErr } = await supabase
       .from('game_sessions')
-      .select('id, status, score, questions_answered, active_core_id, initial_shield_count')
+      .select('id, status, score, questions_answered, active_core_id')
       .eq('id', session_id)
       .eq('player_id', playerId)
       .single()
@@ -426,18 +424,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       flatBuff:          core.flat_buff,
       multiplierBuff:    core.multiplier_buff,
       answerHistory,
-      initialShieldCount: session.initial_shield_count || 0
+      initialShieldCount: 0
     })
-
-    // ── 8.5 Async update players table for cross-round persistence ─────────────
-    if (core.name.toLowerCase() === 'aegis shield' && breakdown.finalShieldCount !== undefined) {
-      supabase.from('players')
-        .update({ aegis_shield_count: breakdown.finalShieldCount })
-        .eq('id', playerId)
-        .then(({ error }) => {
-          if (error) console.error('Failed to update aegis_shield_count for player:', playerId, error)
-        })
-    }
 
     // ── 9. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
