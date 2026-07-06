@@ -6,7 +6,11 @@ import authRoutes from './routes/authRoutes'
 import userRoutes from './routes/userRoutes'
 import gameRoutes from './routes/gameRoutes'
 import rateLimit from 'express-rate-limit'
+import { initQuestionCron } from './cron/questionCron'
 dotenv.config()
+
+// Initialize cron jobs
+initQuestionCron()
 
 const app = express()
 app.use(cors({
