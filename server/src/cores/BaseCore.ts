@@ -36,6 +36,8 @@ export interface ScoringContext {
   multiplierBuff: number
   /** The sequence of correct/wrong answers in the current session (includes the current answer) */
   answerHistory: boolean[]
+  /** Cross-round persistence: the player's shield count when the session started */
+  initialShieldCount?: number
 }
 
 /**

@@ -15,11 +15,11 @@ export class AegisCoreStrategy extends BaseCore {
   readonly coreName = 'aegis shield'
 
   // Helper to calculate the current shield count based on answer history
-  private getShieldCount(history: boolean[]): number {
+  private getShieldCount(initial: number, history: boolean[]): number {
     return history.reduce((shields, isCorrect) => {
       if (isCorrect) return Math.min(shields + 1, 3) // Max 3 shields
       return Math.max(0, shields - 1)
-    }, 0)
+    }, initial)
   }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
@@ -40,6 +40,7 @@ export class AegisCoreStrategy extends BaseCore {
         multiplier_buff: ctx.multiplierBuff,
         oracle_penalty:  oraclePenalty,
         penalty:         0,
+        finalShieldCount: this.getShieldCount(ctx.initialShieldCount || 0, ctx.answerHistory)
       },
     }
   }
@@ -50,7 +51,7 @@ export class AegisCoreStrategy extends BaseCore {
     // Calculate shields right BEFORE this wrong answer
     // ctx.answerHistory includes the CURRENT (wrong) answer at the end, so we omit the last item.
     const historyBeforeThisAnswer = ctx.answerHistory.slice(0, -1)
-    const currentShields = this.getShieldCount(historyBeforeThisAnswer)
+    const currentShields = this.getShieldCount(ctx.initialShieldCount || 0, historyBeforeThisAnswer)
 
     if (currentShields > 0) {
       // Shield blocks the penalty! (Oracle penalty still applies if they bought a hint)
@@ -64,6 +65,7 @@ export class AegisCoreStrategy extends BaseCore {
           oracle_penalty: oraclePenalty,
           penalty: 0, // penalty reduced to 0
           shield_blocked: true,
+          finalShieldCount: Math.max(0, currentShields - 1)
         },
       }
     }
@@ -79,6 +81,7 @@ export class AegisCoreStrategy extends BaseCore {
         oracle_penalty: oraclePenalty,
         penalty: ctx.wrongPenalty,
         shield_blocked: false,
+        finalShieldCount: 0
       },
     }
   }
