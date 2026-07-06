@@ -1,5 +1,6 @@
 <template>
-  <div class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white"
+  <div class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
+    :class="{ 'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting }"
     @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" />
 
@@ -478,6 +479,36 @@ const isOracleCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 
 const isSpeedsterCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speedster')
 const isMissionCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'mission core')
 
+// ── Pandora's Box Logic ──────────────────────────────────────────────────
+const PANDORA_CORE_ID = '00000000-0000-0000-0000-000000000010'
+const isPandoraMode = ref(false)
+const isShifting = ref(false)
+const pandoraPool = ref<any[]>([])
+
+async function fetchPandoraPool() {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/game/cores`)
+    if (!res.ok) return
+    const data = await res.json()
+    // Pandora shifts into anything except itself
+    pandoraPool.value = data.filter((c: any) => c.id !== PANDORA_CORE_ID)
+  } catch (err) {
+    console.error('Failed to fetch cores for Pandora', err)
+  }
+}
+
+function triggerShapeshift() {
+  if (pandoraPool.value.length === 0) return
+  isShifting.value = true
+  
+  const randomCore = pandoraPool.value[Math.floor(Math.random() * pandoraPool.value.length)]
+  
+  setTimeout(() => {
+    activeCoreId.value = randomCore.id
+    gameStore.activeCoreName = randomCore.name
+    isShifting.value = false
+  }, 400) // 400ms glitch duration
+}
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
 const ORACLE_COSTS = [10, 20, 30] // cost per level: -10, -20, -30
@@ -570,14 +601,22 @@ let matchStartTime = 0
 function startMatchTimer() {
   if (matchTimerFrame) return
   matchStartTime = Date.now()
+  let lastShiftTime = matchStartTime
 
   const tick = () => {
-
     const elapsed = Date.now() - matchStartTime
     const remainingMs = Math.max(0, (MATCH_DURATION * 1000) - elapsed)
 
     timerProgressPercent.value = (remainingMs / (MATCH_DURATION * 1000)) * 100
     timeLeft.value = Math.ceil(remainingMs / 1000)
+
+    // Shapeshifter trigger every 15s
+    if (isPandoraMode.value && pandoraPool.value.length > 0) {
+      if (Date.now() - lastShiftTime >= 15000) {
+        lastShiftTime = Date.now()
+        triggerShapeshift()
+      }
+    }
 
     if (remainingMs > 0) {
       matchTimerFrame = requestAnimationFrame(tick)
@@ -617,6 +656,11 @@ async function createSession() {
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
+    
+    if (activeCoreId.value === PANDORA_CORE_ID) {
+      isPandoraMode.value = true
+      fetchPandoraPool()
+    }
   } catch (err) {
     console.error(err)
   }

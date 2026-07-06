@@ -56,6 +56,16 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     showWindOverlay: true,
   },
 
+  // ── Pandora's Box ──────────────────────────────────────────────────────────
+  '00000000-0000-0000-0000-000000000010': {
+    id:           '00000000-0000-0000-0000-000000000010',
+    name:         'Pandora\'s Box',
+    timerColor:   'text-purple-400',
+    timerClass:   'animate-pulse shadow-purple-500',
+    timerIconClass: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]',
+    popupType:    'correct',
+  },
+
   // ↑ Add new cores here — nothing else needs to change.
 }
 

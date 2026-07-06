@@ -11,6 +11,7 @@ const supabase = createClient(
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MATCH_DURATION_MS = 90_000                              // 90-second match
+const PANDORA_CORE_ID = '00000000-0000-0000-0000-000000000010' // Pandora's Box
 
 const TYPO_ACCURACY_THRESHOLD = 0.8   // >= 80% similarity counts as a "typo"
 const TYPO_PENALTY_PER_LETTER = 2     // -2 pts per wrong letter for close misses
@@ -336,16 +337,25 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     const sessionCoreId = session.active_core_id
     const submittedCoreId = active_core_id
 
-    if (!sessionCoreId || !submittedCoreId || sessionCoreId !== submittedCoreId) {
+    if (!sessionCoreId || !submittedCoreId) {
+      res.status(400).json({ error: 'Missing core ID.' })
+      return
+    }
+
+    // Relax anti-cheat if the session is Pandora's Box
+    if (sessionCoreId !== PANDORA_CORE_ID && sessionCoreId !== submittedCoreId) {
       res.status(403).json({ error: 'Core mismatch detected! (Anti-cheat triggered)' })
       return
     }
 
     // ── 4. Fetch core buffs ───────────────────────────────────────────────────
+    // If Pandora mode, grab the buffs for the newly shifted core submitted by the client
+    const coreIdToFetch = sessionCoreId === PANDORA_CORE_ID ? submittedCoreId : sessionCoreId
+
     const { data: coreRow, error: coreErr } = await supabase
       .from('cores')
       .select('id, name, flat_buff, multiplier_buff')
-      .eq('id', sessionCoreId)
+      .eq('id', coreIdToFetch)
       .single()
 
     if (coreErr || !coreRow) {
