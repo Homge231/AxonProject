@@ -491,7 +491,7 @@ async function fetchPandoraPool() {
     if (!res.ok) return
     const data = await res.json()
     // Pandora shifts into anything except itself
-    pandoraPool.value = data.filter((c: any) => c.id !== PANDORA_CORE_ID)
+    pandoraPool.value = (data.cores || []).filter((c: any) => c.id !== PANDORA_CORE_ID)
   } catch (err) {
     console.error('Failed to fetch cores for Pandora', err)
   }
