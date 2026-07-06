@@ -446,7 +446,7 @@ type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
 type ScoreFlash = 'correct' | 'wrong' | null
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-const MATCH_DURATION = 90
+const MATCH_DURATION = 100
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
 const SCORE_BAR_MAX = 2000
