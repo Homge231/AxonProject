@@ -120,6 +120,12 @@
           ]">
             {{ String(timeLeft).padStart(2, '0') }}
           </span>
+          <!-- Round Indicator Preparation -->
+          <div class="absolute -bottom-6 w-full text-center whitespace-nowrap">
+            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-darkBlue/50 px-2 py-0.5 rounded-full border border-white/5">
+              Round {{ currentRound }}/{{ maxRounds }}
+            </span>
+          </div>
         </div>
       </div>
     </header>
@@ -436,6 +442,8 @@ const THEME_MAP: Record<string, string> = {
 
 // ── State ──────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
+const currentRound = ref(1)
+const maxRounds = ref(3)
 const timeLeft = ref(MATCH_DURATION)
 const timerProgressPercent = ref(100)
 const score = ref(0)
@@ -1010,10 +1018,20 @@ function triggerTimeout() {
 
 // ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
+  if (currentRound.value >= maxRounds.value) {
+    // TODO: [US-XX] transition to 'match_over' or End Screen
+    console.log('Match Over! All 3 rounds completed.')
+    currentRound.value = 1 // Reset temporarily until US is fully implemented
+    // Note: To retain Total Score across rounds, we will either need a 'matches' table
+    // in the backend, or we must stop ending the session on round timeouts.
+  } else {
+    currentRound.value++
+  }
+
   gameState.value = 'timeout'
   matchHistory.value = []
   stopTimeoutInterval()
-  score.value = 0
+  score.value = 0 // TODO: Remove this reset once global score retention is implemented
   questionsAnswered.value = 0
   timeLeft.value = MATCH_DURATION
   timerProgressPercent.value = 100
