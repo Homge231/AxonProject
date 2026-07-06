@@ -162,11 +162,10 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
       }, { onConflict: 'id' })
 
     if (upsertError) {
-      res.status(400).json({ error: upsertError.message })
+      res.status(400).json({ error: 'NEW CODE RUNNING BUT UPSERT FAILED: ' + upsertError.message })
       return
     }
-    }
-
+    
     pendingRegistrations.delete(email)
 
     const token = generateToken({
