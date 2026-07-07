@@ -1058,7 +1058,7 @@ async function restartMatch() {
   if (matchStore.isFinalRound()) {
     // Match Over! Transition to End Screen
     console.log('Match Over! Proceeding to results...')
-    router.push('/match-end')
+    router.push('/end')
     return
   }
 
