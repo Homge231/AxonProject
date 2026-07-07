@@ -123,7 +123,7 @@
           <!-- Round Indicator Preparation -->
           <div class="absolute -bottom-6 w-full text-center whitespace-nowrap">
             <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-darkBlue/50 px-2 py-0.5 rounded-full border border-white/5">
-              Round {{ currentRound }}/{{ maxRounds }}
+              Round {{ matchStore.currentRound }}/{{ matchStore.maxRounds }}
             </span>
           </div>
         </div>
@@ -406,11 +406,13 @@ import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
 import { useGameStore } from '../stores/gameStore'
+import { useMatchStore } from '../stores/matchStore'
 import { getCoreModule } from '../game/cores/registry'
 import { fetchWithAuth } from '../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
+const matchStore = useMatchStore()
 
 interface QuestionPayload {
   id: string
@@ -447,8 +449,6 @@ const THEME_MAP: Record<string, string> = {
 
 // ── State ──────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
-const currentRound = ref(1)
-const maxRounds = ref(3)
 const timeLeft = ref(MATCH_DURATION)
 const timerProgressPercent = ref(100)
 const score = ref(0)
@@ -1011,7 +1011,22 @@ async function checkAnswer() {
     })()
 }
 
-
+function resetTypingBoard() {
+  gameState.value = 'timeout'
+  matchHistory.value = []
+  stopTimeoutInterval()
+  // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
+  timeLeft.value = MATCH_DURATION
+  timerProgressPercent.value = 100
+  typedLetters.value = []
+  currentCombo.value = 0
+  missionProgress.value = 0
+  aegisShieldCount.value = 0
+  scoreFlash.value = null
+  pointPopups.value = []
+  oracleRevealLevel.value = 0
+  questionQueue.value = []
+}
 
 function triggerTimeout() {
   gameState.value = 'timeout'
@@ -1027,45 +1042,44 @@ function triggerTimeout() {
     }
   }, 1000)
 
+  // Only tell the backend the session is over if it's the final round!
+  // Otherwise, we keep the session alive to retain score and anti-cheat tracking.
   const sid = sessionId.value
   const coreId = activeCoreId.value
   const oracleLvl = oracleRevealLevel.value
   
-  if (sid) {
+  if (sid && matchStore.isFinalRound()) {
     setTimeout(() => callTimeoutEndpoint(sid, coreId, oracleLvl), 300)
   }
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
-  if (currentRound.value >= maxRounds.value) {
-    // TODO: [US-XX] transition to 'match_over' or End Screen
-    console.log('Match Over! All 3 rounds completed.')
-    currentRound.value = 1 // Reset temporarily until US is fully implemented
-    // Note: To retain Total Score across rounds, we will either need a 'matches' table
-    // in the backend, or we must stop ending the session on round timeouts.
-  } else {
-    currentRound.value++
+  if (matchStore.isFinalRound()) {
+    // Match Over! Transition to End Screen
+    console.log('Match Over! Proceeding to results...')
+    router.push('/match-end')
+    return
   }
 
-  gameState.value = 'timeout'
-  matchHistory.value = []
-  stopTimeoutInterval()
-  score.value = 0 // TODO: Remove this reset once global score retention is implemented
-  questionsAnswered.value = 0
-  timeLeft.value = MATCH_DURATION
-  timerProgressPercent.value = 100
-  questionQueue.value = []
-  currentCombo.value = 0
-  missionProgress.value = 0
-  scoreFlash.value = null
-  pointPopups.value = []
-  stopMatchTimer()
-  await createSession()
+  // Next Round
+  matchStore.incrementRound()
+  resetTypingBoard()
+  
+  // Transition to loading and fetch next batch
+  // Note: We DO NOT call createSession() here so the backend continues the same session!
   gameState.value = 'loading'
-  await fetchBatch()
-  await loadQuestion()
-  startMatchTimer()
+  await fetchBatch(3)
+  
+  if (questionQueue.value.length > 0) {
+    await loadQuestion()
+    gameState.value = 'playing'
+    startMatchTimer()
+  } else {
+    // Fallback if fetch completely failed
+    gameState.value = 'playing'
+    startMatchTimer()
+  }
 }
 
 function goHome() {
