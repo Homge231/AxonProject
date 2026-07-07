@@ -511,7 +511,7 @@ const isDev = import.meta.env.DEV
 // 1. Khai báo danh sách background tương ứng với từng Round
 const ROUND_BACKGROUNDS: Record<number, string> = {
   1: '/bg-daily-life.png', 
-  2: '/bg-food-cafe.png',
+  2: '/bg-cafe.png',
   3: '/bg-travel.png'
 }
 
