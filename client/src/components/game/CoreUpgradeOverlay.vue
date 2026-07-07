@@ -70,9 +70,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { SERVER_URL } from '@/config'
-import { useGameStore } from '@/stores/gameStore'
-import { useMatchStore } from '@/stores/matchStore'
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+import { useGameStore } from '../../stores/gameStore'
+import { useMatchStore } from '../../stores/matchStore'
 
 const emit = defineEmits<{ (e: 'selected', coreId: string): void }>()
 
