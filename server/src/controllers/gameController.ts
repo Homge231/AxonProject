@@ -168,10 +168,15 @@ function generateOracleHints(word: string): string[] {
 }
 
 // ── Endpoint: GET /api/game/questions ────────────────────────────────────────
-export async function getQuestions(_req: AuthRequest, res: Response): Promise<void> {
+export async function getQuestions(req: AuthRequest, res: Response): Promise<void> {
   const BATCH_SIZE = 20
   try {
-    const { data: ids, error: idError } = await supabase.from('questions').select('id')
+    const { topic } = req.query
+    let query = supabase.from('questions').select('id')
+    if (topic && typeof topic === 'string') {
+      query = query.eq('topic', topic)
+    }
+    const { data: ids, error: idError } = await query
     if (idError) throw idError
     if (!ids || ids.length === 0) { res.status(404).json({ error: 'No questions available.' }); return }
 
@@ -180,7 +185,7 @@ export async function getQuestions(_req: AuthRequest, res: Response): Promise<vo
 
     const { data: questions, error: qError } = await supabase
       .from('questions')
-      .select('id, question_text, target_word, hint')
+      .select('id, question_text, target_word, hint, topic')
       .in('id', pickedIds)
 
     if (qError) throw qError

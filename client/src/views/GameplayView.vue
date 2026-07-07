@@ -450,6 +450,7 @@ interface QuestionPayload {
   oracle_hints: string[]
   hint?: string
   correct_word?: string
+  topic?: string
 }
 
 interface PointPopup {
@@ -499,26 +500,15 @@ const TIMEOUT_PHASE_DURATION = 15
 const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 let timeoutPhaseFrame: number | null = null
 let timeoutPhaseStart = 0
-// Khai báo danh sách ảnh tương ứng với 3 chủ đề mới của bạn
-const TOPIC_BACKGROUNDS: Record<string, string> = {
-  'Daily Life & Habits': '/assets/images/bg-daily-life.jpg',
-  'Food & Cafe Culture': '/assets/images/bg-food-cafe.jpg',
-  'Travel & Vacations': '/assets/images/bg-travel.jpg'
-}
-
-const DEFAULT_BG = '/assets/images/bg-daily-life.jpg'
-
-// Biến reactive lưu trữ link ảnh nền đang hiển thị
-const currentBgImage = ref(DEFAULT_BG)
+const currentTopic = computed(() => matchStore.topics[matchStore.currentRound - 1] || 'daily-life')
+const currentBgImage = ref(THEME_MAP['daily-life'])
 const isBgFading = ref(false)
 
-watch(() => currentQuestion.value?.topic, (newTopic, oldTopic) => {
+watch(() => currentTopic.value, (newTopic, oldTopic) => {
   if (newTopic && newTopic !== oldTopic) {
     isBgFading.value = true
-
     setTimeout(() => {
-      currentBgImage.value = TOPIC_BACKGROUNDS[newTopic] || DEFAULT_BG
-
+      currentBgImage.value = THEME_MAP[newTopic] || THEME_MAP['daily-life']
       setTimeout(() => {
         isBgFading.value = false
       }, 100)
@@ -752,7 +742,7 @@ async function createSession() {
     sessionId.value = data.session_id
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
-    if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
+    // Theme is now managed by matchStore topics
     if (data.aegis_shield_count !== undefined) aegisShieldCount.value = data.aegis_shield_count
 
     if (activeCoreId.value === PANDORA_CORE_ID) {
@@ -800,7 +790,8 @@ async function fetchBatch(): Promise<void> {
   if (isFetchingBatch.value || gameState.value === 'timeout') return
   isFetchingBatch.value = true
   try {
-    const res = await fetchWithAuth(`/api/game/questions`)
+    const topic = matchStore.topics[matchStore.currentRound - 1] || 'daily-life'
+    const res = await fetchWithAuth(`/api/game/questions?topic=${topic}`)
     if (!res.ok) throw new Error('fetch failed')
     const data = await res.json()
     questionQueue.value.push(...(data.questions as QuestionPayload[]))
