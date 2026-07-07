@@ -978,7 +978,15 @@ async function checkAnswer() {
     currentCombo.value++
     if (isMissionCore.value) {
       missionProgress.value = (missionProgress.value + 1)
-      if (missionProgress.value > 5) missionProgress.value = 1
+      if (missionProgress.value === 5) {
+        showMissionCelebration.value = true
+        setTimeout(() => {
+          showMissionCelebration.value = false
+          missionProgress.value = 0
+        }, 2000)
+      } else if (missionProgress.value > 5) {
+        missionProgress.value = 1
+      }
     }
     if (isAegisMode.value) {
       aegisShieldCount.value = Math.min(3, aegisShieldCount.value + 1)
@@ -1002,11 +1010,15 @@ async function checkAnswer() {
   const timeTaken = Date.now() - questionStartTime.value
   const mySeq = ++submitAnswerSeq
 
-  // If local check is correct, transition to next question immediately after FEEDBACK_MS
+  // If local check is correct, transition to next question immediately after feedback time
   if (isCorrectLocal) {
+    let delay = FEEDBACK_MS
+    if (isMissionCore.value && missionProgress.value === 5) {
+      delay = 2000 // Wait for celebration to finish
+    }
     setTimeout(() => {
       if (gameState.value !== 'timeout' && mySeq === submitAnswerSeq) loadQuestion()
-    }, FEEDBACK_MS)
+    }, delay)
   }
 
   ; (async () => {
@@ -1063,18 +1075,27 @@ async function checkAnswer() {
             }, 2000)
           }
 
-          if (data.breakdown?.shield_blocked) {
-            spawnPointPopup(0, 'shield_blocked')
-          } else if (data.correct && isSpeedsterCore.value) {
-            spawnPointPopup(data.points_earned, 'speedster')
-          } else {
-            const popupType: 'correct' | 'wrong' | 'typo' = data.correct
-              ? 'correct'
-              : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
-            spawnPointPopup(
-              data.correct ? data.points_earned : data.points_deducted,
-              popupType
-            )
+          matchHistory.value.push({
+            submitted: typed,
+            correct: data.correct ? typed : (data.correct_word || '???'),
+            isCorrect: data.correct
+          })
+
+          if (mySeq === submitAnswerSeq) {
+            // Note: Mission celebration is now handled locally for instant feedback
+            if (data.breakdown?.shield_blocked) {
+              spawnPointPopup(0, 'shield_blocked')
+            } else if (data.correct && isSpeedsterCore.value) {
+              spawnPointPopup(data.points_earned, 'speedster')
+            } else {
+              const popupType: 'correct' | 'wrong' | 'typo' = data.correct
+                ? 'correct'
+                : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+              spawnPointPopup(
+                data.correct ? data.points_earned : data.points_deducted,
+                popupType
+              )
+            }
           }
         }
 
@@ -1121,38 +1142,6 @@ function startTimeoutPhase() {
   timeoutCountdown.value = 15
   stopTimeoutInterval()
 
-<<<<<<< HEAD
-  // Small delay to let any in-flight submit-answer requests write to DB first
-  // before timeout endpoint reads session.score, preventing a race condition.
-  setTimeout(() => callTimeoutEndpoint(), 300)
-
-  const tick = () => {
-    const elapsed = Date.now() - timeoutPhaseStart
-    const remaining = Math.max(0, TIMEOUT_PHASE_DURATION - Math.floor(elapsed / 1000))
-    timeoutCountdown.value = remaining
-
-    if (remaining > 0) {
-      timeoutPhaseFrame = requestAnimationFrame(tick)
-    } else {
-      timeoutPhaseFrame = null
-      // Transition to the final 'timeout' state (shows the result overlay)
-      gameState.value = 'timeout'
-      isTimeoutPhase.value = false
-    }
-  }
-
-  timeoutPhaseFrame = requestAnimationFrame(tick)
-}
-
-function stopTimeoutPhaseTimer() {
-  if (timeoutPhaseFrame) { cancelAnimationFrame(timeoutPhaseFrame); timeoutPhaseFrame = null }
-}
-
-function triggerTimeout() {
-  // Stop typing input and begin the 15-second timeout phase.
-  // After the countdown the 'timeout' overlay is revealed.
-  startTimeoutPhase()
-=======
   // Only auto-countdown for rounds 1 and 2
   if (!matchStore.isFinalRound()) {
     timeoutInterval = setInterval(() => {
@@ -1173,7 +1162,6 @@ function triggerTimeout() {
   if (sid && matchStore.isFinalRound()) {
     setTimeout(() => callTimeoutEndpoint(sid, coreId, oracleLvl), 300)
   }
->>>>>>> 1e4c9728b70692d158a89fc9966619701578d079
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
@@ -1211,22 +1199,9 @@ async function playAgain() {
   // Hard reset of global state
   score.value = 0
   questionsAnswered.value = 0
-<<<<<<< HEAD
-  timeLeft.value = MATCH_DURATION
-  timerProgressPercent.value = 100
-  questionQueue.value = []
-  currentCombo.value = 0
-  missionProgress.value = 0
-  scoreFlash.value = null
-  pointPopups.value = []
-  isTimeoutPhase.value = false
-  timeoutCountdown.value = TIMEOUT_PHASE_DURATION
-  stopTimeoutPhaseTimer()
-=======
 
   resetTypingBoard()
 
->>>>>>> 1e4c9728b70692d158a89fc9966619701578d079
   stopMatchTimer()
   await createSession() // Important: create a new session for the new match!
 

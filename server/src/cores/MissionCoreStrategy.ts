@@ -19,18 +19,23 @@ export class MissionCoreStrategy extends BaseCore {
     const penalty = isCorrect ? 0 : ctx.wrongPenalty
     const oraclePenalty = this._oraclePenalty(ctx)
 
-    // Check pattern match
+    // Check pattern match: count consecutive correct answers at the end of history
     let missionBonus = 0
     let missionCompleted = 0
     const hist = ctx.answerHistory || []
     
-    if (hist.length >= this.requiredPattern.length) {
-      const recent = hist.slice(-this.requiredPattern.length)
-      const isMatch = recent.every((val, idx) => val === this.requiredPattern[idx])
-      if (isMatch) {
-        missionBonus = ctx.flatBuff || 500 // flat bonus score
-        missionCompleted = 1
+    let consecutiveCorrect = 0
+    for (let i = hist.length - 1; i >= 0; i--) {
+      if (hist[i] === true) {
+        consecutiveCorrect++
+      } else {
+        break
       }
+    }
+
+    if (consecutiveCorrect > 0 && consecutiveCorrect % 5 === 0) {
+      missionBonus = ctx.flatBuff || 500 // flat bonus score
+      missionCompleted = 1
     }
 
     const net = (base + missionBonus) * ctx.multiplierBuff - penalty - oraclePenalty
