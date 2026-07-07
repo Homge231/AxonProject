@@ -469,75 +469,36 @@ const MATCH_DURATION = 90
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
 const SCORE_BAR_MAX = 2000
+// (Xóa luôn THEME_MAP và DEFAULT_BG cũ ở trên đi nhé vì không dùng tới nữa)
 
-const THEME_MAP: Record<string, string> = {
-  'daily-life': '/bg-daily-life.png',
-  'cafe': '/bg-cafe.png',
-  'travel': '/bg-travel.png'
-}
-const DEFAULT_BG = '/assets/images/bg-daily-life.jpg'
-
-
-// ── State ──────────────────────────────────────────────────────────────────
-const gameState = ref<GameState>('loading')
-const timeLeft = ref(MATCH_DURATION)
-const timerProgressPercent = ref(100)
-const score = ref(0)
-const scoreFlash = ref<ScoreFlash>(null)
-const questionsAnswered = ref(0)
-const pointsEarned = ref(0)
-const pointsDeducted = ref(0)
-const typedLetters = ref<string[]>([])
-const inputRef = ref<HTMLInputElement | null>(null)
-const menuRef = ref<HTMLElement | null>(null)
-const letterSlotsRef = ref<HTMLElement | null>(null)
-const menuOpen = ref(false)
-const confirmQuit = ref(false)
-const savingSession = ref(false)
-const sessionId = ref<string | null>(null)
-
-// ── US-24: 15-second timeout phase ───────────────────────────────────────
-// The input is disabled and a countdown is shown until timeoutCountdown reaches 0.
-const TIMEOUT_PHASE_DURATION = 15
-const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
-let timeoutPhaseFrame: number | null = null
-let timeoutPhaseStart = 0
-// Khai báo danh sách ảnh tương ứng với 3 chủ đề mới của bạn
-
-
-
-// Biến reactive lưu trữ link ảnh nền đang hiển thị
 // 1. Khai báo danh sách background tương ứng với từng Round
-// Chỉ cần xuyệt một cái (/) là nó tự động chui vào thư mục public để tìm
 const ROUND_BACKGROUNDS: Record<number, string> = {
   1: '/bg-daily-life.png', 
-  2: '/bg-food-cafe.png',  // Nhớ check xem file này của bạn là png hay jpg nhé
-  3: '/bg-travel.png'      // Nhớ check đuôi file này luôn
+  2: '/bg-food-cafe.png',
+  3: '/bg-travel.png'
 }
 
-// Biến reactive khởi tạo mặc định
-const currentBgImage = ref(ROUND_BACKGROUNDS[1])
+const currentBgImage = ref(ROUND_BACKGROUNDS[matchStore.currentRound] || ROUND_BACKGROUNDS[1])
 const isBgFading = ref(false)
 
-// 2. Theo dõi biến currentRound để tự động đổi ảnh khi qua màn
 watch(() => matchStore.currentRound, (newRound, oldRound) => {
-  // Chỉ chạy hiệu ứng đổi nền khi số Round thực sự thay đổi
-  if (newRound && newRound !== oldRound) {
-    // Bật hiệu ứng mờ dần về đen
+  
+  if (oldRound === undefined) {
+    currentBgImage.value = ROUND_BACKGROUNDS[newRound] || ROUND_BACKGROUNDS[1]
+  } 
+  
+  else if (newRound && newRound !== oldRound) {
     isBgFading.value = true
 
-    // Đợi 0.5s để màn hình mờ hẳn rồi mới đổi link ảnh
     setTimeout(() => {
-      // Lấy ảnh theo số Round, nếu lỗi thì fallback về ảnh Round 1
       currentBgImage.value = ROUND_BACKGROUNDS[newRound] || ROUND_BACKGROUNDS[1]
 
-      // Đợi ảnh load một chút xíu rồi sáng bừng lên lại
       setTimeout(() => {
         isBgFading.value = false
       }, 100)
     }, 500) 
   }
-}, { immediate: true }) // Chạy ngay lần đầu tiên component được render
+}, { immediate: true })
 
 
 const currentCombo = ref(0)
