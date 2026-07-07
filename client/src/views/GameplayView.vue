@@ -799,10 +799,6 @@ function pauseTimerFor(ms: number) {
   }, ms)
 }
 
-function getBackgroundImage(themeKey: string) {
-  return THEME_MAP[themeKey] || '/bg-daily-life.png'
-}
-
 // ── Session API ────────────────────────────────────────────────────────────
 async function createSession() {
   try {
@@ -813,15 +809,11 @@ async function createSession() {
     if (!res.ok) return
     const data = await res.json()
     sessionId.value = data.session_id
+    gameStore.sessionId = data.session_id
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     // Theme is now managed by matchStore topics
     if (data.aegis_shield_count !== undefined) aegisShieldCount.value = data.aegis_shield_count
-
-    if (activeCoreId.value === PANDORA_CORE_ID) {
-      isPandoraMode.value = true
-      fetchPandoraPool()
-    }
   } catch (err) {
     console.error(err)
   }
@@ -1253,7 +1245,7 @@ async function restartMatch() {
   // Transition to loading and fetch next batch
   // Note: We DO NOT call createSession() here so the backend continues the same session!
   gameState.value = 'loading'
-  await fetchBatch(3)
+  await fetchBatch()
 
   if (questionQueue.value.length > 0) {
     await loadQuestion()
@@ -1282,7 +1274,7 @@ async function playAgain() {
   await createSession() // Important: create a new session for the new match!
 
   gameState.value = 'loading'
-  await fetchBatch(3)
+  await fetchBatch()
 
   if (questionQueue.value.length > 0) {
     await loadQuestion()
@@ -1334,7 +1326,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 
 onMounted(async () => {
   if (!activeCoreId.value) {
-    router.replace('/core-selection')
+    router.replace('/core')
     return
   }
 
@@ -1343,7 +1335,11 @@ onMounted(async () => {
   remainingMatchMs = MATCH_DURATION * 1000
   timeLeft.value = MATCH_DURATION
 
-  await createSession()
+  if (!gameStore.sessionId) {
+    await createSession()
+  } else {
+    sessionId.value = gameStore.sessionId
+  }
   await fetchBatch()
   await loadQuestion()
   startMatchTimer()
