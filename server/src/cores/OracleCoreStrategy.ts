@@ -15,10 +15,17 @@ import { BaseCore, BASE_POINTS, ScoringContext, ScoringResult } from './BaseCore
  * Wrong answers also carry the oracle penalty on top of the Levenshtein penalty.
  */
 export class OracleCoreStrategy extends BaseCore {
-  readonly coreName = 'oracle core'
+  readonly coreName: string;
+  readonly forgivePenalty: boolean;
+
+  constructor(name: string = 'oracle core', forgivePenalty: boolean = false) {
+    super()
+    this.coreName = name.toLowerCase()
+    this.forgivePenalty = forgivePenalty
+  }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
-    const oraclePenalty = this._oraclePenalty(ctx)
+    const oraclePenalty = this.forgivePenalty ? 0 : this._oraclePenalty(ctx)
     const beforeMult    = BASE_POINTS + ctx.flatBuff
     const total         = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
 
@@ -37,7 +44,7 @@ export class OracleCoreStrategy extends BaseCore {
 
   // Wrong answers for Oracle also carry the hint penalty — override parent default.
   calculateWrong(ctx: ScoringContext): ScoringResult {
-    const oraclePenalty = this._oraclePenalty(ctx)
+    const oraclePenalty = this.forgivePenalty ? 0 : this._oraclePenalty(ctx)
     return {
       pointsDelta: -(ctx.wrongPenalty + oraclePenalty),
       breakdown: {

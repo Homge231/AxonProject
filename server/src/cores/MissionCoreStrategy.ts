@@ -1,10 +1,14 @@
 import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
 
 export class MissionCoreStrategy extends BaseCore {
-  readonly coreName = 'mission core'
-  
-  // The pattern we want to match: 5 correct in a row
-  readonly requiredPattern = [true, true, true, true, true]
+  readonly coreName: string;
+  readonly missionReq: number;
+
+  constructor(name: string = 'mission core', missionReq: number = 5) {
+    super()
+    this.coreName = name.toLowerCase()
+    this.missionReq = missionReq
+  }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     return this._evaluate(ctx, true)
@@ -33,7 +37,7 @@ export class MissionCoreStrategy extends BaseCore {
       }
     }
 
-    if (consecutiveCorrect > 0 && consecutiveCorrect % 5 === 0) {
+    if (consecutiveCorrect > 0 && consecutiveCorrect % this.missionReq === 0) {
       missionBonus = ctx.flatBuff || 500 // flat bonus score
       missionCompleted = 1
     }

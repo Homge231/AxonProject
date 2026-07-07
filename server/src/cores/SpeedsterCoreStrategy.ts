@@ -27,7 +27,12 @@ import {
  * speed is the ONLY axis that matters for this core.
  */
 export class SpeedsterCoreStrategy extends BaseCore {
-  readonly coreName = 'speedster'
+  readonly coreName: string;
+
+  constructor(name: string = 'speedster') {
+    super()
+    this.coreName = name.toLowerCase()
+  }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)

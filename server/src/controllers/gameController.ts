@@ -210,15 +210,58 @@ export async function getQuestions(req: AuthRequest, res: Response): Promise<voi
 }
 
 // ── Endpoint: GET /api/game/cores ─────────────────────────────────────────────
-export async function getCores(_req: AuthRequest, res: Response): Promise<void> {
+export async function getCores(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const { data: cores, error } = await supabase
+    const previous_core_id = req.query.previous_core_id as string | undefined
+
+    const { data: allCores, error } = await supabase
       .from('cores')
-      .select('id, name, description, flat_buff, multiplier_buff')
-      .order('name')
+      .select('id, name, description, flat_buff, multiplier_buff, tier, upgrades_to')
 
     if (error) throw error
-    res.status(200).json({ cores: cores ?? [] })
+    if (!allCores || allCores.length === 0) {
+      res.status(200).json({ cores: [] })
+      return
+    }
+
+    if (req.query.all === 'true') {
+      res.status(200).json({ cores: allCores })
+      return
+    }
+
+    const tier1Cores = allCores.filter(c => c.tier === 1 || !c.tier)
+    
+    let offeredCores: any[] = []
+
+    if (!previous_core_id) {
+      // Round 1: Return 2 random Tier 1 cores
+      const shuffled = [...tier1Cores].sort(() => 0.5 - Math.random())
+      offeredCores = shuffled.slice(0, 2)
+    } else {
+      // Round 2 or 3
+      const prevCore = allCores.find(c => c.id === previous_core_id)
+      let synergyCore: any = null
+
+      if (prevCore && prevCore.upgrades_to) {
+        synergyCore = allCores.find(c => c.id === prevCore.upgrades_to)
+      }
+
+      // Fill remaining slots (we want 2 cores total)
+      // Slot 2 should be a random Tier 1 core (different from prevCore to avoid duplicates if possible)
+      let pool = tier1Cores.filter(c => c.id !== previous_core_id)
+      if (pool.length === 0) pool = tier1Cores // Fallback
+      
+      const shuffledPool = [...pool].sort(() => 0.5 - Math.random())
+      
+      if (synergyCore) {
+        offeredCores = [synergyCore, shuffledPool[0]]
+      } else {
+        // Fallback if no synergy upgrade found (e.g. they had a T3 core somehow)
+        offeredCores = [shuffledPool[0], shuffledPool[1]]
+      }
+    }
+
+    res.status(200).json({ cores: offeredCores })
   } catch (err) {
     console.error('getCores error:', err)
     res.status(500).json({ error: 'Failed to fetch cores.' })
@@ -304,7 +347,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     const playerId = req.user!.id
     if (!playerId) { res.status(401).json({ error: 'Unauthorized' }); return }
 
-   const { player_id, session_id, question_id, answer, time_taken, current_combo, active_core_id, oracle_reveal_level } = req.body
+    const { player_id, session_id, question_id, answer, time_taken, current_combo, active_core_id, secondary_core_id, oracle_reveal_level } = req.body
 
     if (player_id && player_id !== playerId) {
       res.status(403).json({ error: 'player_id does not match authenticated user.' })
@@ -328,7 +371,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 2. Fetch session (verify ownership & status) ──────────────────────────
     const { data: session, error: sessErr } = await supabase
       .from('game_sessions')
-      .select('id, status, score, questions_answered, active_core_id')
+      .select('id, status, score, questions_answered, active_core_id, cores:active_core_id(name)')
       .eq('id', session_id)
       .eq('player_id', playerId)
       .single()
@@ -345,21 +388,24 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 3. Anti-cheat: validate submitted core matches session core ────────────
     const sessionCoreId = session.active_core_id
     const submittedCoreId = active_core_id
+    const sessionCoreName = (session.cores as any)?.name?.toLowerCase() || ''
+
+    const isPandora = ['pandora\'s box', 'trickster\'s glass', 'chaos theory'].includes(sessionCoreName)
 
     if (!sessionCoreId || !submittedCoreId) {
       res.status(400).json({ error: 'Missing core ID.' })
       return
     }
 
-    // Relax anti-cheat if the session is Pandora's Box
-    if (sessionCoreId !== PANDORA_CORE_ID && sessionCoreId !== submittedCoreId) {
+    // Relax anti-cheat if the session is a Pandora variant
+    if (!isPandora && sessionCoreId !== submittedCoreId) {
       res.status(403).json({ error: 'Core mismatch detected! (Anti-cheat triggered)' })
       return
     }
 
     // ── 4. Fetch core buffs ───────────────────────────────────────────────────
     // If Pandora mode, grab the buffs for the newly shifted core submitted by the client
-    const coreIdToFetch = sessionCoreId === PANDORA_CORE_ID ? submittedCoreId : sessionCoreId
+    const coreIdToFetch = isPandora ? submittedCoreId : sessionCoreId
 
     const { data: coreRow, error: coreErr } = await supabase
       .from('cores')
@@ -373,6 +419,17 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     }
 
     const core: CoreRow = coreRow
+
+    // Handle Chaos Theory dual core fetching
+    let secondaryCore: CoreRow | null = null
+    if (sessionCoreName === 'chaos theory' && secondary_core_id) {
+      const { data: secCore } = await supabase
+        .from('cores')
+        .select('id, name, flat_buff, multiplier_buff')
+        .eq('id', secondary_core_id)
+        .single()
+      if (secCore) secondaryCore = secCore
+    }
 
     // ── 5. Fetch question & evaluate answer ──────────────────────────────────
     const { data: question, error: qErr } = await supabase
@@ -404,8 +461,11 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     // ── 7. Fetch answer history for pattern-based cores ───────────────────────
     let answerHistory: boolean[] = []
-    const lowerCoreName = core.name.toLowerCase()
-    if (lowerCoreName === 'mission core' || lowerCoreName === 'aegis shield') {
+    const histNames = ['mission core', 'bounty hunter', 'exodia', 'aegis shield', 'reflective aegis', 'bastion of light']
+    const needsHistory = histNames.includes(core.name.toLowerCase()) || 
+                         (secondaryCore && histNames.includes(secondaryCore.name.toLowerCase()))
+    
+    if (needsHistory) {
       const { data: historyData } = await supabase
         .from('game_session_answers')
         .select('correct')
@@ -420,7 +480,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     // ── 8. Calculate score via core strategy registry ────────────────────────
     const timeTaken = typeof time_taken === 'number' && time_taken >= 0 ? Math.floor(time_taken) : 0
-    const { pointsDelta, breakdown } = runScoring(isCorrect, core.name, {
+    
+    const ctx = {
       timeTaken,
       totalTime:         MATCH_DURATION_MS,
       combo,
@@ -430,7 +491,22 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       multiplierBuff:    core.multiplier_buff,
       answerHistory,
       initialShieldCount: 0
-    })
+    }
+
+    let { pointsDelta, breakdown } = runScoring(isCorrect, core.name, ctx)
+
+    // Apply Chaos Theory secondary score
+    if (secondaryCore) {
+      const secCtx = { ...ctx, flatBuff: secondaryCore.flat_buff, multiplierBuff: secondaryCore.multiplier_buff }
+      const secResult = runScoring(isCorrect, secondaryCore.name, secCtx)
+      pointsDelta += secResult.pointsDelta
+      // Merge breakdown for basic values
+      breakdown.base += secResult.breakdown.base
+      breakdown.combo_bonus += secResult.breakdown.combo_bonus
+      breakdown.flat_buff += secResult.breakdown.flat_buff
+      breakdown.penalty += secResult.breakdown.penalty
+      breakdown.speed_bonus = (breakdown.speed_bonus || 0) + (secResult.breakdown.speed_bonus || 0)
+    }
 
     // ── 9. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
@@ -588,5 +664,31 @@ export async function abandonSession(req: AuthRequest, res: Response): Promise<v
   } catch (err) {
     console.error('abandonSession error:', err)
     res.status(500).json({ error: 'Failed to abandon session.' })
+  }
+}
+
+// ── Endpoint: PUT /api/game/session/core ──────────────────────────────────────
+export async function updateSessionCore(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const playerId = req.user!.id
+    if (!playerId) { res.status(401).json({ error: 'Unauthorized' }); return }
+
+    const { session_id, new_core_id } = req.body
+    if (!session_id || !new_core_id) {
+      res.status(400).json({ error: 'session_id and new_core_id are required.' })
+      return
+    }
+
+    const { error } = await supabase
+      .from('game_sessions')
+      .update({ active_core_id: new_core_id })
+      .eq('id', session_id)
+      .eq('player_id', playerId)
+
+    if (error) throw error
+    res.status(200).json({ status: 'success' })
+  } catch (err) {
+    console.error('updateSessionCore error:', err)
+    res.status(500).json({ error: 'Failed to update session core.' })
   }
 }

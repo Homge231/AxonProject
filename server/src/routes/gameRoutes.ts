@@ -6,7 +6,8 @@ import {
   createSession,
   submitAnswer,
   timeoutSession,
-  abandonSession
+  abandonSession,
+  updateSessionCore
 } from '../controllers/gameController'
 
 const router = Router()
@@ -17,5 +18,6 @@ router.post('/session',       authMiddleware, createSession)
 router.post('/submit-answer', authMiddleware, submitAnswer)
 router.post('/timeout',       authMiddleware, timeoutSession)
 router.post('/abandon',       authMiddleware, abandonSession)
+router.put('/session/core',   authMiddleware, updateSessionCore)
 
 export default router

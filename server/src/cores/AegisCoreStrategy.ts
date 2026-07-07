@@ -12,21 +12,45 @@ import {
  * Mistakes consume 1 shield instead of losing points.
  */
 export class AegisCoreStrategy extends BaseCore {
-  readonly coreName = 'aegis shield'
+  readonly coreName: string;
+  readonly maxShields: number;
+  readonly reflectDamage: boolean;
+  readonly bastionMult: boolean;
+
+  constructor(
+    name: string = 'aegis shield',
+    maxShields: number = 3,
+    reflectDamage: boolean = false,
+    bastionMult: boolean = false
+  ) {
+    super()
+    this.coreName = name.toLowerCase()
+    this.maxShields = maxShields
+    this.reflectDamage = reflectDamage
+    this.bastionMult = bastionMult
+  }
 
   // Helper to calculate the current shield count based on answer history
   private getShieldCount(initial: number, history: boolean[]): number {
     return history.reduce((shields, isCorrect) => {
-      if (isCorrect) return Math.min(shields + 1, 3) // Max 3 shields
+      if (isCorrect) return Math.min(shields + 1, this.maxShields) // dynamic max shields
       return Math.max(0, shields - 1)
     }, initial)
   }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)
-    // Formula: floor( (BASE + flat_buff) * multiplier_buff )
+    // Bastion logic: if at max shields *before* this answer, double the points
+    const historyBeforeThisAnswer = ctx.answerHistory.slice(0, -1)
+    const currentShields = this.getShieldCount(ctx.initialShieldCount || 0, historyBeforeThisAnswer)
+    
+    let activeMultiplier = ctx.multiplierBuff
+    if (this.bastionMult && currentShields === this.maxShields) {
+      activeMultiplier *= 2
+    }
+
     const beforeMult = BASE_POINTS + ctx.flatBuff
-    const total      = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
+    const total      = Math.floor(beforeMult * activeMultiplier) - oraclePenalty
 
     // Even though we calculate correct, the shield count is calculated from history
     // if the frontend needs it, but we only really need it for 'blocked' events.
@@ -54,9 +78,11 @@ export class AegisCoreStrategy extends BaseCore {
     const currentShields = this.getShieldCount(ctx.initialShieldCount || 0, historyBeforeThisAnswer)
 
     if (currentShields > 0) {
-      // Shield blocks the penalty! (Oracle penalty still applies if they bought a hint)
+      // Shield blocks the penalty!
+      // Reflective Aegis: grant +50 points instead of losing
+      const reflectBonus = this.reflectDamage ? 50 : 0
       return {
-        pointsDelta: -oraclePenalty,
+        pointsDelta: reflectBonus - oraclePenalty,
         breakdown: {
           base: 0,
           combo_bonus: 0,

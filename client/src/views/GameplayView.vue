@@ -1,7 +1,11 @@
 <template>
   <div
     class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
-    :class="{ 'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting }"
+    :class="{ 
+      'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting,
+      'chaos-shift': isChaos && !isShifting,
+      'exodia-shake': showMissionCelebration && isExodia
+    }"
     @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
       :class="{ 'opacity-0': isBgFading, 'opacity-100': !isBgFading }" />
@@ -21,7 +25,8 @@
             'text-2xl text-hexred': popup.type === 'wrong',
             'text-2xl text-yellow-400': popup.type === 'typo',
             'text-2xl text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]': popup.type === 'shield_blocked',
-            'speedster-popup': popup.type === 'speedster'
+            'speedster-popup': popup.type === 'speedster',
+            'prismatic-explosion': isPrismaticCombo && popup.type === 'correct'
           }" :style="{ left: popup.x + 'px', top: popup.y + 'px' }">
           <template v-if="popup.type === 'speedster'">
             <span class="speedster-fast-text">+{{ popup.value }} FAST!</span>
@@ -102,6 +107,12 @@
             </button>
           </div>
         </transition>
+
+        <!-- Upgrade Selection Phase (Overlay on top of game board) -->
+        <transition name="fade">
+          <CoreUpgradeOverlay v-if="gameState === 'upgrade'" @selected="handleUpgradeSelected" />
+        </transition>
+
       </div>
 
       <div class="flex items-center gap-8">
@@ -127,7 +138,7 @@
             timeLeft <= 10 ? 'animate-pulse' : '',
             activeCoreModule.timerClass || ''
           ]">
-            {{ String(timeLeft).padStart(2, '0') }}
+            {{ String(timeLeft ?? 0).padStart(2, '0') }}
           </span>
           <!-- Round Indicator Preparation -->
           <div class="absolute -bottom-6 w-full text-center whitespace-nowrap">
@@ -180,11 +191,11 @@
                 class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300"
                 :class="{ 'burning-edge-active': isBurningComboActive }">
                 <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
-                  <span v-if="currentQuestion.question_text.split(/_+/)[0]">
+                  <span v-if="currentQuestion?.question_text?.split(/_+/)[0]">
                     {{ currentQuestion.question_text.split(/_+/)[0] }}
                   </span>
                   <span class="text-white/50 font-bold mx-2 tracking-widest">---</span>
-                  <span v-if="currentQuestion.question_text.split(/_+/)[1]">
+                  <span v-if="currentQuestion?.question_text?.split(/_+/)[1]">
                     {{ currentQuestion.question_text.split(/_+/)[1] }}
                   </span>
                 </p>
@@ -430,6 +441,9 @@ import { useAuthStore } from '../stores/authStore'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
 import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
 import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
+import MatchRecapTimeout from '@/components/game/MatchRecapTimeout.vue'
+import CoreUpgradeOverlay from '@/components/game/CoreUpgradeOverlay.vue'
+import AnimatedBackground from '@/components/layout/AnimatedBackground.vue'
 import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
@@ -520,35 +534,85 @@ const activeCoreId = computed<string | null>({
 // ── Core registry ──────────────────────────────────────────────────────────
 // Single source of truth for all core-specific UI behaviour.
 // To add a new core: edit client/src/game/cores/registry.ts only.
-const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreId))
+const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreName))
 
 // Convenience booleans — still used by Oracle-specific template logic
-const isComboCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'combo core')
-const isOracleCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'oracle core')
-const isSpeedsterCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speedster')
-const isMissionCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'mission core')
+const isComboCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'combo core' || gameStore.activeCoreName?.toLowerCase() === 'radiant combo' || gameStore.activeCoreName?.toLowerCase() === 'prismatic combo')
+const isOracleCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'oracle core' || gameStore.activeCoreName?.toLowerCase() === 'clairvoyance' || gameStore.activeCoreName?.toLowerCase() === 'omniscience')
+const isSpeedsterCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speedster' || gameStore.activeCoreName?.toLowerCase() === 'time warp' || gameStore.activeCoreName?.toLowerCase() === 'chronobreak')
+const isMissionCore = computed(() => gameStore.activeCoreName?.toLowerCase() === 'mission core' || gameStore.activeCoreName?.toLowerCase() === 'bounty hunter' || gameStore.activeCoreName?.toLowerCase() === 'exodia')
+const isTimeWarp = computed(() => gameStore.activeCoreName?.toLowerCase() === 'time warp')
+const isChronobreak = computed(() => gameStore.activeCoreName?.toLowerCase() === 'chronobreak')
+const isOmniscience = computed(() => gameStore.activeCoreName?.toLowerCase() === 'omniscience')
+const isPrismaticCombo = computed(() => gameStore.activeCoreName?.toLowerCase() === 'prismatic combo')
+const isExodia = computed(() => gameStore.activeCoreName?.toLowerCase() === 'exodia')
 
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
-const PANDORA_CORE_ID = '00000000-0000-0000-0000-000000000010'
-const isPandoraMode = ref(false)
+const isPandora = computed(() => gameStore.activeCoreName?.toLowerCase() === "pandora's box")
+const isTrickster = computed(() => gameStore.activeCoreName?.toLowerCase() === "trickster's glass")
+const isChaos = computed(() => gameStore.activeCoreName?.toLowerCase() === "chaos theory")
+const isPandoraMode = computed(() => isPandora.value || isTrickster.value || isChaos.value)
+
 const isShifting = ref(false)
 const shiftAnnouncement = ref('')
 const pandoraPool = ref<any[]>([])
+const allCores = ref<any[]>([])
 
 async function fetchPandoraPool() {
   try {
-    const res = await fetchWithAuth(`/api/game/cores`)
+    const res = await fetchWithAuth(`/api/game/cores?all=true`)
     if (!res.ok) return
     const data = await res.json()
-    // Pandora shifts into anything except itself
-    pandoraPool.value = (data.cores || []).filter((c: any) => c.id !== PANDORA_CORE_ID)
+    allCores.value = data.cores || []
   } catch (err) {
     console.error('Failed to fetch cores for Pandora', err)
   }
 }
 
 function triggerShapeshift() {
+  if (allCores.value.length === 0) return
+
+  // Determine current tier from matchStore (Round 1 = T1, Round 2 = T2, Round 3 = T3)
+  const tier = matchStore.currentRound
+  
+  // T1 names
+  const upgradePaths: Record<string, string> = {
+      'Combo Core': 'Radiant Combo',
+      'Radiant Combo': 'Prismatic Combo',
+      'Speedster': 'Time Warp',
+      'Time Warp': 'Chronobreak',
+      'Oracle Core': 'Clairvoyance',
+      'Clairvoyance': 'Omniscience',
+      'Mission Core': 'Bounty Hunter',
+      'Bounty Hunter': 'Exodia',
+      'Aegis Shield': 'Reflective Aegis',
+      'Reflective Aegis': 'Bastion of Light',
+      'Balanced Core': 'Harmony Core',
+      'Harmony Core': 'Perfect Harmony',
+      'Power Core': 'Overclock Core',
+      'Overclock Core': 'Supernova Core',
+      "Pandora's Box": "Trickster's Glass",
+      "Trickster's Glass": "Chaos Theory"
+  }
+  const tier1Names = Object.keys(upgradePaths).filter(k => !Object.values(upgradePaths).includes(k))
+  const tier2Names = Object.keys(upgradePaths).filter(k => tier1Names.includes(Object.keys(upgradePaths).find(key => upgradePaths[key] === k) || ''))
+  const tier3Names = Object.values(upgradePaths).filter(v => tier2Names.includes(Object.keys(upgradePaths).find(key => upgradePaths[key] === v) || ''))
+  
+  let validNames: string[] = []
+  if (isChaos.value || tier === 3) validNames = tier3Names
+  else if (isTrickster.value || tier === 2) validNames = tier2Names
+  else validNames = tier1Names
+
+  pandoraPool.value = allCores.value.filter((c: any) => 
+    validNames.some(name => name.toLowerCase() === c.name.toLowerCase()) && 
+    c.id !== activeCoreId.value &&
+    !c.name.toLowerCase().includes('pandora') &&
+    !c.name.toLowerCase().includes('trickster') &&
+    !c.name.toLowerCase().includes('chaos')
+  )
+
   if (pandoraPool.value.length === 0) return
+
   isShifting.value = true
 
   const randomCore = pandoraPool.value[Math.floor(Math.random() * pandoraPool.value.length)]
@@ -662,9 +726,9 @@ const questionStartTime = ref<number>(Date.now())
 
 // ── Timer ──────────────────────────────────────────────────────────────────
 let matchTimerFrame: number | null = null
-let matchStartTime = 0
-
-
+let remainingMatchMs = MATCH_DURATION * 1000
+let lastTickTime = 0
+let isTimerPaused = false
 let timeoutInterval: ReturnType<typeof setInterval> | null = null
 
 function stopTimeoutInterval() {
@@ -676,25 +740,36 @@ function stopTimeoutInterval() {
 
 function startMatchTimer() {
   if (matchTimerFrame) return
-  matchStartTime = Date.now()
-  let lastShiftTime = matchStartTime - 25000 // Trigger first shift immediately
+  lastTickTime = Date.now()
+  let lastShiftTime = lastTickTime - 25000 // Trigger first shift immediately
 
   const tick = () => {
-    const elapsed = Date.now() - matchStartTime
-    const remainingMs = Math.max(0, (MATCH_DURATION * 1000) - elapsed)
+    const now = Date.now()
+    const dt = now - lastTickTime
+    lastTickTime = now
 
-    timerProgressPercent.value = (remainingMs / (MATCH_DURATION * 1000)) * 100
-    timeLeft.value = Math.ceil(remainingMs / 1000)
+    if (!isTimerPaused && !isNaN(dt)) {
+      remainingMatchMs -= dt
+    }
+    
+    remainingMatchMs = Math.max(0, remainingMatchMs)
 
-    // Shapeshifter trigger every 25s
-    if (isPandoraMode.value && pandoraPool.value.length > 0) {
-      if (Date.now() - lastShiftTime >= 25000) {
+    timerProgressPercent.value = (remainingMatchMs / (MATCH_DURATION * 1000)) * 100
+    timeLeft.value = isNaN(remainingMatchMs) ? MATCH_DURATION : Math.ceil(remainingMatchMs / 1000)
+
+    // Shapeshifter trigger based on tier
+    if (isPandoraMode.value) {
+      let shiftInterval = 25000 // T1 Pandora
+      if (isTrickster.value) shiftInterval = 10000 // T2 Trickster
+      if (isChaos.value) shiftInterval = 5000 // T3 Chaos Theory
+      
+      if (Date.now() - lastShiftTime >= shiftInterval) {
         lastShiftTime = Date.now()
         triggerShapeshift()
       }
     }
 
-    if (remainingMs > 0) {
+    if (remainingMatchMs > 0) {
       matchTimerFrame = requestAnimationFrame(tick)
     } else {
       matchTimerFrame = null
@@ -708,6 +783,18 @@ function startMatchTimer() {
 
 function stopMatchTimer() {
   if (matchTimerFrame) { cancelAnimationFrame(matchTimerFrame); matchTimerFrame = null }
+}
+
+function addTime(ms: number) {
+  remainingMatchMs += ms
+}
+
+function pauseTimerFor(ms: number) {
+  isTimerPaused = true
+  setTimeout(() => {
+    isTimerPaused = false
+    lastTickTime = Date.now() // Prevent huge dt jump
+  }, ms)
 }
 
 function getBackgroundImage(themeKey: string) {
@@ -810,6 +897,14 @@ async function loadQuestion() {
   questionStartTime.value = Date.now()
 
   gameState.value = 'playing'
+  
+  if (isOmniscience.value && currentQuestion.value.target_length > 0) {
+    const firstLetter = currentQuestion.value.oracle_hints?.[0]?.charAt(0)?.toLowerCase() || '_'
+    if (firstLetter && firstLetter !== '·') {
+      typedLetters.value = [firstLetter]
+    }
+  }
+  
   await nextTick()
   inputRef.value?.focus()
 }
@@ -943,6 +1038,15 @@ async function checkAnswer() {
   if (isCorrectLocal) {
     gameState.value = 'correct'
     currentCombo.value++
+    
+    // Core specific time modifiers
+    if (isTimeWarp.value) {
+      addTime(2000)
+    }
+    if (isChronobreak.value && currentCombo.value > 0 && currentCombo.value % 3 === 0) {
+      pauseTimerFor(3000)
+    }
+
     if (isMissionCore.value) {
       missionProgress.value = (missionProgress.value + 1)
       if (missionProgress.value === 5) {
@@ -1079,6 +1183,7 @@ function resetTypingBoard() {
   gameState.value = 'timeout'
   stopTimeoutInterval()
   // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
+  remainingMatchMs = MATCH_DURATION * 1000
   timeLeft.value = MATCH_DURATION
   timerProgressPercent.value = 100
   typedLetters.value = []
@@ -1109,7 +1214,7 @@ function startTimeoutPhase() {
     if (timeoutCountdown.value <= 0) {
       stopTimeoutInterval()
       if (!matchStore.isFinalRound()) {
-        restartMatch()
+        gameState.value = 'upgrade'
       }
     }
   }, 1000)
@@ -1123,6 +1228,11 @@ function startTimeoutPhase() {
   if (sid && matchStore.isFinalRound()) {
     setTimeout(() => callTimeoutEndpoint(sid, coreId, oracleLvl), 300)
   }
+}
+
+function handleUpgradeSelected(newCoreId: string) {
+  // When upgrade is selected, restart match for the next round
+  restartMatch()
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
@@ -1846,5 +1956,38 @@ onUnmounted(() => {
       0 0 20px rgba(255, 255, 255, 0.3);
     /* Lõi sáng chớp nhẹ ở mép */
   }
+}
+/* Chaos Theory Color Shift */
+.chaos-shift {
+  animation: chaos-cycle 5s infinite linear;
+}
+@keyframes chaos-cycle {
+  0% { filter: hue-rotate(0deg) saturate(1.2); }
+  50% { filter: hue-rotate(180deg) saturate(1.5) contrast(1.1); }
+  100% { filter: hue-rotate(360deg) saturate(1.2); }
+}
+
+/* Exodia Shake */
+.exodia-shake {
+  animation: exodia-tremor 0.1s infinite;
+}
+@keyframes exodia-tremor {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(5px, 5px) rotate(1deg); }
+  50% { transform: translate(0, 0) rotate(0deg); }
+  75% { transform: translate(-5px, 5px) rotate(-1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Prismatic Explosion */
+.prismatic-explosion {
+  animation: prismatic-blast 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  color: #fff;
+  text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff, 0 0 30px #ffff00;
+}
+@keyframes prismatic-blast {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(2.5) rotate(10deg); opacity: 0.8; text-shadow: 0 0 20px #ff00ff, 0 0 40px #00ffff, 0 0 60px #ffff00; }
+  100% { transform: scale(3) rotate(0deg) translateY(-50px); opacity: 0; }
 }
 </style>
