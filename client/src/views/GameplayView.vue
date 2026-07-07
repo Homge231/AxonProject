@@ -1050,11 +1050,6 @@ async function checkAnswer() {
             }, 2000)
           }
 
-          matchHistory.value.push({
-            submitted: typed,
-            correct: data.correct ? typed : (data.correct_word || '???'),
-            isCorrect: data.correct
-          })
 
           if (mySeq === submitAnswerSeq) {
             // Note: Mission celebration is now handled locally for instant feedback
@@ -1089,7 +1084,6 @@ async function checkAnswer() {
 
 function resetTypingBoard() {
   gameState.value = 'timeout'
-  matchHistory.value = []
   stopTimeoutInterval()
   // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
   timeLeft.value = MATCH_DURATION
@@ -1171,6 +1165,7 @@ async function playAgain() {
   if (gameState.value === 'loading') return
   // Reset Match Store completely
   matchStore.resetMatch()
+  matchHistory.value = []
 
   // Hard reset of global state
   score.value = 0
