@@ -5,21 +5,46 @@ import { generateQuestions } from '../services/aiService'
 import { supabase } from '../config/supabase'
 
 async function run() {
-  const topic = 'Daily Life & Habits, Food & Cafe Culture, and Travel & Vacations'
+  const topicConfigs = [
+    { slug: 'daily-life', prompt: 'Daily Life & Habits' },
+    { slug: 'cafe', prompt: 'Food & Cafe Culture' },
+    { slug: 'travel', prompt: 'Travel & Vacations' }
+  ]
   const levels = ['A1', 'B1', 'B2']
-  const countPerLevel = 50
+  const countPerTopicLevel = 50 // 50 questions per topic per level
 
   console.log(`🚀 Starting AI Question Generation...`)
-  console.log(`Topic: ${topic} | Levels: ${levels.join(', ')} | Count per level: ${countPerLevel}`)
+  console.log(`Topics: ${topicConfigs.map(t => t.slug).join(', ')} | Levels: ${levels.join(', ')} | Count per topic/level: ${countPerTopicLevel}`)
   
   try {
     let allNewQuestions: any[] = []
 
-    for (const level of levels) {
-      console.log(`⏳ Generating ${countPerLevel} questions for Level ${level}...`)
-      const questions = await generateQuestions(topic, level, countPerLevel)
-      allNewQuestions = allNewQuestions.concat(questions)
-      console.log(`✅ Generated ${questions.length} questions for Level ${level}.`)
+    for (const t of topicConfigs) {
+      for (const level of levels) {
+        console.log(`⏳ Generating ${countPerTopicLevel} questions for Topic '${t.prompt}' (Level ${level})...`)
+        let success = false;
+        let attempts = 0;
+        while (!success && attempts < 3) {
+          try {
+            const questions = await generateQuestions(t.prompt, level, countPerTopicLevel)
+            const questionsWithTopic = questions.map(q => ({ ...q, topic: t.slug }))
+            allNewQuestions = allNewQuestions.concat(questionsWithTopic)
+            console.log(`✅ Generated ${questions.length} questions.`)
+            success = true;
+          } catch (err: any) {
+            attempts++;
+            console.error(`⚠️ Attempt ${attempts} failed: ${err.message}`)
+            if (attempts < 3) {
+              console.log('Sleeping for 5 seconds before retrying...')
+              await new Promise(r => setTimeout(r, 5000))
+            } else {
+              throw err
+            }
+          }
+        }
+        // Small delay between successful requests to prevent rate limit
+        await new Promise(r => setTimeout(r, 2000))
+      }
     }
     
     console.log(`🗑️ Deleting old game session answers to resolve foreign keys...`)

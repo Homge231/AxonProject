@@ -302,39 +302,16 @@
 
     <Avatar :src="playerAvatarUrl" alt="Player Avatar" />
 
-    <!-- US-24: 15-second timeout phase banner — shown while isTimeoutPhase is true -->
-    <transition name="timeout-phase-banner">
-      <div v-if="isTimeoutPhase"
-        class="absolute inset-0 z-[45] flex flex-col items-center justify-center pointer-events-none">
-        <!-- Dim backdrop (lighter than the full overlay so the game is still visible underneath) -->
-        <div class="absolute inset-0 bg-darkNavy/60 backdrop-blur-sm"></div>
-        <!-- Countdown pill -->
-        <div class="relative flex flex-col items-center gap-4">
-          <p class="text-[11px] font-bold text-hexred/80 tracking-[0.45em] uppercase">Match Ended · Calculating…</p>
-          <div
-            class="flex items-center justify-center w-36 h-36 rounded-full border-4 border-hexred/70 bg-darkNavy/80 shadow-[0_0_40px_rgba(230,57,70,0.5)] timeout-phase-ring">
-            <span class="font-mono font-black text-6xl text-white tabular-nums drop-shadow-lg timeout-phase-digits">{{
-              String(timeoutCountdown).padStart(2, '0') }}</span>
-          </div>
-          <!-- INPUT LOCKED badge -->
-          <div
-            class="flex items-center gap-2 px-5 py-2 rounded-full bg-hexred/20 border border-hexred/40 backdrop-blur-md">
-            <svg class="w-4 h-4 text-hexred" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span class="text-xs font-bold text-hexred tracking-[0.3em] uppercase">Input Locked</span>
-          </div>
-        </div>
-      </div>
-    </transition>
+
 
     <transition name="timeout-overlay">
       <div v-if="gameState === 'timeout'" class="absolute inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-darkNavy/80 backdrop-blur-xl"></div>
         <div
           class="relative border border-hexred/50 bg-darkNavy/90 p-12 max-w-2xl w-full mx-4 text-center timeout-panel rounded-2xl shadow-[0_0_50px_rgba(230,57,70,0.2)] flex flex-col max-h-[90vh]">
-          <p class="text-xs font-bold text-hexred tracking-[0.4em] uppercase mb-4 drop-shadow-md">Match Ended</p>
+          <p class="text-xs font-bold text-hexred tracking-[0.4em] uppercase mb-4 drop-shadow-md">
+            {{ matchStore.isFinalRound() ? 'Match Ended' : 'Round Ended' }}
+          </p>
           <h2
             class="text-7xl font-black italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(230,57,70,0.8)] mb-2 timeout-glitch">
             TIME OUT
@@ -364,15 +341,22 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
-                <tr v-for="(item, idx) in matchHistory" :key="idx" class="hover:bg-white/5 transition-colors">
-                  <td class="px-6 py-3 font-medium uppercase tracking-wider"
-                    :class="item.isCorrect ? 'text-green bg-green/10' : 'text-hexred bg-hexred/10'">
-                    {{ item.submitted }}
-                  </td>
-                  <td class="px-6 py-3 font-medium text-white uppercase tracking-wider border-l border-white/5">
-                    {{ item.correct }}
-                  </td>
-                </tr>
+                <template v-for="(group, roundNum) in groupedMatchHistory" :key="roundNum">
+                  <tr>
+                    <td colspan="2" class="px-6 py-2 font-bold text-xs text-white/50 bg-black/80 uppercase tracking-widest border-b border-white/10">
+                      Round {{ roundNum }}
+                    </td>
+                  </tr>
+                  <tr v-for="(item, idx) in group" :key="`${roundNum}-${idx}`" class="hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-3 font-medium uppercase tracking-wider"
+                      :class="item.isCorrect ? 'text-green bg-green/10' : 'text-hexred bg-hexred/10'">
+                      {{ item.submitted }}
+                    </td>
+                    <td class="px-6 py-3 font-medium text-white uppercase tracking-wider border-l border-white/5">
+                      {{ item.correct }}
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -435,12 +419,12 @@
 
     <!-- US-24: input is disabled during the 15s timeout phase AND in the final timeout state -->
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="isTimeoutPhase || gameState === 'timeout'" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="gameState === 'timeout'" @keydown="handleKeydown" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
@@ -466,6 +450,7 @@ interface QuestionPayload {
   oracle_hints: string[]
   hint?: string
   correct_word?: string
+  topic?: string
 }
 
 interface PointPopup {
@@ -512,10 +497,8 @@ const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 
 // ── US-24: 15-second timeout phase ───────────────────────────────────────
-// isTimeoutPhase: true during the 15s grace window after gameplay ends.
 // The input is disabled and a countdown is shown until timeoutCountdown reaches 0.
 const TIMEOUT_PHASE_DURATION = 15
-const isTimeoutPhase = ref(false)
 const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 let timeoutPhaseFrame: number | null = null
 let timeoutPhaseStart = 0
@@ -674,7 +657,16 @@ const playerAvatarUrl = computed(() =>
 const questionQueue = ref<QuestionPayload[]>([])
 const isFetchingBatch = ref(false)
 const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_length: 0, target_hash: '', oracle_hints: ['', '', ''] })
-const matchHistory = ref<{ submitted: string, correct: string, isCorrect: boolean }[]>([])
+const matchHistory = ref<{ round: number, submitted: string, correct: string, isCorrect: boolean }[]>([])
+
+const groupedMatchHistory = computed(() => {
+  const groups: Record<number, typeof matchHistory.value> = {}
+  matchHistory.value.forEach(item => {
+    if (!groups[item.round]) groups[item.round] = []
+    groups[item.round].push(item)
+  })
+  return groups
+})
 
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -710,7 +702,7 @@ const questionStartTime = ref<number>(Date.now())
 let matchTimerFrame: number | null = null
 let matchStartTime = 0
 
-const timeoutCountdown = ref(15)
+
 let timeoutInterval: ReturnType<typeof setInterval> | null = null
 
 function stopTimeoutInterval() {
@@ -745,7 +737,7 @@ function startMatchTimer() {
     } else {
       matchTimerFrame = null
       timeLeft.value = 0
-      triggerTimeout()
+      startTimeoutPhase()
     }
   }
 
@@ -772,7 +764,7 @@ async function createSession() {
     sessionId.value = data.session_id
     if (data.active_core?.id) activeCoreId.value = data.active_core.id
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
-    if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
+    // Theme is now managed by matchStore topics
     if (data.aegis_shield_count !== undefined) aegisShieldCount.value = data.aegis_shield_count
 
     if (activeCoreId.value === PANDORA_CORE_ID) {
@@ -820,7 +812,8 @@ async function fetchBatch(): Promise<void> {
   if (isFetchingBatch.value || gameState.value === 'timeout') return
   isFetchingBatch.value = true
   try {
-    const res = await fetchWithAuth(`/api/game/questions`)
+    const topic = matchStore.topics[matchStore.currentRound - 1] || 'daily-life'
+    const res = await fetchWithAuth(`/api/game/questions?topic=${topic}`)
     if (!res.ok) throw new Error('fetch failed')
     const data = await res.json()
     questionQueue.value.push(...(data.questions as QuestionPayload[]))
@@ -928,6 +921,7 @@ async function skipQuestion() {
           }
 
           matchHistory.value.push({
+            round: matchStore.currentRound,
             submitted: '(Skipped)',
             correct: data.correct_word || '???',
             isCorrect: false
@@ -941,7 +935,7 @@ async function skipQuestion() {
 
 // ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
-  if (isTimeoutPhase.value || gameState.value === 'timeout') return
+  if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
 
@@ -1072,6 +1066,7 @@ async function checkAnswer() {
         }
 
         matchHistory.value.push({
+          round: matchStore.currentRound,
           submitted: typed,
           correct: data.correct ? typed : (data.correct_word || '???'),
           isCorrect: data.correct
@@ -1086,11 +1081,6 @@ async function checkAnswer() {
             }, 2000)
           }
 
-          matchHistory.value.push({
-            submitted: typed,
-            correct: data.correct ? typed : (data.correct_word || '???'),
-            isCorrect: data.correct
-          })
 
           if (mySeq === submitAnswerSeq) {
             // Note: Mission celebration is now handled locally for instant feedback
@@ -1125,7 +1115,6 @@ async function checkAnswer() {
 
 function resetTypingBoard() {
   gameState.value = 'timeout'
-  matchHistory.value = []
   stopTimeoutInterval()
   // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
   timeLeft.value = MATCH_DURATION
@@ -1145,7 +1134,7 @@ function resetTypingBoard() {
 // Initialises the countdown state and schedules callTimeoutEndpoint once the
 // 15s window has elapsed (or immediately completes the phase if it finishes).
 function startTimeoutPhase() {
-  isTimeoutPhase.value = true
+  gameState.value = 'timeout'
   timeoutCountdown.value = TIMEOUT_PHASE_DURATION
   timeoutPhaseStart = Date.now()
   inputRef.value?.blur()
@@ -1153,16 +1142,15 @@ function startTimeoutPhase() {
   timeoutCountdown.value = 15
   stopTimeoutInterval()
 
-  // Only auto-countdown for rounds 1 and 2
-  if (!matchStore.isFinalRound()) {
-    timeoutInterval = setInterval(() => {
-      timeoutCountdown.value--
-      if (timeoutCountdown.value <= 0) {
-        stopTimeoutInterval()
+  timeoutInterval = setInterval(() => {
+    timeoutCountdown.value--
+    if (timeoutCountdown.value <= 0) {
+      stopTimeoutInterval()
+      if (!matchStore.isFinalRound()) {
         restartMatch()
       }
-    }, 1000)
-  }
+    }
+  }, 1000)
 
   // Only tell the backend the session is over if it's the final round!
   // Otherwise, we keep the session alive to retain score and anti-cheat tracking.
@@ -1177,6 +1165,7 @@ function startTimeoutPhase() {
 
 // ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
+  if (gameState.value === 'loading') return
   if (matchStore.isFinalRound()) {
     // If they manually click "Next Round" somehow, route to home as fallback
     router.push('/home')
@@ -1204,8 +1193,10 @@ async function restartMatch() {
 }
 
 async function playAgain() {
+  if (gameState.value === 'loading') return
   // Reset Match Store completely
   matchStore.resetMatch()
+  matchHistory.value = []
 
   // Hard reset of global state
   score.value = 0
@@ -1256,7 +1247,7 @@ function handleOutsideClick(e: MouseEvent) {
 }
 
 function refocusInput() {
-  if (isTimeoutPhase.value || gameState.value === 'timeout') return
+  if (gameState.value === 'timeout') return
   if (!menuOpen.value && !confirmQuit.value) inputRef.value?.focus()
 }
 
@@ -1272,6 +1263,9 @@ onMounted(async () => {
     router.replace('/core-selection')
     return
   }
+
+  // Ensure we start a fresh match if navigating here from outside
+  matchStore.resetMatch()
 
   await createSession()
   await fetchBatch()

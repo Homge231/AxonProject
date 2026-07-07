@@ -8,14 +8,36 @@ export function initQuestionCron() {
     console.log('Running weekly AI question generation cron job...')
     try {
       // 1. Generate 50 new questions
-      // 1. Generate 150 new questions (50 for A1, 50 for B1, 50 for B2)
-      const topic = 'Daily Life & Habits, Food & Cafe Culture, and Travel & Vacations'
+      const topicConfigs = [
+        { slug: 'daily-life', prompt: 'Daily Life & Habits' },
+        { slug: 'cafe', prompt: 'Food & Cafe Culture' },
+        { slug: 'travel', prompt: 'Travel & Vacations' }
+      ]
       const levels = ['A1', 'B1', 'B2']
       let allNewQuestions: any[] = []
       
-      for (const level of levels) {
-        const questions = await generateQuestions(topic, level, 50)
-        allNewQuestions = allNewQuestions.concat(questions)
+      for (const t of topicConfigs) {
+        for (const level of levels) {
+          let success = false;
+          let attempts = 0;
+          while (!success && attempts < 3) {
+            try {
+              const questions = await generateQuestions(t.prompt, level, 50)
+              const questionsWithTopic = questions.map(q => ({ ...q, topic: t.slug }))
+              allNewQuestions = allNewQuestions.concat(questionsWithTopic)
+              success = true;
+            } catch (err: any) {
+              attempts++;
+              console.error(`⚠️ Cron attempt ${attempts} failed: ${err.message}`)
+              if (attempts < 3) {
+                await new Promise(r => setTimeout(r, 5000))
+              } else {
+                throw err
+              }
+            }
+          }
+          await new Promise(r => setTimeout(r, 2000))
+        }
       }
       
       // 2. Wipe existing questions (optional depending on your exact preference, 

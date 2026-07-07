@@ -93,4 +93,11 @@ router.beforeEach(async (to) => {
   return { name: 'login' }
 })
 
+// Handle chunk load errors when deploying new versions
+router.onError((error, to) => {
+  if (error.message.includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError') {
+    window.location.href = to.fullPath
+  }
+})
+
 export default router
