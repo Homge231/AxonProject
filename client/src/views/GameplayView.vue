@@ -105,6 +105,14 @@
               </svg>
               Quit Match
             </button>
+            <button v-if="isDev" @click.stop="debugSkipRound"
+              class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-yellow-400 hover:bg-yellow-400/10 transition-colors text-left border-t border-white/10">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              Debug: Skip Round
+            </button>
           </div>
         </transition>
 
@@ -473,15 +481,31 @@ interface PointPopup {
   y: number
 }
 
-type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout'
+type GameState = 'loading' | 'playing' | 'correct' | 'wrong' | 'timeout' | 'upgrade'
 type ScoreFlash = 'correct' | 'wrong' | null
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const MATCH_DURATION = 90
 const TIMEOUT_PHASE_DURATION = 15
 const FEEDBACK_MS = 1000
 const REFETCH_THRESHOLD = 5
-const SCORE_BAR_MAX = 2000
+
+// ── State ──────────────────────────────────────────────────────────────────
+const gameState = ref<GameState>('loading')
+const score = ref(0)
+const scoreFlash = ref<ScoreFlash>(null)
+const questionsAnswered = ref(0)
+const pointsEarned = ref(0)
+const pointsDeducted = ref(0)
+const typedLetters = ref<string[]>([])
+const inputRef = ref<HTMLInputElement | null>(null)
+const menuRef = ref<HTMLElement | null>(null)
+const letterSlotsRef = ref<HTMLElement | null>(null)
+const menuOpen = ref(false)
+const confirmQuit = ref(false)
+const savingSession = ref(false)
+const sessionId = ref<string | null>(null)
+const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
+const isDev = import.meta.env.DEV
 // (Xóa luôn THEME_MAP và DEFAULT_BG cũ ở trên đi nhé vì không dùng tới nữa)
 
 // 1. Khai báo danh sách background tương ứng với từng Round
@@ -731,7 +755,6 @@ let isTimerPaused = false
 const timeLeft = ref(MATCH_DURATION)
 const timerProgressPercent = ref(100)
 let timeoutInterval: ReturnType<typeof setInterval> | null = null
-let timeoutPhaseStart = 0
 
 function stopTimeoutInterval() {
   if (timeoutInterval) {
@@ -819,7 +842,7 @@ async function createSession() {
   }
 }
 
-async function callTimeoutEndpoint(sid: string, coreId: string, oracleLvl: number) {
+async function callTimeoutEndpoint(sid: string, coreId: string | null, oracleLvl: number) {
   savingSession.value = true
   try {
     const res = await fetchWithAuth(`/api/game/timeout`, {
@@ -1197,7 +1220,6 @@ function resetTypingBoard() {
 function startTimeoutPhase() {
   gameState.value = 'timeout'
   timeoutCountdown.value = TIMEOUT_PHASE_DURATION
-  timeoutPhaseStart = Date.now()
   inputRef.value?.blur()
 
   timeoutCountdown.value = 15
@@ -1224,7 +1246,7 @@ function startTimeoutPhase() {
   }
 }
 
-function handleUpgradeSelected(newCoreId: string) {
+function handleUpgradeSelected(_newCoreId: string) {
   // When upgrade is selected, restart match for the next round
   restartMatch()
 }
@@ -1293,6 +1315,15 @@ function goHome() {
   router.push('/home')
 }
 
+async function debugSkipRound() {
+  menuOpen.value = false
+  if (matchStore.isFinalRound()) {
+    startTimeoutPhase()
+  } else {
+    await restartMatch()
+  }
+}
+
 async function abandonCurrentSession() {
   if (!sessionId.value || gameState.value === 'timeout') return
   try {
@@ -1339,6 +1370,9 @@ onMounted(async () => {
     await createSession()
   } else {
     sessionId.value = gameStore.sessionId
+  }
+  if (isPandoraMode.value) {
+    await fetchPandoraPool()
   }
   await fetchBatch()
   await loadQuestion()

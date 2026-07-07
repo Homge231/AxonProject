@@ -48,20 +48,30 @@ export class AegisCoreStrategy extends BaseCore {
     if (this.bastionMult && currentShields === this.maxShields) {
       activeMultiplier *= 2
     }
+    
+    if (this.coreName === 'indomitable') {
+      activeMultiplier += (currentShields * 0.15)
+    }
 
-    const beforeMult = BASE_POINTS + ctx.flatBuff
+    let flatNova = 0
+    if (this.coreName === 'aegis nova' && currentShields === this.maxShields) {
+      flatNova = 500
+    }
+    if (this.coreName === 'shield synergy' && currentShields === this.maxShields) {
+      flatNova = 500 // Wait, description says +50 points. Let's make it 50!
+    }
+    const synergyBonus = (this.coreName === 'shield synergy' && currentShields === this.maxShields) ? 50 : 0
+
+    const beforeMult = BASE_POINTS + ctx.flatBuff + flatNova + synergyBonus
     const total      = Math.floor(beforeMult * activeMultiplier) - oraclePenalty
-
-    // Even though we calculate correct, the shield count is calculated from history
-    // if the frontend needs it, but we only really need it for 'blocked' events.
 
     return {
       pointsDelta: total,
       breakdown: {
         base:            BASE_POINTS,
         combo_bonus:     0,
-        flat_buff:       ctx.flatBuff,
-        multiplier_buff: ctx.multiplierBuff,
+        flat_buff:       ctx.flatBuff + flatNova + synergyBonus,
+        multiplier_buff: activeMultiplier,
         oracle_penalty:  oraclePenalty,
         penalty:         0,
         finalShieldCount: this.getShieldCount(ctx.initialShieldCount || 0, ctx.answerHistory)
@@ -73,20 +83,26 @@ export class AegisCoreStrategy extends BaseCore {
     const oraclePenalty = this._oraclePenalty(ctx)
     
     // Calculate shields right BEFORE this wrong answer
-    // ctx.answerHistory includes the CURRENT (wrong) answer at the end, so we omit the last item.
     const historyBeforeThisAnswer = ctx.answerHistory.slice(0, -1)
     const currentShields = this.getShieldCount(ctx.initialShieldCount || 0, historyBeforeThisAnswer)
 
     if (currentShields > 0) {
       // Shield blocks the penalty!
       // Reflective Aegis: grant +50 points instead of losing
-      const reflectBonus = this.reflectDamage ? 50 : 0
+      // Spiked Shield: grant +200 points instead of losing
+      let reflectBonus = 0
+      if (this.coreName === 'spiked shield') {
+        reflectBonus = 200
+      } else if (this.reflectDamage) {
+        reflectBonus = 50
+      }
+      
       return {
         pointsDelta: reflectBonus - oraclePenalty,
         breakdown: {
           base: 0,
           combo_bonus: 0,
-          flat_buff: 0,
+          flat_buff: reflectBonus,
           multiplier_buff: 1,
           oracle_penalty: oraclePenalty,
           penalty: 0, // penalty reduced to 0

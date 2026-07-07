@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/authMiddleware'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { runScoring } from '../cores/index'
+import { getUpgradesForCore, getCoreFamily } from '../cores/families'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -240,24 +241,37 @@ export async function getCores(req: AuthRequest, res: Response): Promise<void> {
     } else {
       // Round 2 or 3
       const prevCore = allCores.find(c => c.id === previous_core_id)
-      let synergyCore: any = null
-
-      if (prevCore && prevCore.upgrades_to) {
-        synergyCore = allCores.find(c => c.id === prevCore.upgrades_to)
+      if (prevCore) {
+        const targetTier = (prevCore.tier === 1) ? 2 : (prevCore.tier === 2 ? 3 : 2)
+        const upgradeNames = getUpgradesForCore(prevCore.name, targetTier)
+        
+        if (upgradeNames.length > 0) {
+          const synergyPool = allCores.filter(c => 
+            upgradeNames.some(name => name.toLowerCase() === c.name.toLowerCase())
+          )
+          
+          if (synergyPool.length > 0) {
+            const shuffledPool = [...synergyPool].sort(() => 0.5 - Math.random())
+            offeredCores = shuffledPool.slice(0, 3)
+          }
+        }
       }
 
-      // Fill remaining slots (we want 2 cores total)
-      // Slot 2 should be a random Tier 1 core (different from prevCore to avoid duplicates if possible)
-      let pool = tier1Cores.filter(c => c.id !== previous_core_id)
-      if (pool.length === 0) pool = tier1Cores // Fallback
-      
-      const shuffledPool = [...pool].sort(() => 0.5 - Math.random())
-      
-      if (synergyCore) {
-        offeredCores = [synergyCore, shuffledPool[0]]
-      } else {
-        // Fallback if no synergy upgrade found (e.g. they had a T3 core somehow)
-        offeredCores = [shuffledPool[0], shuffledPool[1]]
+      // Fallback if no synergy upgrades found
+      if (offeredCores.length === 0) {
+        const prevCore = allCores.find(c => c.id === previous_core_id)
+        let synergyCore: any = null
+        if (prevCore && prevCore.upgrades_to) {
+          synergyCore = allCores.find(c => c.id === prevCore.upgrades_to)
+        }
+        let pool = tier1Cores.filter(c => c.id !== previous_core_id)
+        if (pool.length === 0) pool = tier1Cores
+        const shuffledPool = [...pool].sort(() => 0.5 - Math.random())
+        if (synergyCore) {
+          offeredCores = [synergyCore, shuffledPool[0]]
+        } else {
+          offeredCores = [shuffledPool[0], shuffledPool[1]]
+        }
       }
     }
 
@@ -462,8 +476,12 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 7. Fetch answer history for pattern-based cores ───────────────────────
     let answerHistory: boolean[] = []
     const histNames = ['mission core', 'bounty hunter', 'exodia', 'aegis shield', 'reflective aegis', 'bastion of light']
+    const family = getCoreFamily(core.name) || ''
+    const secFamily = secondaryCore ? (getCoreFamily(secondaryCore.name) || '') : ''
+    const histFamilies = ['aegis', 'mission', 'combo']
     const needsHistory = histNames.includes(core.name.toLowerCase()) || 
-                         (secondaryCore && histNames.includes(secondaryCore.name.toLowerCase()))
+                         histFamilies.includes(family) ||
+                         (secondaryCore && (histNames.includes(secondaryCore.name.toLowerCase()) || histFamilies.includes(secFamily)))
     
     if (needsHistory) {
       const { data: historyData } = await supabase
@@ -490,7 +508,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       flatBuff:          core.flat_buff,
       multiplierBuff:    core.multiplier_buff,
       answerHistory,
-      initialShieldCount: 0
+      initialShieldCount: (core.name.toLowerCase() === 'shield battery' || (secondaryCore && secondaryCore.name.toLowerCase() === 'shield battery')) ? 2 : 0
     }
 
     let { pointsDelta, breakdown } = runScoring(isCorrect, core.name, ctx)

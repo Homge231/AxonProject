@@ -23,26 +23,24 @@
         </div>
       </div>
 
-      <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative px-4">
+      <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative px-4">
         
-        <div v-for="(core, index) in randomCores" :key="core.id" 
+        <div v-for="core in randomCores" :key="core.id" 
              class="group relative"
              @click="submitCore(core)">
              
           <!-- Tier Border Effect -->
           <div class="absolute -inset-1 rounded-[2rem] blur-md transition-all duration-300"
                :class="{
-                 'bg-gradient-to-br from-gray-300 via-gray-100 to-gray-400 opacity-60 group-hover:opacity-100': (matchStore.currentRound + 1) === 2 && index === 0,
-                 'bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 opacity-60 group-hover:opacity-100': (matchStore.currentRound + 1) === 3 && index === 0,
-                 'bg-white/20 opacity-0 group-hover:opacity-100': index !== 0
+                 'bg-gradient-to-br from-gray-300 via-gray-100 to-gray-400 opacity-60 group-hover:opacity-100': (matchStore.currentRound + 1) === 2,
+                 'bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 opacity-60 group-hover:opacity-100': (matchStore.currentRound + 1) === 3
                }">
           </div>
 
           <div class="relative h-full flex flex-col items-center text-center p-8 md:p-10 rounded-3xl cursor-pointer transition-all duration-300 transform group-hover:-translate-y-2 group-hover:scale-[1.02] bg-white/5 backdrop-blur-xl border-2"
                :class="{
-                 'border-gray-300/50': (matchStore.currentRound + 1) === 2 && index === 0,
-                 'border-purple-400/50': (matchStore.currentRound + 1) === 3 && index === 0,
-                 'border-white/10': index !== 0
+                 'border-gray-300/50': (matchStore.currentRound + 1) === 2,
+                 'border-purple-400/50': (matchStore.currentRound + 1) === 3
                }">
             
             <div class="text-5xl md:text-6xl mb-6 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300">
@@ -51,8 +49,8 @@
             
             <h2 class="text-2xl md:text-3xl font-black text-white tracking-widest uppercase mb-4 drop-shadow-md"
                 :class="{
-                  'text-gray-100': (matchStore.currentRound + 1) === 2 && index === 0,
-                  'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400': (matchStore.currentRound + 1) === 3 && index === 0
+                  'text-gray-100': (matchStore.currentRound + 1) === 2,
+                  'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400': (matchStore.currentRound + 1) === 3
                 }">
               {{ core.name }}
             </h2>
@@ -84,32 +82,95 @@ const ICON_MAP: Record<string, string> = {
   'balanced core': '⚖️',
   'harmony core': '☯️',
   'perfect harmony': '💠',
+  'equilibrium': '⚖️',
+  'yin yang': '☯️',
+  'steady pace': '🚶',
+  'zenith core': '🏔️',
+  'nirvana': '🧘',
+  'cosmic balance': '🪐',
   'combo core': '🔥',
   'radiant combo': '☄️',
   'prismatic combo': '💥',
+  'combo shield': '🧱',
+  'combo time': '⏱️',
+  'combo multiplier': '📈',
+  'golden combo': '🏆',
+  'chain lightning': '⚡',
+  'combo mastery': '🎓',
   'oracle core': '👁️',
   'clairvoyance': '🔭',
   'omniscience': '🌟',
+  'third eye': '🧿',
+  'future sight': '🔮',
+  'divine guidance': '👼',
+  'mind reader': '🧠',
+  'predictive strike': '⚔️',
+  'cosmic wisdom': '🌌',
   'speedster': '⚡',
   'time warp': '⏳',
   'chronobreak': '🛑',
+  'speed shield': '🛡️',
+  'mach speed': '🚀',
+  'overdrive': '⚙️',
+  'time freeze': '❄️',
+  'warp speed': '🌌',
+  'grand prix': '🏎️',
   'mission core': '🎯',
   'bounty hunter': '💰',
   'exodia': '👑',
+  'daily quest': '📜',
+  'shield mission': '🛡️',
+  'time mission': '⏳',
+  'bounty overlord': '💰',
+  'apex predator': '🦁',
+  'mission specialist': '🕵️',
   'power core': '💪',
   'overclock core': '🔋',
   'supernova core': '🌋',
+  'hypercharge': '⚡',
+  'power surge': '💥',
+  'brute force': '🔨',
+  'gigawatt core': '🔌',
+  'desperado': '🤠',
+  'absolute power': '👑',
   'aegis shield': '🛡️',
   'reflective aegis': '🪞',
   'bastion of light': '🏰',
+  'shield battery': '🔋',
+  'fortress aegis': '🏰',
+  'shield synergy': '⛓️',
+  'spiked shield': '🔱',
+  'indomitable': '✊',
+  'aegis nova': '💥',
   "pandora's box": '🎲',
   "trickster's glass": '🃏',
-  "chaos theory": '🌀'
+  "chaos theory": '🌀',
+  'chaos prism': '💎',
+  'warp reality': '🕳️',
+  "pandora's curse": '☠️',
+  'butterfly effect': '🦋',
+  "pandora's wrath": '👺',
+  'cosmic entropy': '🌪️',
+  'combo focus': '🎯',
+  'super combo': '💥',
+  'speed demon': '😈',
+  'sonic boom': '💥',
+  'oracle blessing': '😇',
+  'divine eye': '👁️',
+  'swift mission': '🏃',
+  'mission master': '🏆',
+  'shield burst': '💥',
+  'guardian angel': '👼',
+  'harmony wave': '🌊',
+  'universal harmony': '🌌',
+  'overload': '⚡',
+  'supermassive core': '🕳️',
+  "pandora's mirror": '🪞',
+  'reality collapse': '🌌'
 }
 
 type CoreOption = { id: string; name: string; description: string; icon: string; flat_buff: number; multiplier_buff: number }
 
-const supportCores = ref<CoreOption[]>([])
 const randomCores = ref<CoreOption[]>([])
 const loading = ref(true)
 const errorMsg = ref('')
