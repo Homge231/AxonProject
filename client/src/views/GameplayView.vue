@@ -1,10 +1,16 @@
 <template>
-  <div class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
+  <div
+    class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
     :class="{ 'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting }"
     @click="refocusInput">
-    <PhaserBackground :image-url="currentBgImage" />
+    <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
+      :class="{ 'opacity-0': isBgFading, 'opacity-100': !isBgFading }" />
+
+    <div class="absolute inset-0 bg-black/45 pointer-events-none z-0"></div>
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
+
+
 
     <!-- Floating points popup container -->
     <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
@@ -32,7 +38,8 @@
 
     <!-- Persistent Pandora Mode Indicator -->
     <div v-if="isPandoraMode" class="absolute top-[90px] left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
-      <div class="px-5 py-2 rounded-full bg-purple-900/60 border border-purple-500/50 backdrop-blur-md text-xs font-bold text-purple-200 uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
+      <div
+        class="px-5 py-2 rounded-full bg-purple-900/60 border border-purple-500/50 backdrop-blur-md text-xs font-bold text-purple-200 uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
         <span class="animate-pulse">Pandora's Box:</span>
         <span class="text-white drop-shadow-md text-sm">{{ gameStore.activeCoreName }}</span>
       </div>
@@ -41,9 +48,11 @@
     <!-- Flashy Announcement -->
     <transition name="fade">
       <div v-if="shiftAnnouncement" class="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-        <h2 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-widest drop-shadow-[0_0_20px_rgba(168,85,247,0.8)] uppercase animate-pulse text-center leading-tight">
+        <h2
+          class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-widest drop-shadow-[0_0_20px_rgba(168,85,247,0.8)] uppercase animate-pulse text-center leading-tight">
           PANDORA SHIFTS TO<br>
-          <span class="text-white text-5xl md:text-6xl drop-shadow-[0_0_25px_rgba(255,255,255,1)] block mt-2">{{ shiftAnnouncement }}</span>
+          <span class="text-white text-5xl md:text-6xl drop-shadow-[0_0_25px_rgba(255,255,255,1)] block mt-2">{{
+            shiftAnnouncement }}</span>
         </h2>
       </div>
     </transition>
@@ -120,6 +129,13 @@
           ]">
             {{ String(timeLeft).padStart(2, '0') }}
           </span>
+          <!-- Round Indicator Preparation -->
+          <div class="absolute -bottom-6 w-full text-center whitespace-nowrap">
+            <span
+              class="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-darkBlue/50 px-2 py-0.5 rounded-full border border-white/5">
+              Round {{ matchStore.currentRound }}/{{ matchStore.maxRounds }}
+            </span>
+          </div>
         </div>
       </div>
     </header>
@@ -156,14 +172,9 @@
               </div>
 
               <!-- Oracle: Click-to-reveal hint button (only for Oracle core) -->
-              <OracleCoreIndicator
-                v-if="isOracleCore && gameState === 'playing'"
-                :oracle-reveal-level="oracleRevealLevel"
-                :oracle-max-allowed="oracleMaxAllowed"
-                :oracle-hint-text="oracleHintText"
-                :oracle-next-cost="oracleNextCost"
-                @use-hint="useOracleHint"
-              />
+              <OracleCoreIndicator v-if="isOracleCore && gameState === 'playing'"
+                :oracle-reveal-level="oracleRevealLevel" :oracle-max-allowed="oracleMaxAllowed"
+                :oracle-hint-text="oracleHintText" :oracle-next-cost="oracleNextCost" @use-hint="useOracleHint" />
 
               <div
                 class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300"
@@ -239,9 +250,14 @@
                   }">
                   <span v-if="gameState === 'correct'">★ Brilliant! +{{ pointsEarned }} pts</span>
                   <span v-else>
-                    ✗ Correct word:
-                    <span class="uppercase text-white ml-1 font-black">{{ currentQuestion.correct_word }}</span>
-                    <span class="ml-3 text-hexred font-black">-{{ pointsDeducted }} pts</span>
+                    <span v-if="currentQuestion.correct_word">
+                      ✗ Correct word:
+                      <span class="uppercase text-white ml-1 font-black">{{ currentQuestion.correct_word }}</span>
+                      <span class="ml-3 text-hexred font-black">-{{ pointsDeducted }} pts</span>
+                    </span>
+                    <span v-else class="animate-pulse">
+                      ✗ Checking...
+                    </span>
                   </span>
                 </div>
               </transition>
@@ -278,10 +294,7 @@
     <!-- Mission Tracker UI: only visible when active core is the Mission Core -->
     <transition name="fade-scale">
       <div v-if="isMissionCore" class="absolute top-28 left-8 z-20 flex transition-all duration-300">
-        <MissionCoreIndicator 
-          :mission-progress="missionProgress" 
-          :show-celebration="showMissionCelebration" 
-        />
+        <MissionCoreIndicator :mission-progress="missionProgress" :show-celebration="showMissionCelebration" />
       </div>
     </transition>
 
@@ -341,7 +354,8 @@
           </div>
 
           <!-- Recap Table -->
-          <div v-if="matchHistory.length > 0" class="mb-6 bg-black/40 border border-white/10 rounded-xl overflow-hidden flex-1 overflow-y-auto custom-scrollbar">
+          <div v-if="matchHistory.length > 0"
+            class="mb-6 bg-black/40 border border-white/10 rounded-xl overflow-hidden flex-1 overflow-y-auto custom-scrollbar">
             <table class="w-full text-left text-sm text-gray-300">
               <thead class="bg-black/60 text-xs uppercase text-gray-500 sticky top-0 z-10">
                 <tr>
@@ -351,7 +365,8 @@
               </thead>
               <tbody class="divide-y divide-white/5">
                 <tr v-for="(item, idx) in matchHistory" :key="idx" class="hover:bg-white/5 transition-colors">
-                  <td class="px-6 py-3 font-medium uppercase tracking-wider" :class="item.isCorrect ? 'text-green bg-green/10' : 'text-hexred bg-hexred/10'">
+                  <td class="px-6 py-3 font-medium uppercase tracking-wider"
+                    :class="item.isCorrect ? 'text-green bg-green/10' : 'text-hexred bg-hexred/10'">
                     {{ item.submitted }}
                   </td>
                   <td class="px-6 py-3 font-medium text-white uppercase tracking-wider border-l border-white/5">
@@ -362,7 +377,8 @@
             </table>
           </div>
 
-          <p v-if="savingSession" class="text-xs text-gray-400 uppercase tracking-widest mb-6 animate-pulse flex-shrink-0">
+          <p v-if="savingSession"
+            class="text-xs text-gray-400 uppercase tracking-widest mb-6 animate-pulse flex-shrink-0">
             <span class="inline-block w-2 h-2 bg-lightBlue rounded-full mr-2"></span>
             Syncing results...
           </p>
@@ -370,12 +386,23 @@
           <div class="flex gap-4 justify-center flex-shrink-0 mt-auto">
             <button @click="router.push('/home')"
               class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors rounded-lg">Home</button>
-            <button @click="restartMatch"
+
+            <!-- Next Round (Rounds 1 & 2) -->
+            <button v-if="!matchStore.isFinalRound()" @click="restartMatch"
               class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-orange to-hexred overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow">
               <div
                 class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
               </div>
               <span class="relative z-10 text-white">Next Round ({{ timeoutCountdown }}s)</span>
+            </button>
+
+            <!-- Play Again (Round 3) -->
+            <button v-else @click="playAgain"
+              class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-shadow">
+              <div
+                class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+              </div>
+              <span class="relative z-10 text-white">Play Again</span>
             </button>
           </div>
         </div>
@@ -423,11 +450,13 @@ import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
 import { useGameStore } from '../stores/gameStore'
+import { useMatchStore } from '../stores/matchStore'
 import { getCoreModule } from '../game/cores/registry'
 import { fetchWithAuth } from '../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
+const matchStore = useMatchStore()
 
 interface QuestionPayload {
   id: string
@@ -488,7 +517,34 @@ const isTimeoutPhase = ref(false)
 const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 let timeoutPhaseFrame: number | null = null
 let timeoutPhaseStart = 0
-const currentBgImage = ref('/bg-daily-life.png')
+// Khai báo danh sách ảnh tương ứng với 3 chủ đề mới của bạn
+const TOPIC_BACKGROUNDS: Record<string, string> = {
+  'Daily Life & Habits': '/assets/images/bg-daily-life.jpg',
+  'Food & Cafe Culture': '/assets/images/bg-food-cafe.jpg',
+  'Travel & Vacations': '/assets/images/bg-travel.jpg'
+}
+
+const DEFAULT_BG = '/assets/images/bg-daily-life.jpg'
+
+// Biến reactive lưu trữ link ảnh nền đang hiển thị
+const currentBgImage = ref(DEFAULT_BG)
+const isBgFading = ref(false)
+
+watch(() => currentQuestion.value?.topic, (newTopic, oldTopic) => {
+  if (newTopic && newTopic !== oldTopic) {
+    isBgFading.value = true
+
+    setTimeout(() => {
+      currentBgImage.value = TOPIC_BACKGROUNDS[newTopic] || DEFAULT_BG
+
+      setTimeout(() => {
+        isBgFading.value = false
+      }, 100)
+    }, 500)
+  }
+}, { immediate: true })
+
+
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
@@ -538,9 +594,9 @@ async function fetchPandoraPool() {
 function triggerShapeshift() {
   if (pandoraPool.value.length === 0) return
   isShifting.value = true
-  
+
   const randomCore = pandoraPool.value[Math.floor(Math.random() * pandoraPool.value.length)]
-  
+
   setTimeout(() => {
     activeCoreId.value = randomCore.id
     gameStore.activeCoreName = randomCore.name
@@ -707,7 +763,7 @@ async function createSession() {
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     if (data.theme) currentBgImage.value = getBackgroundImage(data.theme)
     if (data.aegis_shield_count !== undefined) aegisShieldCount.value = data.aegis_shield_count
-    
+
     if (activeCoreId.value === PANDORA_CORE_ID) {
       isPandoraMode.value = true
       fetchPandoraPool()
@@ -717,16 +773,15 @@ async function createSession() {
   }
 }
 
-async function callTimeoutEndpoint() {
-  if (!sessionId.value) return
+async function callTimeoutEndpoint(sid: string, coreId: string, oracleLvl: number) {
   savingSession.value = true
   try {
     const res = await fetchWithAuth(`/api/game/timeout`, {
       method: 'POST',
       body: JSON.stringify({
-        session_id: sessionId.value,
-        active_core_id: activeCoreId.value,
-        oracle_reveal_level: oracleRevealLevel.value
+        session_id: sid,
+        active_core_id: coreId,
+        oracle_reveal_level: oracleLvl
       })
     })
     if (res.ok) {
@@ -848,10 +903,10 @@ async function skipQuestion() {
         })
         if (res.ok) {
           const data = await res.json()
-          
+
           score.value = data.new_total_score ?? score.value
           questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
-          
+
           // Only show popup if it's the latest question to avoid spam, but ALWAYS update history
           if (mySeq === submitAnswerSeq) {
             if (data.breakdown?.shield_blocked) {
@@ -860,7 +915,7 @@ async function skipQuestion() {
               spawnPointPopup(data.points_deducted, 'wrong')
             }
           }
-            
+
           matchHistory.value.push({
             submitted: '(Skipped)',
             correct: data.correct_word || '???',
@@ -937,91 +992,121 @@ async function checkAnswer() {
     triggerScoreFlash('wrong')
   }
 
-  setTimeout(() => {
-    if (gameState.value !== 'timeout') loadQuestion()
-  }, FEEDBACK_MS)
+  if (!sessionId.value || !questionId) {
+    setTimeout(() => {
+      if (gameState.value !== 'timeout') loadQuestion()
+    }, FEEDBACK_MS)
+    return
+  }
 
-  if (!sessionId.value || !questionId) return
   const timeTaken = Date.now() - questionStartTime.value
   const mySeq = ++submitAnswerSeq
 
-    ; (async () => {
-      try {
-        const res = await fetchWithAuth(`/api/game/submit-answer`, {
-          method: 'POST',
-          body: JSON.stringify({
-            session_id: sessionId.value,
-            question_id: questionId,
-            answer: typed,
-            current_combo: capturedCombo,
-            active_core_id: activeCoreId.value,
-            oracle_reveal_level: capturedOracleLevel,
-            time_taken: timeTaken
-          })
+  // If local check is correct, transition to next question immediately after FEEDBACK_MS
+  if (isCorrectLocal) {
+    setTimeout(() => {
+      if (gameState.value !== 'timeout' && mySeq === submitAnswerSeq) loadQuestion()
+    }, FEEDBACK_MS)
+  }
+
+  ; (async () => {
+    try {
+      const res = await fetchWithAuth(`/api/game/submit-answer`, {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: sessionId.value,
+          question_id: questionId,
+          answer: typed,
+          current_combo: capturedCombo,
+          active_core_id: activeCoreId.value,
+          oracle_reveal_level: capturedOracleLevel,
+          time_taken: timeTaken
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+
+        const startScore = score.value
+        const targetScore = data.new_total_score ?? score.value
+        const duration = 500
+        const startTime = performance.now()
+
+        function animateScore(currentTime: number) {
+          const elapsed = currentTime - startTime
+          const progress = Math.min(elapsed / duration, 1)
+          score.value = Math.floor(startScore + (targetScore - startScore) * progress)
+          if (progress < 1) requestAnimationFrame(animateScore)
+        }
+        requestAnimationFrame(animateScore)
+
+        questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
+        pointsEarned.value = data.points_earned ?? pointsEarned.value
+        pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
+
+        if (mySeq === submitAnswerSeq && !data.correct && data.correct_word) {
+          currentQuestion.value.correct_word = data.correct_word
+        }
+
+        matchHistory.value.push({
+          submitted: typed,
+          correct: data.correct ? typed : (data.correct_word || '???'),
+          isCorrect: data.correct
         })
 
-        if (res.ok) {
-          const data = await res.json()
-
-          const startScore = score.value
-          const targetScore = data.new_total_score ?? score.value
-          const duration = 500
-          const startTime = performance.now()
-
-          function animateScore(currentTime: number) {
-            const elapsed = currentTime - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            score.value = Math.floor(startScore + (targetScore - startScore) * progress)
-            if (progress < 1) requestAnimationFrame(animateScore)
-          }
-          requestAnimationFrame(animateScore)
-
-          questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
-          pointsEarned.value = data.points_earned ?? pointsEarned.value
-          pointsDeducted.value = data.points_deducted ?? pointsDeducted.value
-
-          if (mySeq === submitAnswerSeq && !data.correct && data.correct_word) {
-            currentQuestion.value.correct_word = data.correct_word
+        if (mySeq === submitAnswerSeq) {
+          if (data.breakdown?.mission_completed === 1) {
+            showMissionCelebration.value = true
+            setTimeout(() => {
+              showMissionCelebration.value = false
+              missionProgress.value = 0
+            }, 2000)
           }
 
-          matchHistory.value.push({
-            submitted: typed,
-            correct: data.correct ? typed : (data.correct_word || '???'),
-            isCorrect: data.correct
-          })
-
-          if (mySeq === submitAnswerSeq) {
-            if (data.breakdown?.mission_completed === 1) {
-              showMissionCelebration.value = true
-              setTimeout(() => {
-                showMissionCelebration.value = false
-                missionProgress.value = 0
-              }, 2000)
-            }
-
-            if (data.breakdown?.shield_blocked) {
-              spawnPointPopup(0, 'shield_blocked')
-            } else if (data.correct && isSpeedsterCore.value) {
-              spawnPointPopup(data.points_earned, 'speedster')
-            } else {
-              const popupType: 'correct' | 'wrong' | 'typo' = data.correct
-                ? 'correct'
-                : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
-              spawnPointPopup(
-                data.correct ? data.points_earned : data.points_deducted,
-                popupType
-              )
-            }
+          if (data.breakdown?.shield_blocked) {
+            spawnPointPopup(0, 'shield_blocked')
+          } else if (data.correct && isSpeedsterCore.value) {
+            spawnPointPopup(data.points_earned, 'speedster')
+          } else {
+            const popupType: 'correct' | 'wrong' | 'typo' = data.correct
+              ? 'correct'
+              : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+            spawnPointPopup(
+              data.correct ? data.points_earned : data.points_deducted,
+              popupType
+            )
           }
-
         }
-      } catch (err) {
-        console.error('Failed to sync answer:', err)
+
       }
-    })()
+    } catch (err) {
+      console.error('Failed to sync answer:', err)
+    } finally {
+      if (!isCorrectLocal && mySeq === submitAnswerSeq) {
+        setTimeout(() => {
+          if (gameState.value !== 'timeout') loadQuestion()
+        }, FEEDBACK_MS)
+      }
+    }
+  })()
 }
 
-
+function resetTypingBoard() {
+  gameState.value = 'timeout'
+  matchHistory.value = []
+  stopTimeoutInterval()
+  // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
+  timeLeft.value = MATCH_DURATION
+  timerProgressPercent.value = 100
+  typedLetters.value = []
+  currentCombo.value = 0
+  missionProgress.value = 0
+  aegisShieldCount.value = 0
+  scoreFlash.value = null
+  pointPopups.value = []
+  oracleRevealLevel.value = 0
+  questionQueue.value = []
+}
 
 // ── US-24: Start 15-second timeout phase countdown ───────────────────────
 // Called when the 1m30s gameplay timer reaches 0.
@@ -1032,17 +1117,11 @@ function startTimeoutPhase() {
   timeoutCountdown.value = TIMEOUT_PHASE_DURATION
   timeoutPhaseStart = Date.now()
   inputRef.value?.blur()
-  
+
   timeoutCountdown.value = 15
   stopTimeoutInterval()
-  timeoutInterval = setInterval(() => {
-    timeoutCountdown.value--
-    if (timeoutCountdown.value <= 0) {
-      stopTimeoutInterval()
-      restartMatch()
-    }
-  }, 1000)
 
+<<<<<<< HEAD
   // Small delay to let any in-flight submit-answer requests write to DB first
   // before timeout endpoint reads session.score, preventing a race condition.
   setTimeout(() => callTimeoutEndpoint(), 300)
@@ -1073,15 +1152,66 @@ function triggerTimeout() {
   // Stop typing input and begin the 15-second timeout phase.
   // After the countdown the 'timeout' overlay is revealed.
   startTimeoutPhase()
+=======
+  // Only auto-countdown for rounds 1 and 2
+  if (!matchStore.isFinalRound()) {
+    timeoutInterval = setInterval(() => {
+      timeoutCountdown.value--
+      if (timeoutCountdown.value <= 0) {
+        stopTimeoutInterval()
+        restartMatch()
+      }
+    }, 1000)
+  }
+
+  // Only tell the backend the session is over if it's the final round!
+  // Otherwise, we keep the session alive to retain score and anti-cheat tracking.
+  const sid = sessionId.value
+  const coreId = activeCoreId.value
+  const oracleLvl = oracleRevealLevel.value
+
+  if (sid && matchStore.isFinalRound()) {
+    setTimeout(() => callTimeoutEndpoint(sid, coreId, oracleLvl), 300)
+  }
+>>>>>>> 1e4c9728b70692d158a89fc9966619701578d079
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
 async function restartMatch() {
-  gameState.value = 'timeout'
-  matchHistory.value = []
-  stopTimeoutInterval()
+  if (matchStore.isFinalRound()) {
+    // If they manually click "Next Round" somehow, route to home as fallback
+    router.push('/home')
+    return
+  }
+
+  // Next Round
+  matchStore.incrementRound()
+  resetTypingBoard()
+
+  // Transition to loading and fetch next batch
+  // Note: We DO NOT call createSession() here so the backend continues the same session!
+  gameState.value = 'loading'
+  await fetchBatch(3)
+
+  if (questionQueue.value.length > 0) {
+    await loadQuestion()
+    gameState.value = 'playing'
+    startMatchTimer()
+  } else {
+    // Fallback if fetch completely failed
+    gameState.value = 'playing'
+    startMatchTimer()
+  }
+}
+
+async function playAgain() {
+  // Reset Match Store completely
+  matchStore.resetMatch()
+
+  // Hard reset of global state
   score.value = 0
   questionsAnswered.value = 0
+<<<<<<< HEAD
   timeLeft.value = MATCH_DURATION
   timerProgressPercent.value = 100
   questionQueue.value = []
@@ -1092,11 +1222,25 @@ async function restartMatch() {
   isTimeoutPhase.value = false
   timeoutCountdown.value = TIMEOUT_PHASE_DURATION
   stopTimeoutPhaseTimer()
+=======
+
+  resetTypingBoard()
+
+>>>>>>> 1e4c9728b70692d158a89fc9966619701578d079
   stopMatchTimer()
-  await createSession()
-  await fetchBatch()
-  await loadQuestion()
-  startMatchTimer()
+  await createSession() // Important: create a new session for the new match!
+
+  gameState.value = 'loading'
+  await fetchBatch(3)
+
+  if (questionQueue.value.length > 0) {
+    await loadQuestion()
+    gameState.value = 'playing'
+    startMatchTimer()
+  } else {
+    gameState.value = 'playing'
+    startMatchTimer()
+  }
 }
 
 function goHome() {
@@ -1184,9 +1328,11 @@ onUnmounted(() => {
 .mission-celebration-enter-active {
   animation: missionCelebIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
 .mission-celebration-leave-active {
   transition: opacity 0.3s ease-in;
 }
+
 .mission-celebration-enter-from,
 .mission-celebration-leave-to {
   opacity: 0;
@@ -1198,6 +1344,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: scale(0.5);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -1561,9 +1708,11 @@ onUnmounted(() => {
 .timeout-phase-banner-enter-active {
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
 .timeout-phase-banner-leave-active {
   transition: opacity 0.25s ease;
 }
+
 .timeout-phase-banner-enter-from,
 .timeout-phase-banner-leave-to {
   opacity: 0;
@@ -1576,9 +1725,12 @@ onUnmounted(() => {
 }
 
 @keyframes phaseRingPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(230, 57, 70, 0.4), 0 0 40px rgba(230, 57, 70, 0.2);
   }
+
   50% {
     box-shadow: 0 0 40px rgba(230, 57, 70, 0.8), 0 0 80px rgba(230, 57, 70, 0.4), 0 0 120px rgba(230, 57, 70, 0.15);
   }
@@ -1590,9 +1742,17 @@ onUnmounted(() => {
 }
 
 @keyframes phaseTick {
-  0% { transform: scale(1); }
-  5% { transform: scale(1.15); }
-  15% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  5% {
+    transform: scale(1.15);
+  }
+
+  15% {
+    transform: scale(1);
+  }
 }
 
 .timeout-overlay-enter-active,
