@@ -1,4 +1,4 @@
-import { BaseCore, ScoringContext, ScoringResult } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
 
 export class BalancedCoreStrategy extends BaseCore {
   readonly coreName: string
@@ -8,6 +8,24 @@ export class BalancedCoreStrategy extends BaseCore {
     super()
     this.coreName = name.toLowerCase()
     this.immuneToPenalty = immuneToPenalty
+  }
+
+  calculateCorrect(ctx: ScoringContext): ScoringResult {
+    const oraclePenalty = this._oraclePenalty(ctx)
+    const beforeMult    = BASE_POINTS + ctx.flatBuff
+    const total         = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
+
+    return {
+      pointsDelta: total,
+      breakdown: {
+        base:           BASE_POINTS,
+        combo_bonus:    0,
+        flat_buff:      ctx.flatBuff,
+        multiplier_buff: ctx.multiplierBuff,
+        oracle_penalty: oraclePenalty,
+        penalty:        0,
+      },
+    }
   }
 
   calculateWrong(ctx: ScoringContext): ScoringResult {
