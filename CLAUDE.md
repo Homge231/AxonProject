@@ -54,8 +54,7 @@ Every "Support Core" (game power-up) has unique scoring logic and unique visual 
 2. Register it in `server/src/cores/index.ts` — one line: `'your core name': new YourCoreStrategy()`
 
 **Frontend:**
-1. Get the UUID from Supabase after creating the `cores` row
-2. Add one entry to `client/src/game/cores/registry.ts`
+1. Add one entry to `client/src/game/cores/registry.ts` keyed by the lowercase name.
 
 `gameController.ts` and `GameplayView.vue` **never need to be touched** for new cores.
 
@@ -103,14 +102,16 @@ interface CoreModule {
 
 ### Frontend — Registered cores (`client/src/game/cores/registry.ts`)
 
-| UUID | Core name | Special effects |
+Keyed by the core `name` (lowercase). UUIDs are no longer hardcoded on the frontend.
+
+| Key | Core name | Special effects |
 |---|---|---|
-| `00000000-0000-0000-0000-000000000001` | No Core | None |
-| `00000000-0000-0000-0000-000000000005` | Combo Core | None |
-| `00000000-0000-0000-0000-000000000006` | Oracle Core | None (Oracle uses its own template block) |
-| `00000000-0000-0000-0000-000000000007` | Speedster | Cyan timer glow, wind-streak overlay, "+N FAST!" popup |
-| `00000000-0000-0000-0000-000000000010` | Pandora's Box | Purple pulse timer, shifts core every 25s, "PANDORA SHIFTS TO X" text |
-| `00000000-0000-0000-0000-000000000011` | Aegis Shield | Cyan timer, glowing 3-orb stack tracker UI, "BLOCKED!" popup on miss |
+| `'no core'` | No Core | None |
+| `'combo core'` | Combo Core | None |
+| `'oracle core'` | Oracle Core | None (Oracle uses its own template block) |
+| `'speedster'` | Speedster | Cyan timer glow, wind-streak overlay, "+N FAST!" popup |
+| `'pandora\'s box'` | Pandora's Box | Purple pulse timer, shifts core every 25s, "PANDORA SHIFTS TO X" text |
+| `'aegis shield'` | Aegis Shield | Cyan timer, glowing 3-orb stack tracker UI, "BLOCKED!" popup on miss |
 
 ### How GameplayView.vue uses the registry
 
@@ -262,12 +263,12 @@ Timer hits 0 →
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | Seeded stable UUIDs |
-| name | text | Matched by BE registry (case-insensitive) |
+| name | text | Matched by BE/FE registries (case-insensitive) |
 | description | text | nullable |
 | flat_buff | int | Default 0 |
 | multiplier_buff | float | Default 1.0 |
-
-> **Speedster** is not yet in the DB. Once inserted, copy its UUID to `registry.ts`.
+| tier | int | Default 1. (1: Base, 2: Upgrade, 3: Final) |
+| upgrades_to | uuid | Self-referencing FK for evolution tree |
 
 ### `game_sessions`
 | Column | Notes |

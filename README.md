@@ -97,15 +97,17 @@ Each match is **90 seconds**. Players receive an infinite stream of fill-in-the-
 
 Cores are the central mechanic that differentiates player strategies. Each core is a self-contained module — adding a new core requires creating one file on the backend and adding one entry on the frontend.
 
-| Core | Scoring behaviour | UUID |
-|---|---|---|
-| **No Core** | `floor( (100 + flat_buff) × multiplier_buff )` | `00000000-0000-0000-0000-000000000001` |
-| **Combo Core** | Same as No Core + up to +100 bonus for answer streaks | `00000000-0000-0000-0000-000000000005` |
-| **Oracle Core** | Lets you reveal letter hints at −10/−30/−60 point cost per level | `00000000-0000-0000-0000-000000000006` |
-| **Speedster** | `100 + max(0, floor( (1 − timeTaken/8s) × 150 ))` — faster = more points | `00000000-0000-0000-0000-000000000007` |
-| **Mission Core**| Answer 5 correctly in a row for a flat bonus of +500 points | *(Custom UUID via SQL script)* |
-| **Pandora's Box**| Periodically shapeshifts into another core entirely during the match! | `00000000-0000-0000-0000-000000000010` |
-| **Aegis Shield**| Answering correctly builds a shield (max 3) that deflects wrong answer penalties | `00000000-0000-0000-0000-000000000011` |
+| Core | Scoring behaviour |
+|---|---|
+| **No Core** | `floor( (100 + flat_buff) × multiplier_buff )` |
+| **Combo Core** | Same as No Core + up to +100 bonus for answer streaks |
+| **Oracle Core** | Lets you reveal letter hints at −10/−30/−60 point cost per level |
+| **Speedster** | `100 + max(0, floor( (1 − timeTaken/8s) × 150 ))` — faster = more points |
+| **Mission Core**| Answer 5 correctly in a row for a flat bonus of +500 points |
+| **Pandora's Box**| Periodically shapeshifts into another core entirely during the match! |
+| **Aegis Shield**| Answering correctly builds a shield (max 3) that deflects wrong answer penalties |
+
+At the end of Round 1 and Round 2, players can upgrade their Base Core to Tier 2 and Tier 3 evolutions (e.g. Speedster → Time Warp → Chronobreak) via a Core Upgrade interface.
 
 The chosen core is **locked at session creation** and validated on every answer submission (anti-cheat: mismatches return 403).
 
@@ -192,10 +194,10 @@ const CORE_REGISTRY = {
 
 ### Frontend — 1 step
 
-Add one entry to `client/src/game/cores/registry.ts`:
+Add one entry to `client/src/game/cores/registry.ts` (keyed by name):
 
 ```ts
-'<supabase-uuid>': {
+'your core name': {
   id: '<supabase-uuid>',
   name: 'Your Core Name',
   timerColor: 'text-purple-400',
@@ -216,10 +218,12 @@ Add one entry to `client/src/game/cores/registry.ts`:
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | Stable seeded UUIDs |
-| name | text | Matched by BE strategy registry |
+| name | text | Matched by BE/FE strategy registries |
 | description | text | Shown on CoreSelectionView |
 | flat_buff | int | Added before multiplier (default 0) |
 | multiplier_buff | float | Score multiplier (default 1.0) |
+| tier | int | 1: Base, 2: Upgrade, 3: Final |
+| upgrades_to | uuid | Self-referencing FK for evolution tree |
 
 ### `game_sessions`
 | Column | Notes |
