@@ -1382,30 +1382,25 @@ async function restartMatch() {
 
 async function playAgain() {
   if (gameState.value === 'loading') return
-  // Reset Match Store completely
-  matchStore.resetMatch()
-  matchHistory.value = []
-
+  
   // Hard reset of global state
   score.value = 0
   questionsAnswered.value = 0
-
+  currentCombo.value = 0
+  aegisShieldCount.value = 0
+  missionProgress.value = 0
+  
+  matchStore.resetMatch()
+  matchHistory.value = []
+  gameStore.coreHistory = []
+  gameStore.activeCoreId = null
+  gameStore.activeCoreName = null
+  
+  stopMatchTimer()
   resetTypingBoard()
 
-  stopMatchTimer()
-  await createSession() // Important: create a new session for the new match!
-
-  gameState.value = 'loading'
-  await fetchBatch()
-
-  if (questionQueue.value.length > 0) {
-    await loadQuestion()
-    gameState.value = 'playing'
-    startMatchTimer()
-  } else {
-    gameState.value = 'playing'
-    startMatchTimer()
-  }
+  // Route back to core selection for a completely fresh match
+  router.push('/core')
 }
 
 function goHome() {
