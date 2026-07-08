@@ -32,7 +32,7 @@
             left: `${popup.x}px`,
             top: `${popup.y}px`
           }">
-          {{ popup.value >= 0 && popup.type !== 'shield_blocked' ? '+' : '' }}{{ popup.type === 'shield_blocked' ? 'BLOCKED' : popup.value }}
+          {{ popup.type === 'shield_blocked' ? 'BLOCKED' : (popup.type === 'wrong' || popup.type === 'typo' ? `-${Math.abs(popup.value)}` : `+${Math.abs(popup.value)}`) }}
           <span v-if="popup.type === 'speedster'" class="ml-1">FAST!</span>
         </div>
       </transition-group>
