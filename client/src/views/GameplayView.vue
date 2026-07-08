@@ -133,7 +133,7 @@
           </span>
           <span class="text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-sm"
                 :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
-            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + core.name : core.name }}
+            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + gameStore.activeCoreName : core.name }}
           </span>
         </div>
       </div>
@@ -585,10 +585,10 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
-const isAegisMode = computed(() => gameStore.coreHistory.some(c => checkAegisCore(c.name)))
+const isAegisMode = computed(() => effectiveCores.value.some(c => checkAegisCore(c.name)))
 const maxShields = computed(() => {
-  if (gameStore.coreHistory.length === 0) return checkMaxShields(gameStore.activeCoreName)
-  return Math.max(...gameStore.coreHistory.map(c => checkMaxShields(c.name)))
+  if (effectiveCores.value.length === 0) return checkMaxShields(gameStore.activeCoreName)
+  return Math.max(...effectiveCores.value.map(c => checkMaxShields(c.name)))
 })
 // Aegis Shield State
 const aegisShieldCount = ref(0)
@@ -598,28 +598,40 @@ const showMissionCelebration = ref(false)
 // active_core_id / name sourced from gameStore (set in CoreSelectionView)
 const currentPandoraCoreId = ref<string | null>(null)
 const activeCoreId = computed<string | null>(() => {
-  if (isPandoraMode.value && currentPandoraCoreId.value) {
-    return currentPandoraCoreId.value
-  }
   return gameStore.activeCoreId
 })
 
 // ── Core registry ──────────────────────────────────────────────────────────
-// Single source of truth for all core-specific UI behaviour.
-// To add a new core: edit client/src/game/cores/registry.ts only.
-const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreName))
+const effectiveCores = computed(() => {
+  const cores = [...gameStore.coreHistory]
+  if (isPandoraMode.value && currentPandoraCoreId.value) {
+    const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
+    if (shiftedCore) {
+      cores.push(shiftedCore)
+    }
+  }
+  return cores
+})
 
-// Convenience booleans — still used by Oracle-specific template logic
-const isComboCore = computed(() => gameStore.coreHistory.some(c => checkComboCore(c.name)))
-const isOracleCore = computed(() => gameStore.coreHistory.some(c => checkOracleCore(c.name)))
-const isSpeedsterCore = computed(() => gameStore.coreHistory.some(c => checkSpeedsterCore(c.name)))
-const isMissionCore = computed(() => gameStore.coreHistory.some(c => checkMissionCore(c.name)))
-const isTimeWarp = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'time warp'))
-const isChronobreak = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'chronobreak'))
-const isOmniscience = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'omniscience'))
-const isPrismaticCombo = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'prismatic combo'))
-const isExodia = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'exodia'))
-const isSpeedDemon = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'speed demon'))
+const activeCoreModule = computed(() => {
+  if (isPandoraMode.value && currentPandoraCoreId.value) {
+    const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
+    if (shiftedCore) return getCoreModule(shiftedCore.name)
+  }
+  return getCoreModule(gameStore.activeCoreName)
+})
+
+// Convenience booleans
+const isComboCore = computed(() => effectiveCores.value.some(c => checkComboCore(c.name)))
+const isOracleCore = computed(() => effectiveCores.value.some(c => checkOracleCore(c.name)))
+const isSpeedsterCore = computed(() => effectiveCores.value.some(c => checkSpeedsterCore(c.name)))
+const isMissionCore = computed(() => effectiveCores.value.some(c => checkMissionCore(c.name)))
+const isTimeWarp = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'time warp'))
+const isChronobreak = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'chronobreak'))
+const isOmniscience = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'omniscience'))
+const isPrismaticCombo = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'prismatic combo'))
+const isExodia = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'exodia'))
+const isSpeedDemon = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'speed demon'))
 
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
 const basePandoraCoreName = computed(() => {
@@ -693,7 +705,6 @@ function triggerShapeshift() {
 
   setTimeout(() => {
     currentPandoraCoreId.value = randomCore.id
-    gameStore.activeCoreName = randomCore.name
     shiftAnnouncement.value = randomCore.name
     isShifting.value = false
 
@@ -1006,7 +1017,7 @@ async function skipQuestion() {
   gameState.value = 'wrong'
   currentCombo.value = 0
   if (isMissionCore.value) {
-    const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
+    const isShieldMission = effectiveCores.value.some(c => c.name.toLowerCase() === 'shield mission')
     if (isShieldMission && aegisShieldCount.value > 0) {
       // Streak is protected by active shield
     } else {
@@ -1033,6 +1044,7 @@ async function skipQuestion() {
             answer: '',            // empty = full skip
             current_combo: capturedCombo,
             active_core_id: activeCoreId.value,
+            secondary_core_id: isPandoraMode.value ? currentPandoraCoreId.value : undefined,
             core_history_names: gameStore.coreHistory.map(c => c.name),
             oracle_reveal_level: capturedOracleLevel,
             time_taken: timeTaken
@@ -1135,7 +1147,7 @@ async function checkAnswer() {
     }
 
     if (isMissionCore.value) {
-      const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
+      const isShieldMission = effectiveCores.value.some(c => c.name.toLowerCase() === 'shield mission')
       const targetStreak = isShieldMission ? 3 : 5
       missionProgress.value = (missionProgress.value + 1)
       if (missionProgress.value === targetStreak) {
@@ -1159,7 +1171,7 @@ async function checkAnswer() {
     gameState.value = 'wrong'
     currentCombo.value = 0
     if (isMissionCore.value) {
-      const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
+      const isShieldMission = effectiveCores.value.some(c => c.name.toLowerCase() === 'shield mission')
       if (isShieldMission && aegisShieldCount.value > 0) {
         // Streak is protected by active shield
       } else {
@@ -1203,6 +1215,7 @@ async function checkAnswer() {
           answer: typed,
           current_combo: capturedCombo,
           active_core_id: activeCoreId.value,
+          secondary_core_id: isPandoraMode.value ? currentPandoraCoreId.value : undefined,
           core_history_names: gameStore.coreHistory.map(c => c.name),
           core_history: gameStore.coreHistory.map(c => c.id),
           oracle_reveal_level: capturedOracleLevel,
