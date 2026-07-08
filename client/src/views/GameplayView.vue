@@ -580,8 +580,11 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
-const isAegisMode = computed(() => checkAegisCore(gameStore.activeCoreName))
-const maxShields = computed(() => checkMaxShields(gameStore.activeCoreName))
+const isAegisMode = computed(() => gameStore.coreHistory.some(c => checkAegisCore(c.name)))
+const maxShields = computed(() => {
+  if (gameStore.coreHistory.length === 0) return checkMaxShields(gameStore.activeCoreName)
+  return Math.max(...gameStore.coreHistory.map(c => checkMaxShields(c.name)))
+})
 // Aegis Shield State
 const aegisShieldCount = ref(0)
 const isShattering = ref(false)
@@ -602,16 +605,16 @@ const activeCoreId = computed<string | null>(() => {
 const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreName))
 
 // Convenience booleans — still used by Oracle-specific template logic
-const isComboCore = computed(() => checkComboCore(gameStore.activeCoreName))
-const isOracleCore = computed(() => checkOracleCore(gameStore.activeCoreName))
-const isSpeedsterCore = computed(() => checkSpeedsterCore(gameStore.activeCoreName))
-const isMissionCore = computed(() => checkMissionCore(gameStore.activeCoreName))
-const isTimeWarp = computed(() => gameStore.activeCoreName?.toLowerCase() === 'time warp')
-const isChronobreak = computed(() => gameStore.activeCoreName?.toLowerCase() === 'chronobreak')
-const isOmniscience = computed(() => gameStore.activeCoreName?.toLowerCase() === 'omniscience')
-const isPrismaticCombo = computed(() => gameStore.activeCoreName?.toLowerCase() === 'prismatic combo')
-const isExodia = computed(() => gameStore.activeCoreName?.toLowerCase() === 'exodia')
-const isSpeedDemon = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speed demon')
+const isComboCore = computed(() => gameStore.coreHistory.some(c => checkComboCore(c.name)))
+const isOracleCore = computed(() => gameStore.coreHistory.some(c => checkOracleCore(c.name)))
+const isSpeedsterCore = computed(() => gameStore.coreHistory.some(c => checkSpeedsterCore(c.name)))
+const isMissionCore = computed(() => gameStore.coreHistory.some(c => checkMissionCore(c.name)))
+const isTimeWarp = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'time warp'))
+const isChronobreak = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'chronobreak'))
+const isOmniscience = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'omniscience'))
+const isPrismaticCombo = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'prismatic combo'))
+const isExodia = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'exodia'))
+const isSpeedDemon = computed(() => gameStore.coreHistory.some(c => c.name.toLowerCase() === 'speed demon'))
 
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
 const basePandoraCoreName = computed(() => {
@@ -998,7 +1001,7 @@ async function skipQuestion() {
   gameState.value = 'wrong'
   currentCombo.value = 0
   if (isMissionCore.value) {
-    const isShieldMission = gameStore.activeCoreName?.toLowerCase() === 'shield mission'
+    const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
     if (isShieldMission && aegisShieldCount.value > 0) {
       // Streak is protected by active shield
     } else {
@@ -1126,7 +1129,7 @@ async function checkAnswer() {
     }
 
     if (isMissionCore.value) {
-      const isShieldMission = gameStore.activeCoreName?.toLowerCase() === 'shield mission'
+      const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
       const targetStreak = isShieldMission ? 3 : 5
       missionProgress.value = (missionProgress.value + 1)
       if (missionProgress.value === targetStreak) {
@@ -1150,7 +1153,7 @@ async function checkAnswer() {
     gameState.value = 'wrong'
     currentCombo.value = 0
     if (isMissionCore.value) {
-      const isShieldMission = gameStore.activeCoreName?.toLowerCase() === 'shield mission'
+      const isShieldMission = gameStore.coreHistory.some(c => c.name.toLowerCase() === 'shield mission')
       if (isShieldMission && aegisShieldCount.value > 0) {
         // Streak is protected by active shield
       } else {
