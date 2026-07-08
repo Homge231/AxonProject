@@ -120,15 +120,22 @@
 
       </div>
 
-      <!-- Active Core Display Badge in Center -->
-      <div v-if="gameStore.activeCoreName" class="hidden md:flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 border border-white/5 shadow-md backdrop-blur-md">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-          {{ isPandoraMode ? basePandoraCoreName : 'Active Core' }}
-        </span>
-        <span class="text-xs font-black uppercase tracking-widest transition-all duration-300"
-              :class="[activeCoreModule.timerColor || 'text-white', activeCoreModule.timerClass || '']">
-          {{ isPandoraMode ? 'Shifted: ' + gameStore.activeCoreName : gameStore.activeCoreName }}
-        </span>
+      <!-- Active Core History Badges in Center -->
+      <div v-if="gameStore.coreHistory.length > 0" class="hidden md:flex flex-row items-center gap-2">
+        <div v-for="(core, index) in gameStore.coreHistory" :key="core.id" 
+             class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
+             :class="[
+               index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
+             ]">
+          <span class="text-[8px] font-bold uppercase tracking-wider mb-0.5"
+                :class="[index === gameStore.coreHistory.length - 1 ? 'text-gray-300' : 'text-gray-500']">
+            {{ index === gameStore.coreHistory.length - 1 && isPandoraMode ? basePandoraCoreName : `Round ${index + 1}` }}
+          </span>
+          <span class="text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-sm"
+                :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
+            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + core.name : core.name }}
+          </span>
+        </div>
       </div>
 
       <div class="flex items-center gap-8">

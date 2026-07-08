@@ -317,6 +317,7 @@ async function submitCore(core: CoreOption) {
 
   gameStore.activeCoreId = core.id
   gameStore.activeCoreName = core.name
+  gameStore.coreHistory = [{ id: core.id, name: core.name, icon: core.icon }]
 
   await createSession(core.id)
 

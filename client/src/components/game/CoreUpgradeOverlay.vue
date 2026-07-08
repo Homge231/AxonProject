@@ -274,6 +274,7 @@ async function submitCore(core: CoreOption) {
   // But wait! Chaos Theory is a Tier 3 Pandora core. R3 has no R4 upgrade, so we don't need to select further.
   gameStore.activeCoreId = core.id
   gameStore.activeCoreName = core.name
+  gameStore.coreHistory.push({ id: core.id, name: core.name, icon: core.icon })
 
   await updateSessionCore(core.id)
   emit('selected', core.id)
