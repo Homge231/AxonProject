@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 
 const props = defineProps<{
   targetId: string
@@ -30,6 +30,33 @@ const calculatePosition = () => {
   
   isVisible.value = false
 }
+
+const popoverStyle = computed(() => {
+  if (!targetRect.value) return {}
+  const rect = targetRect.value
+  
+  let top = 'auto'
+  let bottom = 'auto'
+  let left = 'auto'
+  let transform = 'none'
+
+  const p = props.placement || 'bottom'
+
+  if (p === 'bottom') {
+    top = `${rect.bottom + 25}px`
+  } else if (p === 'top') {
+    bottom = `${window.innerHeight - rect.top + 25}px`
+  } else {
+    top = `${rect.top + rect.height / 2}px`
+  }
+
+  if (p === 'bottom' || p === 'top' || p === 'center') {
+    left = `${rect.left + (rect.width / 2)}px`
+    transform = 'translateX(-50%)'
+  }
+
+  return { top, bottom, left, transform }
+})
 
 onMounted(() => {
   calculatePosition()
@@ -80,12 +107,7 @@ watch(() => props.targetId, () => {
       <!-- Popover Box -->
       <div 
         class="absolute flex flex-col gap-3 bg-gray-900 border border-white/20 p-5 rounded-xl shadow-2xl max-w-sm z-[101]"
-        :style="{
-          top: placement === 'bottom' ? `${targetRect.bottom + 25}px` : (placement === 'top' ? 'auto' : `${targetRect.top + targetRect.height/2}px`),
-          bottom: placement === 'top' ? `${window.innerHeight - targetRect.top + 25}px` : 'auto',
-          left: (placement === 'bottom' || placement === 'top' || placement === 'center') ? `${targetRect.left + (targetRect.width / 2)}px` : 'auto',
-          transform: (placement === 'bottom' || placement === 'top' || placement === 'center') ? 'translateX(-50%)' : 'none'
-        }"
+        :style="popoverStyle"
       >
         <p class="text-white text-sm font-medium leading-relaxed">
           {{ message }}
