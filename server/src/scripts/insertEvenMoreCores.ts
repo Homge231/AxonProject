@@ -33,8 +33,11 @@ const extraCores = [
   { name: 'Supermassive Core', description: 'Grants an extreme 4.5x multiplier, but mistakes deduct 200 points.', flat_buff: 0, multiplier_buff: 4.5, tier: 3 },
 
   // ── 8. Pandora ──
-  { name: "Pandora's Mirror", description: 'Shifts every 20 seconds. Fuses T2 cores and reflects mistakes as positive points.', flat_buff: 0, multiplier_buff: 1.0, tier: 2 },
-  { name: 'Reality Collapse', description: 'Shifts every 10 seconds. Fuses two random T3 cores with a random extra effect.', flat_buff: 0, multiplier_buff: 1.0, tier: 3 }
+  { name: "Pandora's Mirror", description: 'Shape-shifts every 20 seconds into Main (Tier 1) cores. Reflects mistakes as positive points.', flat_buff: 0, multiplier_buff: 1.0, tier: 2 },
+  { name: "Pandora's Curse", description: 'Shape-shifts every 20 seconds into Main (Tier 1) cores. Curses incorrect answers to deal triple damage.', flat_buff: 0, multiplier_buff: 1.0, tier: 2 },
+  { name: 'Cosmic Entropy', description: 'Shape-shifts every 15 seconds into Main (Tier 1) cores. Randomly adds a 1.5x multiplier.', flat_buff: 0, multiplier_buff: 1.5, tier: 3 },
+  { name: 'Reality Collapse', description: 'Shape-shifts every 15 seconds into Main (Tier 1) cores. Points earned are randomly doubled or halved.', flat_buff: 0, multiplier_buff: 1.0, tier: 3 },
+  { name: "Pandora's Wrath", description: 'Shape-shifts every 15 seconds into Main (Tier 1) cores. Destroys incorrect answers, granting flat +200 points instead of losing points.', flat_buff: 200, multiplier_buff: 1.0, tier: 3 }
 ]
 
 async function run() {
