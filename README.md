@@ -265,3 +265,4 @@ Stores every submitted answer with `points_delta` for audit.
 - **Avatar storage** — Uploads to Supabase Storage bucket `avatars`.
 - ELO updates after match are not yet wired (Sprint 3).
 - Colyseus multiplayer rooms not yet active (Sprint 3).
+- **Cleanup / Remove test skip gameplay button** — The settings dropdown menu in `client/src/views/GameplayView.vue` currently contains a yellow "Skip to Core Selection" button (which calls the `skipGameplay()` function) for testing purposes. This button and its function must be deleted before moving to production.
