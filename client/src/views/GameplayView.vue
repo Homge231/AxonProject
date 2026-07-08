@@ -113,6 +113,15 @@
 
       </div>
 
+      <!-- Active Core Display Badge in Center -->
+      <div v-if="gameStore.activeCoreName" class="hidden md:flex items-center gap-3 px-4 py-2 rounded-lg bg-black/20 border border-white/5 shadow-md backdrop-blur-md">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Active Core</span>
+        <span class="text-xs font-black uppercase tracking-widest transition-all duration-300"
+              :class="[activeCoreModule.timerColor || 'text-white', activeCoreModule.timerClass || '']">
+          {{ gameStore.activeCoreName }}
+        </span>
+      </div>
+
       <div class="flex items-center gap-8">
         <div
           class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">

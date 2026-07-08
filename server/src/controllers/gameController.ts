@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { AuthRequest } from '../middleware/authMiddleware'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
-import { runScoring } from '../cores/index'
+import { runScoring, getCoreStrategy } from '../cores/index'
 import { getUpgradesForCore, getCoreFamily } from '../cores/families'
 
 const supabase = createClient(
@@ -474,13 +474,15 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     // ── 7. Fetch answer history for pattern-based cores ───────────────────────
     let answerHistory: boolean[] = []
-    const histNames = ['mission core', 'bounty hunter', 'exodia', 'aegis shield', 'reflective aegis', 'bastion of light']
-    const family = getCoreFamily(core.name) || ''
-    const secFamily = secondaryCore ? (getCoreFamily(secondaryCore.name) || '') : ''
-    const histFamilies = ['aegis', 'mission', 'combo']
-    const needsHistory = histNames.includes(core.name.toLowerCase()) || 
-                         histFamilies.includes(family) ||
-                         (secondaryCore && (histNames.includes(secondaryCore.name.toLowerCase()) || histFamilies.includes(secFamily)))
+    const primaryStrategy = getCoreStrategy(core.name)
+    const secondaryStrategy = secondaryCore ? getCoreStrategy(secondaryCore.name) : null
+
+    const needsHistory = (primaryStrategy.constructor.name === 'AegisCoreStrategy') ||
+                         (primaryStrategy.constructor.name === 'MissionCoreStrategy') ||
+                         (secondaryStrategy && (
+                           secondaryStrategy.constructor.name === 'AegisCoreStrategy' ||
+                           secondaryStrategy.constructor.name === 'MissionCoreStrategy'
+                         ))
     
     if (needsHistory) {
       const { data: historyData } = await supabase
