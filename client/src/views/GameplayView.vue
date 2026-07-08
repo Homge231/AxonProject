@@ -41,26 +41,12 @@
       </transition-group>
     </div>
 
-    <!-- Persistent Pandora Mode Indicator -->
-    <div v-if="isPandoraMode" class="absolute top-[90px] left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
-      <div
-        class="px-5 py-2 rounded-full bg-purple-900/60 border border-purple-500/50 backdrop-blur-md text-xs font-bold text-purple-200 uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
-        <span class="animate-pulse">Pandora's Box:</span>
-        <span class="text-white drop-shadow-md text-sm">{{ gameStore.activeCoreName }}</span>
-      </div>
-    </div>
-
-    <!-- Flashy Announcement -->
-    <transition name="fade">
-      <div v-if="shiftAnnouncement" class="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-        <h2
-          class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-widest drop-shadow-[0_0_20px_rgba(168,85,247,0.8)] uppercase animate-pulse text-center leading-tight">
-          PANDORA SHIFTS TO<br>
-          <span class="text-white text-5xl md:text-6xl drop-shadow-[0_0_25px_rgba(255,255,255,1)] block mt-2">{{
-            shiftAnnouncement }}</span>
-        </h2>
-      </div>
-    </transition>
+    <!-- Pandora overlays: shift announcements and indicator -->
+    <PandoraOverlay
+      :is-pandora-mode="isPandoraMode"
+      :active-core-name="gameStore.activeCoreName"
+      :shift-announcement="shiftAnnouncement"
+    />
 
     <header
       class="relative z-30 flex justify-between items-center px-8 lg:px-12 py-5 bg-darkNavy/30 backdrop-blur-md border-b border-white/10 shadow-lg">
@@ -225,18 +211,11 @@
               <!-- Letter slots (anchor for popup position) -->
               <div class="w-full flex flex-col items-center gap-3 overflow-hidden" ref="letterSlotsRef">
 
-                <!-- Speedster wind streak overlay -->
-                <transition name="wind-fade">
-                  <div v-if="activeCoreModule.showWindOverlay && gameState === 'playing'"
-                    class="speedster-wind-container" aria-hidden="true">
-                    <span class="wind-streak ws1"></span>
-                    <span class="wind-streak ws2"></span>
-                    <span class="wind-streak ws3"></span>
-                    <span class="wind-streak ws4"></span>
-                    <span class="wind-streak ws5"></span>
-                    <span class="wind-streak ws6"></span>
-                  </div>
-                </transition>
+                <!-- Speedster wind streak overlay component -->
+                <SpeedsterOverlay
+                  :active="!!activeCoreModule.showWindOverlay"
+                  :playing="gameState === 'playing'"
+                />
 
                 <div
                   class="flex flex-nowrap items-center justify-center gap-2 md:gap-3 w-full overflow-x-auto pb-3 scrollbar-none"
@@ -465,9 +444,20 @@ import CoreUpgradeOverlay from '../components/game/CoreUpgradeOverlay.vue'
 import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
+import SpeedsterOverlay from '../components/game/SpeedsterOverlay.vue'
+import PandoraOverlay from '../components/game/PandoraOverlay.vue'
 import { useGameStore } from '../stores/gameStore'
 import { useMatchStore } from '../stores/matchStore'
-import { getCoreModule } from '../game/cores/registry'
+import {
+  getCoreModule,
+  isComboCore as checkComboCore,
+  isOracleCore as checkOracleCore,
+  isSpeedsterCore as checkSpeedsterCore,
+  isMissionCore as checkMissionCore,
+  isAegisCore as checkAegisCore,
+  isPandoraCore as checkPandoraCore,
+  getMaxShields as checkMaxShields
+} from '../game/cores/registry'
 import { fetchWithAuth } from '../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
@@ -552,32 +542,8 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
-const isAegisMode = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    'aegis shield',
-    'reflective aegis',
-    'bastion of light',
-    'shield battery',
-    'fortress aegis',
-    'shield synergy',
-    'spiked shield',
-    'indomitable',
-    'aegis nova',
-    'shield burst',
-    'guardian angel',
-    'combo shield',
-    'speed shield',
-    'shield mission'
-  ].includes(name)
-})
-const maxShields = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (name === 'bastion of light') return 5
-  if (name === 'shield battery') return 4
-  return 3
-})
+const isAegisMode = computed(() => checkAegisCore(gameStore.activeCoreName))
+const maxShields = computed(() => checkMaxShields(gameStore.activeCoreName))
 // Aegis Shield State
 const aegisShieldCount = ref(0)
 const isShattering = ref(false)
@@ -595,71 +561,10 @@ const activeCoreId = computed<string | null>({
 const activeCoreModule = computed(() => getCoreModule(gameStore.activeCoreName))
 
 // Convenience booleans — still used by Oracle-specific template logic
-const isComboCore = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    'combo core',
-    'radiant combo',
-    'prismatic combo',
-    'combo time',
-    'combo multiplier',
-    'golden combo',
-    'chain lightning',
-    'combo mastery',
-    'combo focus',
-    'super combo'
-  ].includes(name)
-})
-const isOracleCore = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    'oracle core',
-    'clairvoyance',
-    'omniscience',
-    'third eye',
-    'future sight',
-    'divine guidance',
-    'mind reader',
-    'predictive strike',
-    'cosmic wisdom',
-    'oracle blessing',
-    'divine eye'
-  ].includes(name)
-})
-const isSpeedsterCore = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    'speedster',
-    'time warp',
-    'chronobreak',
-    'mach speed',
-    'overdrive',
-    'time freeze',
-    'warp speed',
-    'grand prix',
-    'speed demon',
-    'sonic boom'
-  ].includes(name)
-})
-const isMissionCore = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    'mission core',
-    'bounty hunter',
-    'exodia',
-    'daily quest',
-    'time mission',
-    'bounty overlord',
-    'apex predator',
-    'mission specialist',
-    'swift mission',
-    'mission master'
-  ].includes(name)
-})
+const isComboCore = computed(() => checkComboCore(gameStore.activeCoreName))
+const isOracleCore = computed(() => checkOracleCore(gameStore.activeCoreName))
+const isSpeedsterCore = computed(() => checkSpeedsterCore(gameStore.activeCoreName))
+const isMissionCore = computed(() => checkMissionCore(gameStore.activeCoreName))
 const isTimeWarp = computed(() => gameStore.activeCoreName?.toLowerCase() === 'time warp')
 const isChronobreak = computed(() => gameStore.activeCoreName?.toLowerCase() === 'chronobreak')
 const isOmniscience = computed(() => gameStore.activeCoreName?.toLowerCase() === 'omniscience')
@@ -670,23 +575,7 @@ const isExodia = computed(() => gameStore.activeCoreName?.toLowerCase() === 'exo
 const isPandora = computed(() => gameStore.activeCoreName?.toLowerCase() === "pandora's box")
 const isTrickster = computed(() => gameStore.activeCoreName?.toLowerCase() === "trickster's glass")
 const isChaos = computed(() => gameStore.activeCoreName?.toLowerCase() === "chaos theory")
-const isPandoraMode = computed(() => {
-  const name = gameStore.activeCoreName?.toLowerCase()
-  if (!name) return false
-  return [
-    "pandora's box",
-    "trickster's glass",
-    "chaos theory",
-    'chaos prism',
-    'warp reality',
-    "pandora's curse",
-    'butterfly effect',
-    "pandora's wrath",
-    'cosmic entropy',
-    "pandora's mirror",
-    'reality collapse'
-  ].includes(name)
-})
+const isPandoraMode = computed(() => checkPandoraCore(gameStore.activeCoreName))
 
 const isShifting = ref(false)
 const shiftAnnouncement = ref('')
@@ -1686,109 +1575,14 @@ onUnmounted(() => {
   }
 }
 
-/* ── Speedster wind streaks ─────────────────────────────────────────────── */
-.speedster-wind-container {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  border-radius: inherit;
-}
 
-.wind-streak {
-  position: absolute;
-  left: -160px;
-  height: 2px;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.7), rgba(255, 255, 255, 0.9), transparent);
-  animation: windMove 0.9s linear infinite;
-  filter: blur(1px);
-  opacity: 0;
-}
-
-.ws1 {
-  top: 18%;
-  width: 160px;
-  animation-delay: 0s;
-  animation-duration: 0.75s;
-}
-
-.ws2 {
-  top: 35%;
-  width: 220px;
-  animation-delay: 0.15s;
-  animation-duration: 0.90s;
-}
-
-.ws3 {
-  top: 50%;
-  width: 140px;
-  animation-delay: 0.05s;
-  animation-duration: 0.65s;
-}
-
-.ws4 {
-  top: 62%;
-  width: 200px;
-  animation-delay: 0.30s;
-  animation-duration: 0.80s;
-}
-
-.ws5 {
-  top: 28%;
-  width: 100px;
-  animation-delay: 0.42s;
-  animation-duration: 0.70s;
-}
-
-.ws6 {
-  top: 75%;
-  width: 180px;
-  animation-delay: 0.22s;
-  animation-duration: 0.95s;
-}
-
-@keyframes windMove {
-  0% {
-    transform: translateX(0);
-    opacity: 0;
-  }
-
-  15% {
-    opacity: 0.9;
-  }
-
-  80% {
-    opacity: 0.6;
-  }
-
-  100% {
-    transform: translateX(calc(100vw + 260px));
-    opacity: 0;
-  }
-}
 
 .speedster-slots-glow {
   filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.35));
   transition: filter 0.3s ease;
 }
 
-.wind-fade-enter-active {
-  transition: opacity 0.4s ease;
-}
 
-.wind-fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.wind-fade-enter-from {
-  opacity: 0;
-}
-
-.wind-fade-leave-to {
-  opacity: 0;
-}
 
 .score-pop-correct {
   animation: scoreScaleCorrect 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

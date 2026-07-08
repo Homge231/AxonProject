@@ -345,4 +345,141 @@ export function getCoreName(name: string | null | undefined): string {
   return getCoreModule(name).name
 }
 
+/**
+ * Checks if the given core name belongs to the Combo Core family.
+ */
+export function isComboCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    'combo core',
+    'radiant combo',
+    'prismatic combo',
+    'combo time',
+    'combo multiplier',
+    'golden combo',
+    'chain lightning',
+    'combo mastery',
+    'combo focus',
+    'super combo'
+  ].includes(key)
+}
+
+/**
+ * Checks if the given core name belongs to the Oracle Core family.
+ */
+export function isOracleCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    'oracle core',
+    'clairvoyance',
+    'omniscience',
+    'third eye',
+    'future sight',
+    'divine guidance',
+    'mind reader',
+    'predictive strike',
+    'cosmic wisdom',
+    'oracle blessing',
+    'divine eye'
+  ].includes(key)
+}
+
+/**
+ * Checks if the given core name belongs to the Speedster family.
+ */
+export function isSpeedsterCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    'speedster',
+    'time warp',
+    'chronobreak',
+    'mach speed',
+    'overdrive',
+    'time freeze',
+    'warp speed',
+    'grand prix',
+    'speed demon',
+    'sonic boom'
+  ].includes(key)
+}
+
+/**
+ * Checks if the given core name belongs to the Mission Core family.
+ */
+export function isMissionCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    'mission core',
+    'bounty hunter',
+    'exodia',
+    'daily quest',
+    'time mission',
+    'bounty overlord',
+    'apex predator',
+    'mission specialist',
+    'swift mission',
+    'mission master'
+  ].includes(key)
+}
+
+/**
+ * Checks if the given core name belongs to the Aegis Shield family.
+ */
+export function isAegisCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    'aegis shield',
+    'reflective aegis',
+    'bastion of light',
+    'shield battery',
+    'fortress aegis',
+    'shield synergy',
+    'spiked shield',
+    'indomitable',
+    'aegis nova',
+    'shield burst',
+    'guardian angel',
+    'combo shield',
+    'speed shield',
+    'shield mission'
+  ].includes(key)
+}
+
+/**
+ * Checks if the given core name belongs to the Pandora's Box family.
+ */
+export function isPandoraCore(name: string | null | undefined): boolean {
+  if (!name) return false
+  const key = name.trim().toLowerCase()
+  return [
+    "pandora's box",
+    "trickster's glass",
+    "chaos theory",
+    'chaos prism',
+    'warp reality',
+    "pandora's curse",
+    'butterfly effect',
+    "pandora's wrath",
+    'cosmic entropy',
+    "pandora's mirror",
+    'reality collapse'
+  ].includes(key)
+}
+
+/**
+ * Returns the maximum shield count for the given Aegis-family core name.
+ */
+export function getMaxShields(name: string | null | undefined): number {
+  if (!name) return 3
+  const key = name.trim().toLowerCase()
+  if (key === 'bastion of light') return 5
+  if (key === 'shield battery') return 4
+  return 3
+}
+
 export type { CoreModule }
