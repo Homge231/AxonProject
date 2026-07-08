@@ -15,39 +15,31 @@ const emit = defineEmits<{
 const targetRect = ref<DOMRect | null>(null)
 const isVisible = ref(false)
 
-let retryCount = 0
-let retryTimer: ReturnType<typeof setTimeout> | null = null
+let checkInterval: ReturnType<typeof setInterval> | null = null
 
 const calculatePosition = () => {
   const el = document.getElementById(props.targetId)
   if (el) {
     const rect = el.getBoundingClientRect()
-    // Only accept it if it actually has physical dimensions on the screen
     if (rect.width > 0 && rect.height > 0) {
       targetRect.value = rect
       isVisible.value = true
-      retryCount = 0
       return
     }
   }
   
-  // If we reach here, it either doesn't exist or hasn't rendered size yet
   isVisible.value = false
-  if (retryCount < 20) {
-    retryCount++
-    retryTimer = setTimeout(calculatePosition, 250)
-  }
 }
 
 onMounted(() => {
-  // Add a slight delay to ensure DOM is fully rendered
-  setTimeout(calculatePosition, 300)
+  calculatePosition()
+  checkInterval = setInterval(calculatePosition, 500)
   window.addEventListener('resize', calculatePosition)
   window.addEventListener('scroll', calculatePosition, true)
 })
 
 onUnmounted(() => {
-  if (retryTimer) clearTimeout(retryTimer)
+  if (checkInterval) clearInterval(checkInterval)
   window.removeEventListener('resize', calculatePosition)
   window.removeEventListener('scroll', calculatePosition, true)
 })
