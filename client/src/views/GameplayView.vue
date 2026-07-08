@@ -579,6 +579,7 @@ const isChronobreak = computed(() => gameStore.activeCoreName?.toLowerCase() ===
 const isOmniscience = computed(() => gameStore.activeCoreName?.toLowerCase() === 'omniscience')
 const isPrismaticCombo = computed(() => gameStore.activeCoreName?.toLowerCase() === 'prismatic combo')
 const isExodia = computed(() => gameStore.activeCoreName?.toLowerCase() === 'exodia')
+const isSpeedDemon = computed(() => gameStore.activeCoreName?.toLowerCase() === 'speed demon')
 
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
 const isPandora = computed(() => gameStore.activeCoreName?.toLowerCase() === "pandora's box")
@@ -1066,6 +1067,7 @@ async function checkAnswer() {
   if (typedLetters.value.length < maxLen) return
 
   const typed = typedLetters.value.join('')
+  const elapsed = Date.now() - questionStartTime.value
 
   const questionId = currentQuestion.value.id
   const capturedOracleLevel = oracleRevealLevel.value
@@ -1081,6 +1083,9 @@ async function checkAnswer() {
     // Core specific time modifiers
     if (isTimeWarp.value) {
       addTime(2000)
+    }
+    if (isSpeedDemon.value && elapsed < 1500) {
+      addTime(3000)
     }
     if (isChronobreak.value && currentCombo.value > 0 && currentCombo.value % 3 === 0) {
       pauseTimerFor(3000)
@@ -1131,7 +1136,7 @@ async function checkAnswer() {
     return
   }
 
-  const timeTaken = Date.now() - questionStartTime.value
+  const timeTaken = elapsed
   const mySeq = ++submitAnswerSeq
 
   // If local check is correct, transition to next question immediately after feedback time
