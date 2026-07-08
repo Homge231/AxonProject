@@ -60,10 +60,9 @@
             <div
               class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
               :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
-              <svg class="w-12 h-12 transition-colors duration-500 drop-shadow-md" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="core.icon" />
-              </svg>
+              <span class="text-5xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300">
+                {{ core.icon }}
+              </span>
             </div>
             <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
               :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
@@ -134,11 +133,96 @@ interface CoreOption {
   multiplier_buff: number
   icon: string
 }
-const DEFAULT_ICON = 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
+const DEFAULT_ICON = '🔮'
 const ICON_MAP: Record<string, string> = {
-  'time freeze': 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-  'score multiplier': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
-  'hint reveal': 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
+  'balanced core': '⚖️',
+  'harmony core': '☯️',
+  'perfect harmony': '💠',
+  'equilibrium': '⚖️',
+  'yin yang': '☯️',
+  'steady pace': '🚶',
+  'zenith core': '🏔️',
+  'nirvana': '🧘',
+  'cosmic balance': '🪐',
+  'combo core': '🔥',
+  'radiant combo': '☄️',
+  'prismatic combo': '💥',
+  'combo shield': '🧱',
+  'combo time': '⏱️',
+  'combo multiplier': '📈',
+  'golden combo': '🏆',
+  'chain lightning': '⚡',
+  'combo mastery': '🎓',
+  'oracle core': '👁️',
+  'clairvoyance': '🔭',
+  'omniscience': '🌟',
+  'third eye': '🧿',
+  'future sight': '🔮',
+  'divine guidance': '👼',
+  'mind reader': '🧠',
+  'predictive strike': '⚔️',
+  'cosmic wisdom': '🌌',
+  'speedster': '⚡',
+  'time warp': '⏳',
+  'chronobreak': '🛑',
+  'speed shield': '🛡️',
+  'mach speed': '🚀',
+  'overdrive': '⚙️',
+  'time freeze': '❄️',
+  'warp speed': '🌌',
+  'grand prix': '🏎️',
+  'mission core': '🎯',
+  'bounty hunter': '💰',
+  'exodia': '👑',
+  'daily quest': '📜',
+  'shield mission': '🛡️',
+  'time mission': '⏳',
+  'bounty overlord': '💰',
+  'apex predator': '🦁',
+  'mission specialist': '🕵️',
+  'power core': '💪',
+  'overclock core': '🔋',
+  'supernova core': '🌋',
+  'hypercharge': '⚡',
+  'power surge': '💥',
+  'brute force': '🔨',
+  'gigawatt core': '🔌',
+  'desperado': '🤠',
+  'absolute power': '👑',
+  'aegis shield': '🛡️',
+  'reflective aegis': '🪞',
+  'bastion of light': '🏰',
+  'shield battery': '🔋',
+  'fortress aegis': '🏰',
+  'shield synergy': '⛓️',
+  'spiked shield': '🔱',
+  'indomitable': '✊',
+  'aegis nova': '💥',
+  "pandora's box": '🎲',
+  "trickster's glass": '🃏',
+  "chaos theory": '🌀',
+  'chaos prism': '💎',
+  'warp reality': '🕳️',
+  "pandora's curse": '☠️',
+  'butterfly effect': '🦋',
+  "pandora's wrath": '👺',
+  'cosmic entropy': '🌪️',
+  'combo focus': '🎯',
+  'super combo': '💥',
+  'speed demon': '😈',
+  'sonic boom': '💥',
+  'oracle blessing': '😇',
+  'divine eye': '👁️',
+  'swift mission': '🏃',
+  'mission master': '🏆',
+  'shield burst': '💥',
+  'guardian angel': '👼',
+  'harmony wave': '🌊',
+  'universal harmony': '🌌',
+  'overload': '⚡',
+  'supermassive core': '🕳️',
+  "pandora's mirror": '🪞',
+  'reality collapse': '🌌'
 }
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
