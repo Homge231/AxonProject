@@ -235,9 +235,8 @@ export async function getCores(req: AuthRequest, res: Response): Promise<void> {
     let offeredCores: any[] = []
 
     if (!previous_core_id) {
-      // Round 1: Return 2 random Tier 1 cores
-      const shuffled = [...tier1Cores].sort(() => 0.5 - Math.random())
-      offeredCores = shuffled.slice(0, 2)
+      // Round 1: Return all Tier 1 cores so the client can select and reroll
+      offeredCores = tier1Cores
     } else {
       // Round 2 or 3
       const prevCore = allCores.find(c => c.id === previous_core_id)
