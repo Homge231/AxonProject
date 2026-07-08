@@ -533,6 +533,45 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       breakdown.speed_bonus = (breakdown.speed_bonus || 0) + (secResult.breakdown.speed_bonus || 0)
     }
 
+    // ── Apply Pandora Base Passive Effects ────────────────────────────────────
+    if (isPandora) {
+      const baseName = sessionCoreName.toLowerCase()
+      
+      if (baseName === "pandora's curse") {
+        if (isCorrect) pointsDelta *= 2
+        else pointsDelta = -Math.abs(pointsDelta) * 2
+      } 
+      else if (baseName === "pandora's mirror") {
+        if (!isCorrect) {
+          // Reflects mistakes as positive points
+          pointsDelta = Math.abs(pointsDelta)
+        }
+      } 
+      else if (baseName === "chaos prism") {
+        if (isCorrect) pointsDelta += 50
+      } 
+      else if (baseName === "warp reality") {
+        if (isCorrect) pointsDelta = Math.floor(pointsDelta * 1.5)
+      } 
+      else if (baseName === "cosmic entropy") {
+        if (isCorrect) {
+          const mult = 1.0 + Math.random() * 4.0
+          pointsDelta = Math.floor(pointsDelta * mult)
+        }
+      } 
+      else if (baseName === "reality collapse") {
+        if (isCorrect) {
+          pointsDelta = Math.random() > 0.5 ? pointsDelta * 2 : Math.floor(pointsDelta / 2)
+        }
+      } 
+      else if (baseName === "pandora's wrath") {
+        if (!isCorrect) {
+          // Destroys incorrect answers, granting flat +200 points instead of losing points.
+          pointsDelta = 200
+        }
+      }
+    }
+
     // ── 9. Record the answer (unique per session+question) ────────────────────
     const { error: answerErr } = await supabase
       .from('game_session_answers')
