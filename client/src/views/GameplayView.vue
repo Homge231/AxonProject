@@ -105,6 +105,15 @@
               </svg>
               Quit Match
             </button>
+            <button v-if="!matchStore.isFinalRound() && (gameState === 'playing' || gameState === 'correct' || gameState === 'wrong')"
+              @click.stop="skipGameplay"
+              class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-yellow-400 hover:bg-yellow-400/10 transition-colors text-left border-t border-white/10">
+              <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              Skip to Core Selection
+            </button>
             <button v-if="isDev" @click.stop="debugSkipRound"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-yellow-400 hover:bg-yellow-400/10 transition-colors text-left border-t border-white/10">
               <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -341,12 +350,11 @@
           </h2>
           <div class="w-20 h-1 bg-gradient-to-r from-transparent via-hexred to-transparent mx-auto mb-10 mt-6"></div>
 
-          <div class="flex justify-center gap-12 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
+          <div class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
             <div>
               <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Final Score</p>
               <p class="text-4xl font-black text-orange drop-shadow-md">{{ score }}</p>
             </div>
-            <div class="w-px bg-white/10"></div>
             <div>
               <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Questions</p>
               <p class="text-4xl font-black text-lightBlue drop-shadow-md">{{ questionsAnswered }}</p>
@@ -390,12 +398,12 @@
             Syncing results...
           </p>
 
-          <div class="flex gap-4 justify-center flex-shrink-0 mt-auto">
+          <div class="flex gap-4 justify-center flex-shrink-0 mt-6">
             <button @click="router.push('/home')"
               class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors rounded-lg">Home</button>
 
             <!-- Next Round (Rounds 1 & 2) -->
-            <button v-if="!matchStore.isFinalRound()" @click="restartMatch"
+            <button v-if="!matchStore.isFinalRound()" @click="goToUpgrade"
               class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-orange to-hexred overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow">
               <div
                 class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -1249,6 +1257,13 @@ function startTimeoutPhase() {
   }
 }
 
+function goToUpgrade() {
+  stopTimeoutInterval()
+  if (!matchStore.isFinalRound()) {
+    gameState.value = 'upgrade'
+  }
+}
+
 function handleUpgradeSelected(_newCoreId: string) {
   // When upgrade is selected, restart match for the next round
   restartMatch()
@@ -1324,6 +1339,16 @@ async function debugSkipRound() {
     startTimeoutPhase()
   } else {
     await restartMatch()
+  }
+}
+
+function skipGameplay() {
+  menuOpen.value = false
+  stopMatchTimer()
+  if (!matchStore.isFinalRound()) {
+    gameState.value = 'upgrade'
+  } else {
+    startTimeoutPhase()
   }
 }
 
