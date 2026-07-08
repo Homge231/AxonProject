@@ -114,11 +114,13 @@
       </div>
 
       <!-- Active Core Display Badge in Center -->
-      <div v-if="gameStore.activeCoreName" class="hidden md:flex items-center gap-3 px-4 py-2 rounded-lg bg-black/20 border border-white/5 shadow-md backdrop-blur-md">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Active Core</span>
+      <div v-if="gameStore.activeCoreName" class="hidden md:flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 border border-white/5 shadow-md backdrop-blur-md">
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+          {{ isPandoraMode ? basePandoraCoreName : 'Active Core' }}
+        </span>
         <span class="text-xs font-black uppercase tracking-widest transition-all duration-300"
               :class="[activeCoreModule.timerColor || 'text-white', activeCoreModule.timerClass || '']">
-          {{ gameStore.activeCoreName }}
+          {{ isPandoraMode ? 'Shifted: ' + gameStore.activeCoreName : gameStore.activeCoreName }}
         </span>
       </div>
 
@@ -847,7 +849,7 @@ async function createSession() {
     const data = await res.json()
     sessionId.value = data.session_id
     gameStore.sessionId = data.session_id
-    if (data.active_core?.id) activeCoreId.value = data.active_core.id
+    if (data.active_core?.id) gameStore.activeCoreId = data.active_core.id
     if (data.active_core?.name) gameStore.activeCoreName = data.active_core.name
     // Theme is now managed by matchStore topics
     if (data.aegis_shield_count !== undefined) aegisShieldCount.value = data.aegis_shield_count
