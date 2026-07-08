@@ -366,6 +366,7 @@ MAIL_FROM=
   - Colyseus multiplayer rooms + matchmaking
   - Real-time opponent sync
   - ELO updates after match end
+  - **Clean up / Delete test "Skip to Core Selection" button** (added in settings menu of `GameplayView.vue`) before production
 
 ---
 

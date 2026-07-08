@@ -214,6 +214,7 @@ Speedster is fully wired. The next focus is Sprint 3.
 3. **ELO update after match** — call a PATCH on `players.elo` in `timeoutSession()` using a simple Elo formula
 4. **Colyseus multiplayer** — create rooms in `server/src/index.ts`, sync opponent score/progress via WebSocket
 5. **Real-time opponent UI** — add opponent score bar + letter-slot shadow in `GameplayView.vue`
+6. **Clean up / Delete test skip button** — delete the test "Skip to Core Selection" button (and the `skipGameplay` function) in `client/src/views/GameplayView.vue` before production.
 
 ---
 
