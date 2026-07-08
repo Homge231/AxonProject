@@ -15,13 +15,21 @@ const emit = defineEmits<{
 const targetRect = ref<DOMRect | null>(null)
 const isVisible = ref(false)
 
+let retryCount = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+
 const calculatePosition = () => {
   const el = document.getElementById(props.targetId)
   if (el) {
     targetRect.value = el.getBoundingClientRect()
     isVisible.value = true
+    retryCount = 0
   } else {
     isVisible.value = false
+    if (retryCount < 20) {
+      retryCount++
+      retryTimer = setTimeout(calculatePosition, 250)
+    }
   }
 }
 
@@ -33,6 +41,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (retryTimer) clearTimeout(retryTimer)
   window.removeEventListener('resize', calculatePosition)
   window.removeEventListener('scroll', calculatePosition, true)
 })

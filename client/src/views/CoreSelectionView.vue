@@ -105,16 +105,16 @@
     <CoachMark 
       v-if="showTutorial"
       targetId="tutorial-core-cards"
-      message="Select a Support Core to determine your strategy before the match."
-      placement="top"
-      @next="dismissTutorialLocally"
+      message="Choose a Support Core to buff your score multiplier or get hints!"
+      placement="bottom"
+      @next="hideTutorialLocal"
       @skip="skipTutorialPermanently"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
@@ -160,7 +160,13 @@ const errorMsg = ref('')
 
 const showTutorial = ref(false)
 
-function dismissTutorialLocally() {
+watch(() => authStore.isFirstPlay, (isFirst) => {
+  if (isFirst) {
+    showTutorial.value = true
+  }
+}, { immediate: true })
+
+function hideTutorialLocal() {
   showTutorial.value = false
 }
 
@@ -321,9 +327,6 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(() => {
-  if (authStore.isFirstPlay) {
-    showTutorial.value = true
-  }
   fetchSupportCores()
   window.addEventListener('beforeunload', handleBeforeUnload)
 })

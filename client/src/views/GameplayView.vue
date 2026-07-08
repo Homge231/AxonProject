@@ -529,6 +529,12 @@ const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 const isDev = import.meta.env.DEV
 const showTutorial = ref(false)
 
+watch(() => authStore.isFirstPlay, (isFirst) => {
+  if (isFirst) {
+    showTutorial.value = true
+  }
+}, { immediate: true })
+
 async function skipTutorialPermanently() {
   showTutorial.value = false
   await authStore.skipTutorial()
@@ -1068,7 +1074,7 @@ function handleKeydown(e: KeyboardEvent) {
     return
   }
 
-  if (/^[a-zA-Z]$/.test(e.key)) {
+  if (/^[a-zA-Z0-9\- '".,!?]$/.test(e.key)) {
     const maxLen = currentQuestion.value.target_length
     if (typedLetters.value.length >= maxLen) return
 
@@ -1450,10 +1456,6 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(async () => {
-  if (authStore.isFirstPlay) {
-    showTutorial.value = true
-  }
-
   if (!activeCoreId.value) {
     router.replace('/core')
     return
