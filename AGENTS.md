@@ -31,6 +31,8 @@
 | Session lifecycle (create / timeout / abandon) | `gameController.ts` |
 | **Core selection screen** | `CoreSelectionView.vue` |
 | **Anti-cheat core validation** | `submitAnswer()` in `gameController.ts` |
+| **Core upgrade validation** | `updateSessionCore()` checks consecutive tier ($T+1$) and same core family |
+| **ELO updates after match** | `timeoutSession()` applies ELO calculation and updates player stats (wins/losses/matches) |
 | **Levenshtein-based penalty** (typo vs wrong) | `getWrongAnswerPenalty()` |
 | **Core Strategy Pattern — Backend** | `server/src/cores/` |
 | **Core Strategy Pattern — Frontend** | `client/src/game/cores/` |
@@ -45,7 +47,6 @@
 | Item | Notes |
 |---|---|
 | Speedster Supabase row | ✅ Created. UUID: `00000000-0000-0000-0000-000000000007`. Registry fully wired. |
-| ELO updates after match | Planned Sprint 3 |
 | Colyseus multiplayer | Planned Sprint 3 |
 | Real-time opponent sync | Planned Sprint 3 |
 | Rate limiting on auth endpoints | Deferred |

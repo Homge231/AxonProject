@@ -362,10 +362,11 @@ MAIL_FROM=
   - "+N FAST!" floating popup
   - **Core Strategy Pattern refactor** — BE + FE both use registry/parent-child architecture
 
-**Sprint 3 (next)**:
-  - Colyseus multiplayer rooms + matchmaking
-  - Real-time opponent sync
-  - ELO updates after match end
+**Sprint 3 (in progress)**:
+  - ELO updates after match end ✅ (Formula: expected_score = 500 + ELO/2, change = 0.05 * (score - expected_score), wins/losses stats saved)
+  - Core upgrade anti-cheat validation ✅ (enforces initial core must be T1, and upgrades must be T+1 and same family)
+  - Colyseus multiplayer rooms + matchmaking (planned)
+  - Real-time opponent sync (planned)
   - **Clean up / Delete test "Skip to Core Selection" button** (added in settings menu of `GameplayView.vue`) before production
 
 ---
