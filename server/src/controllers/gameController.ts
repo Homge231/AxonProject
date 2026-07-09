@@ -3,7 +3,7 @@ import { AuthRequest } from '../middleware/authMiddleware'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { runScoring, getCoreStrategy } from '../cores/index'
-import { getUpgradesForCore, getCoreFamily, isPowerCore, isEffectCore } from '../cores/families'
+import { getUpgradesForCore, getCoreFamily } from '../cores/families'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -26,6 +26,8 @@ interface CoreRow {
   name: string
   flat_buff: number
   multiplier_buff: number
+  core_type: 'main' | 'upgrade'
+  classification: 'power' | 'effect'
 }
 
 type PenaltyType = 'typo' | 'wrong' | null
@@ -217,7 +219,7 @@ export async function getCores(req: AuthRequest, res: Response): Promise<void> {
 
     const { data: allCores, error } = await supabase
       .from('cores')
-      .select('id, name, description, flat_buff, multiplier_buff, tier, upgrades_to')
+      .select('id, name, description, flat_buff, multiplier_buff, tier, upgrades_to, core_type, classification')
 
     if (error) throw error
     if (!allCores || allCores.length === 0) {
@@ -439,7 +441,7 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     const { data: coreRow, error: coreErr } = await supabase
       .from('cores')
-      .select('id, name, flat_buff, multiplier_buff')
+      .select('id, name, flat_buff, multiplier_buff, core_type, classification')
       .eq('id', coreIdToFetch)
       .single()
 
@@ -455,10 +457,10 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     if (sessionCoreName === 'chaos theory' && secondary_core_id) {
       const { data: secCore } = await supabase
         .from('cores')
-        .select('id, name, flat_buff, multiplier_buff')
+        .select('id, name, flat_buff, multiplier_buff, core_type, classification')
         .eq('id', secondary_core_id)
         .single()
-      if (secCore) secondaryCore = secCore
+      if (secCore) secondaryCore = secCore as CoreRow
     }
 
     // ── 5. Fetch question & evaluate answer ──────────────────────────────────
@@ -537,12 +539,12 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // Fetch details of all cores in the family history
     const { data: dbCores } = await supabase
       .from('cores')
-      .select('id, name, flat_buff, multiplier_buff')
+      .select('id, name, flat_buff, multiplier_buff, core_type, classification')
       .in('name', historyCoreNames)
-    const coreRows = dbCores && dbCores.length > 0 ? dbCores : [core]
+    const coreRows = (dbCores && dbCores.length > 0 ? dbCores : [core]) as CoreRow[]
 
     // Identify the best Power Core in history to use for scoring calculation
-    const powerCores = coreRows.filter(r => isPowerCore(r.name))
+    const powerCores = coreRows.filter(r => r.classification === 'power')
     let scoringCore = core
     if (powerCores.length > 0) {
       // Pick the most recent power core in history
