@@ -661,64 +661,6 @@ const effectiveCores = computed(() => {
   return history
 })
 
-const activeCoreModule = computed(() => {
-  if (isPandoraMode.value && currentPandoraCoreId.value) {
-    const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
-    if (shiftedCore) return getCoreModule(shiftedCore.name)
-  }
-  return getCoreModule(gameStore.activeCoreName)
-})
-
-// Convenience booleans
-const isComboCore = computed(() => 
-  checkComboCore(activeCoreModule.value?.name || '') ||
-  effectiveCores.value.some(c => checkComboCore(c.name))
-)
-const isOracleCore = computed(() => 
-  checkOracleCore(activeCoreModule.value?.name || '') ||
-  effectiveCores.value.some(c => checkOracleCore(c.name))
-)
-const isSpeedsterCore = computed(() => 
-  checkSpeedsterCore(activeCoreModule.value?.name || '') ||
-  effectiveCores.value.some(c => checkSpeedsterCore(c.name))
-)
-const isMissionCore = computed(() => 
-  checkMissionCore(activeCoreModule.value?.name || '') ||
-  effectiveCores.value.some(c => checkMissionCore(c.name))
-)
-const isTimeWarp = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'time warp' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'time warp')
-)
-const isChronobreak = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'chronobreak' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'chronobreak')
-)
-const isOmniscience = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'omniscience' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'omniscience')
-)
-const isPrismaticCombo = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'prismatic combo' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'prismatic combo')
-)
-const isExodia = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'exodia' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'exodia')
-)
-const isSpeedDemon = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'speed demon' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'speed demon')
-)
-const isThirdEye = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'third eye' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'third eye')
-)
-const isMindReader = computed(() => 
-  (activeCoreModule.value?.name || '').toLowerCase() === 'mind reader' ||
-  effectiveCores.value.some(c => c.name.toLowerCase() === 'mind reader')
-)
-
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
 const basePandoraCoreName = computed(() => {
   const baseCore = allCores.value.find(c => c.id === gameStore.activeCoreId)
@@ -728,6 +670,106 @@ const isPandora = computed(() => basePandoraCoreName.value?.toLowerCase() === "p
 const isPandoraMode = computed(() => checkPandoraCore(basePandoraCoreName.value))
 const isTrickster = computed(() => isPandoraMode.value && matchStore.currentRound === 2)
 const isChaos = computed(() => isPandoraMode.value && matchStore.currentRound === 3)
+
+const activeCoreNameDynamic = computed(() => {
+  if (isPandoraMode.value && currentPandoraCoreId.value) {
+    const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
+    return shiftedCore ? shiftedCore.name : gameStore.activeCoreName
+  }
+  return gameStore.activeCoreName
+})
+
+const activeCoreModule = computed(() => {
+  return getCoreModule(activeCoreNameDynamic.value)
+})
+
+// Convenience booleans
+const getActiveName = () => activeCoreNameDynamic.value?.toLowerCase() || ''
+
+const isComboCore = computed(() => {
+  const name = getActiveName()
+  if (checkComboCore(name)) return true
+  return gameStore.coreHistory.some(c => checkComboCore(c.name))
+})
+const isOracleCore = computed(() => {
+  const name = getActiveName()
+  if (checkOracleCore(name)) return true
+  return gameStore.coreHistory.some(c => checkOracleCore(c.name))
+})
+const isSpeedsterCore = computed(() => {
+  const name = getActiveName()
+  if (checkSpeedsterCore(name)) return true
+  return gameStore.coreHistory.some(c => checkSpeedsterCore(c.name))
+})
+const isMissionCore = computed(() => {
+  const name = getActiveName()
+  if (checkMissionCore(name)) return true
+  return gameStore.coreHistory.some(c => checkMissionCore(c.name))
+})
+const isTimeWarp = computed(() => {
+  const name = getActiveName()
+  if (name === 'time warp') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'time warp')
+})
+const isChronobreak = computed(() => {
+  const name = getActiveName()
+  if (name === 'chronobreak') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'chronobreak')
+})
+const isOmniscience = computed(() => {
+  const name = getActiveName()
+  if (name === 'omniscience') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'omniscience')
+})
+const isPrismaticCombo = computed(() => {
+  const name = getActiveName()
+  if (name === 'prismatic combo') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'prismatic combo')
+})
+const isExodia = computed(() => {
+  const name = getActiveName()
+  if (name === 'exodia') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'exodia')
+})
+const isSpeedDemon = computed(() => {
+  const name = getActiveName()
+  if (name === 'speed demon') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'speed demon')
+})
+const isThirdEye = computed(() => {
+  const name = getActiveName()
+  if (name === 'third eye') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'third eye')
+})
+const isMindReader = computed(() => {
+  const name = getActiveName()
+  if (name === 'mind reader') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'mind reader')
+})
+const isOracleFree = computed(() => {
+  const name = getActiveName()
+  if (name && name !== 'oracle core') return true
+  return gameStore.coreHistory.some(c => {
+    const family = getCoreFamily(c.name)
+    return family === 'oracle' && c.name.toLowerCase() !== 'oracle core'
+  })
+})
+const timerSpeedMultiplier = computed(() => {
+  let mult = 1.0
+  const activeName = getActiveName()
+  
+  const hasHypercharge = activeName === 'hypercharge' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'hypercharge')
+  const hasOverdrive = activeName === 'overdrive' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'overdrive')
+  if (hasHypercharge) mult += 0.15
+  if (hasOverdrive) mult += 0.20
+
+  const hasDivineGuidance = activeName === 'divine guidance' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'divine guidance')
+  const hasOmniscienceCore = activeName === 'omniscience' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'omniscience')
+  if (hasDivineGuidance) mult -= 0.10
+  if (hasOmniscienceCore) mult -= 0.20
+
+  return Math.max(0.1, mult)
+})
 
 const isShifting = ref(false)
 const shiftAnnouncement = ref('')
@@ -922,7 +964,7 @@ function startMatchTimer() {
     lastTickTime = now
 
     if (!isTimerPaused && !showTutorial.value && !isNaN(dt)) {
-      remainingMatchMs -= dt
+      remainingMatchMs -= dt * timerSpeedMultiplier.value
     }
     
     remainingMatchMs = Math.max(0, remainingMatchMs)
@@ -1063,12 +1105,19 @@ async function loadQuestion() {
 
   gameState.value = 'playing'
   
-  if ((isOmniscience.value || isThirdEye.value) && currentQuestion.value.target_length > 0) {
+  const activeName = (gameStore.activeCoreName || '').toLowerCase()
+  const historyNames = gameStore.coreHistory.map(c => c.name.toLowerCase())
+  const hasThirdEye = activeName === 'third eye' || historyNames.includes('third eye')
+  const hasOmniscience = activeName === 'omniscience' || historyNames.includes('omniscience')
+  const hasMindReader = activeName === 'mind reader' || historyNames.includes('mind reader')
+  const hasDivineEye = activeName === 'divine eye' || historyNames.includes('divine eye')
+
+  if ((hasOmniscience || hasThirdEye || hasDivineEye) && currentQuestion.value.target_length > 0) {
     const firstLetter = currentQuestion.value.oracle_hints?.[0]?.charAt(0)?.toLowerCase() || '_'
     if (firstLetter && firstLetter !== '·') {
       typedLetters.value = [firstLetter]
     }
-  } else if (isMindReader.value && currentQuestion.value.target_length > 1) {
+  } else if (hasMindReader && currentQuestion.value.target_length > 1) {
     const hintLetters = currentQuestion.value.oracle_hints?.[2]?.split(' ') || []
     const first = hintLetters[0]?.toLowerCase()
     const second = hintLetters[1]?.toLowerCase()

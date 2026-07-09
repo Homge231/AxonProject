@@ -580,9 +580,31 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     // Apply Oracle Blessing points multiplier (1.5x on correct answer with no hints used)
     const hasOracleBlessing = historyCoreNames.some(name => name.toLowerCase() === 'oracle blessing')
-    if (hasOracleBlessing && isCorrect && oracleRevealLevel === 0) {
+    if (hasOracleBlessing && isCorrect && oracleRevealLevel === 0 && scoringCore.name.toLowerCase() !== 'oracle blessing') {
       pointsDelta = Math.floor(pointsDelta * 1.5)
       breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * 1.5
+    }
+
+    // Cosmic Wisdom: 2.0x multiplier if no hints used
+    const hasCosmicWisdom = historyCoreNames.some(name => name.toLowerCase() === 'cosmic wisdom')
+    if (hasCosmicWisdom && isCorrect && oracleRevealLevel === 0 && scoringCore.name.toLowerCase() !== 'cosmic wisdom') {
+      pointsDelta = Math.floor(pointsDelta * 2.0)
+      breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * 2.0
+    }
+
+    // Predictive Strike: +300 points if all 3 hints revealed
+    const hasPredictiveStrike = historyCoreNames.some(name => name.toLowerCase() === 'predictive strike')
+    if (hasPredictiveStrike && isCorrect && oracleRevealLevel === 3 && scoringCore.name.toLowerCase() !== 'predictive strike') {
+      pointsDelta += 300
+      breakdown.flat_buff = (breakdown.flat_buff || 0) + 300
+    }
+
+    // Future Sight: +50 points (scaled by current multiplier) if correct in under 4s
+    const hasFutureSight = historyCoreNames.some(name => name.toLowerCase() === 'future sight')
+    if (hasFutureSight && isCorrect && timeTaken <= 4000 && scoringCore.name.toLowerCase() !== 'future sight') {
+      const bonus = Math.floor(50 * (breakdown.multiplier_buff || 1))
+      pointsDelta += bonus
+      breakdown.flat_buff = (breakdown.flat_buff || 0) + 50
     }
 
     // Stack Mission progress if there is a Mission core in history
