@@ -476,6 +476,9 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { useScoreAnimation } from '../composables/game/useScoreAnimation'
+import { useMatchTimer } from '../composables/game/useMatchTimer'
+import { useQuestionQueue } from '../composables/game/useQuestionQueue'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
 import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
 import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
@@ -534,12 +537,6 @@ const REFETCH_THRESHOLD = 5
 
 // ── State ──────────────────────────────────────────────────────────────────
 const gameState = ref<GameState>('loading')
-const score = ref(0)
-let activeAnimationId: number | null = null
-const scoreFlash = ref<ScoreFlash>(null)
-const questionsAnswered = ref(0)
-const pointsEarned = ref(0)
-const pointsDeducted = ref(0)
 const typedLetters = ref<string[]>([])
 const inputRef = ref<HTMLInputElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
@@ -551,6 +548,65 @@ const sessionId = ref<string | null>(null)
 const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 const isDev = import.meta.env.DEV
 const showTutorial = ref(false)
+
+const questionsAnswered = ref(0)
+const oracleRevealLevel = ref(0)
+const oracleTotalPenalty = ref(0)
+const questionStartTime = ref<number>(Date.now())
+
+// Initialize custom composables
+const {
+  score,
+  pointsEarned,
+  pointsDeducted,
+  scoreFlash,
+  pointPopups,
+  triggerScoreFlash,
+  spawnPointPopup,
+  updateScoreAnimated,
+  clearActiveAnimation
+} = useScoreAnimation(letterSlotsRef)
+
+const {
+  timeLeft,
+  timerProgressPercent,
+  startMatchTimer,
+  stopMatchTimer,
+  setPaused,
+  addTime,
+  pauseTimerFor,
+  resetTimer,
+  getRemainingMs,
+  setRemainingMs
+} = useMatchTimer({
+  showTutorial: () => showTutorial.value,
+  timerSpeedMultiplier: () => timerSpeedMultiplier.value,
+  isPandoraMode: () => isPandoraMode.value,
+  isTrickster: () => isTrickster.value,
+  isChaos: () => isChaos.value,
+  onShapeshift: () => triggerShapeshift(),
+  onTimeout: () => startTimeoutPhase()
+})
+
+const {
+  questionQueue,
+  isFetchingBatch,
+  currentQuestion,
+  fetchBatch,
+  loadQuestion,
+  clearQueue
+} = useQuestionQueue({
+  fetchWithAuth,
+  matchStore,
+  gameStore,
+  gameState,
+  typedLetters,
+  oracleRevealLevel,
+  oracleTotalPenalty,
+  questionStartTime,
+  inputRef,
+  refetchThreshold: REFETCH_THRESHOLD
+})
 
 watch(() => authStore.isFirstPlay, (isFirst) => {
   if (isFirst) {
@@ -845,10 +901,11 @@ function triggerShapeshift() {
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
 const ORACLE_COSTS = [10, 20, 30] // cost per level: -10, -20, -30
-const oracleRevealLevel = ref(0)
-const oracleTotalPenalty = ref(0)
 
-const oracleNextCost = computed(() => ORACLE_COSTS[oracleRevealLevel.value] ?? 0)
+const oracleNextCost = computed(() => {
+  if (isOracleFree.value) return 0
+  return ORACLE_COSTS[oracleRevealLevel.value] ?? 0
+})
 
 const oracleHintText = computed(() => {
   const level = oracleRevealLevel.value
@@ -862,7 +919,7 @@ function useOracleHint() {
   if (oracleRevealLevel.value >= oracleMaxAllowed.value) return
   if (gameState.value !== 'playing') return
 
-  const cost = ORACLE_COSTS[oracleRevealLevel.value]
+  const cost = isOracleFree.value ? 0 : ORACLE_COSTS[oracleRevealLevel.value]
   oracleRevealLevel.value++
   oracleTotalPenalty.value += cost
 
@@ -880,9 +937,6 @@ const oracleMaxAllowed = computed(() => {
 
 
 
-// Floating point popups
-const pointPopups = ref<PointPopup[]>([])
-let popupIdCounter = 0
 let submitAnswerSeq = 0   // increments per answer submitted; used to discard out-of-order responses
 
 const playerAvatarUrl = computed(() =>
@@ -890,12 +944,6 @@ const playerAvatarUrl = computed(() =>
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authStore.profile?.username || 'Player')}`
 )
 
-// Removed unused scoreBar derived state
-
-// ── Question queue ────────────────────────────────────────────────────────
-const questionQueue = ref<QuestionPayload[]>([])
-const isFetchingBatch = ref(false)
-const currentQuestion = ref<QuestionPayload>({ id: '', question_text: '', target_length: 0, target_hash: '', oracle_hints: ['', '', ''] })
 const matchHistory = ref<{ round: number, submitted: string, correct: string, isCorrect: boolean }[]>([])
 
 const groupedMatchHistory = computed(() => {
@@ -907,43 +955,7 @@ const groupedMatchHistory = computed(() => {
   return groups
 })
 
-let flashTimer: ReturnType<typeof setTimeout> | null = null
-
-// ── Score flash helper ────────────────────────────────────────────────────
-function triggerScoreFlash(type: ScoreFlash) {
-  if (flashTimer) clearTimeout(flashTimer)
-  scoreFlash.value = type
-  flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
-}
-
-// ── Floating popup helper ─────────────────────────────────────────────────
-function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked' | 'prismatic') {
-  let x = window.innerWidth / 2 - 50
-  let y = window.innerHeight / 2 - 60
-  if (letterSlotsRef.value) {
-    const rect = letterSlotsRef.value.getBoundingClientRect()
-    x = rect.left + rect.width / 2 - 50
-    y = rect.top - 10
-  }
-
-  const id = popupIdCounter++
-  pointPopups.value.push({ id, value, type, x, y })
-  const duration = type === 'speedster' || type === 'prismatic' ? 1800 : 1200
-  setTimeout(() => {
-    pointPopups.value = pointPopups.value.filter(p => p.id !== id)
-  }, duration)
-}
-
-// ── Question start-time tracking (for Speedster time_taken) ───────────────
-const questionStartTime = ref<number>(Date.now())
-
 // ── Timer ──────────────────────────────────────────────────────────────────
-let matchTimerFrame: number | null = null
-let remainingMatchMs = MATCH_DURATION * 1000
-let lastTickTime = 0
-let isTimerPaused = false
-const timeLeft = ref(MATCH_DURATION)
-const timerProgressPercent = ref(100)
 let timeoutInterval: ReturnType<typeof setInterval> | null = null
 
 function stopTimeoutInterval() {
@@ -951,65 +963,6 @@ function stopTimeoutInterval() {
     clearInterval(timeoutInterval)
     timeoutInterval = null
   }
-}
-
-function startMatchTimer() {
-  if (matchTimerFrame) return
-  lastTickTime = Date.now()
-  let lastShiftTime = lastTickTime - 25000 // Trigger first shift immediately
-
-  const tick = () => {
-    const now = Date.now()
-    const dt = now - lastTickTime
-    lastTickTime = now
-
-    if (!isTimerPaused && !showTutorial.value && !isNaN(dt)) {
-      remainingMatchMs -= dt * timerSpeedMultiplier.value
-    }
-    
-    remainingMatchMs = Math.max(0, remainingMatchMs)
-
-    timerProgressPercent.value = (remainingMatchMs / (MATCH_DURATION * 1000)) * 100
-    timeLeft.value = isNaN(remainingMatchMs) ? MATCH_DURATION : Math.ceil(remainingMatchMs / 1000)
-
-    // Shapeshifter trigger based on tier
-    if (isPandoraMode.value) {
-      let shiftInterval = 20000 // T1 Pandora: 20s
-      if (isTrickster.value) shiftInterval = 20000 // T2 upgrades: 20s
-      if (isChaos.value) shiftInterval = 15000 // T3 upgrades: 15s
-      
-      if (Date.now() - lastShiftTime >= shiftInterval) {
-        lastShiftTime = Date.now()
-        triggerShapeshift()
-      }
-    }
-
-    if (remainingMatchMs > 0) {
-      matchTimerFrame = requestAnimationFrame(tick)
-    } else {
-      matchTimerFrame = null
-      timeLeft.value = 0
-      startTimeoutPhase()
-    }
-  }
-
-  matchTimerFrame = requestAnimationFrame(tick)
-}
-
-function stopMatchTimer() {
-  if (matchTimerFrame) { cancelAnimationFrame(matchTimerFrame); matchTimerFrame = null }
-}
-
-function addTime(ms: number) {
-  remainingMatchMs += ms
-}
-
-function pauseTimerFor(ms: number) {
-  isTimerPaused = true
-  setTimeout(() => {
-    isTimerPaused = false
-    lastTickTime = Date.now() // Prevent huge dt jump
-  }, ms)
 }
 
 // ── Session API ────────────────────────────────────────────────────────────
@@ -1055,80 +1008,7 @@ async function callTimeoutEndpoint(sid: string, coreId: string | null, oracleLvl
   }
 }
 
-// ── Batch fetching ─────────────────────────────────────────────────────────
-const MOCK_QUESTIONS: QuestionPayload[] = [
-  { id: 'm1', question_text: 'The scientist made a remarkable ________ that changed medicine forever.', target_length: 9, target_hash: '', oracle_hints: ['D·······Y', 'D·S···E·Y', 'D·S·O·E·Y'], hint: 'The act of finding something new' },
-  { id: 'm2', question_text: 'She spoke with great ________ when addressing the crowd at the stadium.', target_length: 10, target_hash: '', oracle_hints: ['C········E', 'C·N····C·E', 'C·N·I·E·C·E'], hint: 'A feeling of self-assurance' },
-  { id: 'm3', question_text: 'His ability to ________ complex data in seconds impressed the entire team.', target_length: 7, target_hash: '', oracle_hints: ['A·····E', 'A·A··Z·E', 'A·A·Y·Z·E'], hint: 'Examine methodically and in detail' },
-  { id: 'm4', question_text: 'The team celebrated their ________ after months of hard work.', target_length: 7, target_hash: '', oracle_hints: ['V·····Y', 'V·C··R·Y', 'V·C·O·R·Y'], hint: 'Winning a competition' },
-  { id: 'm5', question_text: 'She showed great ________ in the face of adversity.', target_length: 10, target_hash: '', oracle_hints: ['R········E', 'R·S····N·E', 'R·S·L·E·N·E'], hint: 'Ability to recover quickly' },
-]
 
-async function fetchBatch(): Promise<void> {
-  if (isFetchingBatch.value || gameState.value === 'timeout') return
-  isFetchingBatch.value = true
-  try {
-    const topic = matchStore.topics?.[matchStore.currentRound - 1] || 'daily-life'
-    const res = await fetchWithAuth(`/api/game/questions?topic=${topic}`)
-    if (!res.ok) throw new Error('fetch failed')
-    const data = await res.json()
-    questionQueue.value.push(...(data.questions as QuestionPayload[]))
-  } catch {
-    const shuffled = [...MOCK_QUESTIONS].sort(() => Math.random() - 0.5)
-    questionQueue.value.push(...shuffled)
-  } finally {
-    isFetchingBatch.value = false
-  }
-}
-
-// ── Question loading ──────────────────────────────────────────────────────
-async function loadQuestion() {
-  gameState.value = 'loading'
-  typedLetters.value = []
-  oracleRevealLevel.value = 0
-  oracleTotalPenalty.value = 0
-
-  if (questionQueue.value.length <= REFETCH_THRESHOLD) {
-    fetchBatch()
-  }
-
-  const next = questionQueue.value.shift()
-  if (!next) {
-    currentQuestion.value = MOCK_QUESTIONS[Math.floor(Math.random() * MOCK_QUESTIONS.length)]
-    fetchBatch()
-  } else {
-    currentQuestion.value = next
-  }
-
-  // Reset per-question start time for Speedster time_taken calculation
-  questionStartTime.value = Date.now()
-
-  gameState.value = 'playing'
-  
-  const activeName = (gameStore.activeCoreName || '').toLowerCase()
-  const historyNames = gameStore.coreHistory.map(c => c.name.toLowerCase())
-  const hasThirdEye = activeName === 'third eye' || historyNames.includes('third eye')
-  const hasOmniscience = activeName === 'omniscience' || historyNames.includes('omniscience')
-  const hasMindReader = activeName === 'mind reader' || historyNames.includes('mind reader')
-  const hasDivineEye = activeName === 'divine eye' || historyNames.includes('divine eye')
-
-  if ((hasOmniscience || hasThirdEye || hasDivineEye) && currentQuestion.value.target_length > 0) {
-    const firstLetter = currentQuestion.value.oracle_hints?.[0]?.charAt(0)?.toLowerCase() || '_'
-    if (firstLetter && firstLetter !== '·') {
-      typedLetters.value = [firstLetter]
-    }
-  } else if (hasMindReader && currentQuestion.value.target_length > 1) {
-    const hintLetters = currentQuestion.value.oracle_hints?.[2]?.split(' ') || []
-    const first = hintLetters[0]?.toLowerCase()
-    const second = hintLetters[1]?.toLowerCase()
-    if (first && first !== '·' && second && second !== '·') {
-      typedLetters.value = [first, second]
-    }
-  }
-  
-  await nextTick()
-  inputRef.value?.focus()
-}
 
 // ── Skip Question Logic (Enter key) ───────────────────────────────────────
 async function skipQuestion() {
@@ -1373,27 +1253,7 @@ async function checkAnswer() {
       if (res.ok) {
         const data = await res.json()
 
-        if (activeAnimationId !== null) {
-          cancelAnimationFrame(activeAnimationId)
-          activeAnimationId = null
-        }
-
-        const startScore = score.value
-        const targetScore = data.new_total_score ?? score.value
-        const duration = 500
-        const startTime = performance.now()
-
-        function animateScore(currentTime: number) {
-          const elapsed = currentTime - startTime
-          const progress = Math.min(elapsed / duration, 1)
-          score.value = Math.floor(startScore + (targetScore - startScore) * progress)
-          if (progress < 1) {
-            activeAnimationId = requestAnimationFrame(animateScore)
-          } else {
-            activeAnimationId = null
-          }
-        }
-        activeAnimationId = requestAnimationFrame(animateScore)
+        updateScoreAnimated(data.new_total_score ?? score.value)
 
         questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
         pointsEarned.value = data.points_earned ?? pointsEarned.value
@@ -1468,9 +1328,7 @@ function resetTypingBoard() {
   gameState.value = 'timeout'
   stopTimeoutInterval()
   // NOTE: intentionally NOT resetting score, questionsAnswered, pointsEarned, pointsDeducted
-  remainingMatchMs = MATCH_DURATION * 1000
-  timeLeft.value = MATCH_DURATION
-  timerProgressPercent.value = 100
+  resetTimer()
   typedLetters.value = []
   currentCombo.value = 0
   missionProgress.value = 0
@@ -1485,7 +1343,7 @@ function resetTypingBoard() {
   scoreFlash.value = null
   pointPopups.value = []
   oracleRevealLevel.value = 0
-  questionQueue.value = []
+  clearQueue()
 }
 
 // ── US-24: Start 15-second timeout phase countdown ───────────────────────
@@ -1669,8 +1527,7 @@ onMounted(async () => {
 
   // Ensure we start a fresh match if navigating here from outside
   matchStore.resetMatch()
-  remainingMatchMs = MATCH_DURATION * 1000
-  timeLeft.value = MATCH_DURATION
+  resetTimer()
 
   if (!gameStore.sessionId) {
     await createSession()
