@@ -558,11 +558,11 @@ const THEME_MAP: Record<string, string> = {
   'travel': '/bg-travel.png'
 }
 
-const currentBgImage = ref(THEME_MAP[matchStore.topics[matchStore.currentRound - 1]] || THEME_MAP['daily-life'])
+const currentBgImage = ref(THEME_MAP[matchStore.topics?.[matchStore.currentRound - 1] || 'daily-life'] || THEME_MAP['daily-life'])
 const isBgFading = ref(false)
 
 watch(() => matchStore.currentRound, (newRound, oldRound) => {
-  const newTopic = matchStore.topics[newRound - 1]
+  const newTopic = matchStore.topics?.[newRound - 1]
   const newBg = THEME_MAP[newTopic] || THEME_MAP['daily-life']
   
   if (oldRound === undefined) {
@@ -950,7 +950,7 @@ async function fetchBatch(): Promise<void> {
   if (isFetchingBatch.value || gameState.value === 'timeout') return
   isFetchingBatch.value = true
   try {
-    const topic = matchStore.topics[matchStore.currentRound - 1] || 'daily-life'
+    const topic = matchStore.topics?.[matchStore.currentRound - 1] || 'daily-life'
     const res = await fetchWithAuth(`/api/game/questions?topic=${topic}`)
     if (!res.ok) throw new Error('fetch failed')
     const data = await res.json()
