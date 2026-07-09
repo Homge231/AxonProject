@@ -552,27 +552,28 @@ async function skipTutorialPermanently() {
   await authStore.skipTutorial()
 }
 
-// 1. Danh sách background tương ứng với từng Round
-const ROUND_BACKGROUNDS: Record<number, string> = {
-  1: '/bg-daily-life.png', 
-  2: '/bg-cafe.png',
-  3: '/bg-travel.png'
+const THEME_MAP: Record<string, string> = {
+  'daily-life': '/bg-daily-life.png',
+  'cafe': '/bg-cafe.png',
+  'travel': '/bg-travel.png'
 }
 
-const currentBgImage = ref(ROUND_BACKGROUNDS[matchStore.currentRound] || ROUND_BACKGROUNDS[1])
+const currentBgImage = ref(THEME_MAP[matchStore.topics[matchStore.currentRound - 1]] || THEME_MAP['daily-life'])
 const isBgFading = ref(false)
 
 watch(() => matchStore.currentRound, (newRound, oldRound) => {
+  const newTopic = matchStore.topics[newRound - 1]
+  const newBg = THEME_MAP[newTopic] || THEME_MAP['daily-life']
   
   if (oldRound === undefined) {
-    currentBgImage.value = ROUND_BACKGROUNDS[newRound] || ROUND_BACKGROUNDS[1]
+    currentBgImage.value = newBg
   } 
   
   else if (newRound && newRound !== oldRound) {
     isBgFading.value = true
 
     setTimeout(() => {
-      currentBgImage.value = ROUND_BACKGROUNDS[newRound] || ROUND_BACKGROUNDS[1]
+      currentBgImage.value = newBg
 
       setTimeout(() => {
         isBgFading.value = false
