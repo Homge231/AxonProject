@@ -3,7 +3,7 @@ import { AuthRequest } from '../middleware/authMiddleware'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { runScoring, getCoreStrategy } from '../cores/index'
-import { getUpgradesForCore, getCoreFamily } from '../cores/families'
+import { getUpgradesForCore, getCoreFamily, isPowerCore, isEffectCore } from '../cores/families'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -534,6 +534,21 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 8. Calculate score via core strategy registry ────────────────────────
     const timeTaken = typeof time_taken === 'number' && time_taken >= 0 ? Math.floor(time_taken) : 0
     
+    // Fetch details of all cores in the family history
+    const { data: dbCores } = await supabase
+      .from('cores')
+      .select('id, name, flat_buff, multiplier_buff')
+      .in('name', historyCoreNames)
+    const coreRows = dbCores && dbCores.length > 0 ? dbCores : [core]
+
+    // Identify the best Power Core in history to use for scoring calculation
+    const powerCores = coreRows.filter(r => isPowerCore(r.name))
+    let scoringCore = core
+    if (powerCores.length > 0) {
+      // Pick the most recent power core in history
+      scoringCore = powerCores.sort((a, b) => historyCoreNames.indexOf(b.name) - historyCoreNames.indexOf(a.name))[0]
+    }
+
     // Find if ANY core in history grants initial shields
     const initialShieldCount = historyCoreNames.some(n => n.toLowerCase() === 'shield battery') ? 2 : 0
 
@@ -543,19 +558,32 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       combo,
       wrongPenalty,
       oracleRevealLevel,
-      flatBuff:          core.flat_buff,
-      multiplierBuff:    core.multiplier_buff,
+      flatBuff:          scoringCore.flat_buff,
+      multiplierBuff:    scoringCore.multiplier_buff,
       answerHistory,
       initialShieldCount
     }
 
-    // Always run the primary active core logic to get base score
-    let { pointsDelta, breakdown } = runScoring(isCorrect, core.name, ctx)
+    // Always run the primary scoring core logic
+    let { pointsDelta, breakdown } = runScoring(isCorrect, scoringCore.name, ctx)
+
+    // Stack Mission progress if there is a Mission core in history
+    const missionCoreName = historyCoreNames.find(name => getCoreStrategy(name).constructor.name === 'MissionCoreStrategy')
+    if (missionCoreName && missionCoreName !== scoringCore.name) {
+      const missionResult = runScoring(isCorrect, missionCoreName, ctx)
+      breakdown.mission_streak = missionResult.breakdown.mission_streak
+      if (isCorrect && missionResult.breakdown.mission_completed === 1) {
+        breakdown.mission_completed = 1
+        const missionBonus = missionResult.breakdown.flat_buff
+        pointsDelta += missionBonus
+        breakdown.flat_buff += missionBonus
+      }
+    }
 
     // If there is an Aegis core in history that would block damage, let it override the primary penalty!
     if (!isCorrect) {
       const aegisCore = historyCoreNames.find(name => getCoreStrategy(name).constructor.name === 'AegisCoreStrategy')
-      if (aegisCore && aegisCore !== core.name) {
+      if (aegisCore && aegisCore !== scoringCore.name) {
          const aegisResult = runScoring(isCorrect, aegisCore, ctx)
          if (aegisResult.breakdown.shield_blocked) {
            // Shield successfully blocked! Override the penalty result.

@@ -51,3 +51,13 @@ export function getCoreFamily(coreName: string): string | null {
   }
   return null
 }
+
+export function isPowerCore(coreName: string): boolean {
+  const family = getCoreFamily(coreName)
+  return family ? ['power', 'balanced', 'combo', 'speedster'].includes(family) : false
+}
+
+export function isEffectCore(coreName: string): boolean {
+  const family = getCoreFamily(coreName)
+  return family ? ['aegis', 'mission', 'oracle', 'pandora'].includes(family) : false
+}

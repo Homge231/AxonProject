@@ -487,7 +487,7 @@ import SpeedsterOverlay from '../components/game/SpeedsterOverlay.vue'
 import PandoraOverlay from '../components/game/PandoraOverlay.vue'
 import CoachMark from '../components/tutorial/CoachMark.vue'
 import { useGameStore } from '../stores/gameStore'
-import { getCoreFamily } from '../game/cores/families'
+import { getCoreFamily, isPowerCore } from '../game/cores/families'
 import { useMatchStore } from '../stores/matchStore'
 import {
   getCoreModule,
@@ -640,6 +640,14 @@ const effectiveCores = computed(() => {
       history.push(shiftedCore)
     }
   }
+
+  // Filter out older Power Cores in history if there is a more recent one
+  const powerCoresInHist = history.filter(c => isPowerCore(c.name))
+  if (powerCoresInHist.length > 1) {
+    const latestPowerCore = powerCoresInHist[powerCoresInHist.length - 1]
+    history = history.filter(c => !isPowerCore(c.name) || c.id === latestPowerCore.id)
+  }
+
   return history
 })
 
