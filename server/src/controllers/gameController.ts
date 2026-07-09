@@ -560,7 +560,14 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     }
 
     // Find if ANY core in history grants initial shields
-    const initialShieldCount = historyCoreNames.some(n => n.toLowerCase() === 'shield battery') ? 2 : 0
+    let initialShieldCount = 0
+    const historyLower = historyCoreNames.map(n => n.toLowerCase())
+    const activeLower = core.name.toLowerCase()
+    if (historyLower.includes('guardian angel') || activeLower === 'guardian angel') {
+      initialShieldCount = 3
+    } else if (historyLower.includes('shield battery') || activeLower === 'shield battery') {
+      initialShieldCount = 2
+    }
 
     const ctx = {
       timeTaken,

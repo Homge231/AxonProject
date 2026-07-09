@@ -35,18 +35,21 @@ export class AegisCoreStrategy extends BaseCore {
     let shields = initialShields
     let streak = 0
 
+    const name = this.coreName
+    const isShieldMission = name === 'shield mission'
+
     for (const isCorrect of history) {
       if (isCorrect) {
         shields = Math.min(shields + 1, this.maxShields)
         streak++
-        if (this.coreName === 'shield mission' && streak >= 3) {
+        if (isShieldMission && streak >= 3) {
           shields = this.maxShields
           streak = 0
         }
       } else {
         if (shields > 0) {
           shields = Math.max(0, shields - 1)
-          if (this.coreName === 'shield mission') {
+          if (isShieldMission) {
             // Shield Mission Special: streak does NOT break if protected by a shield
           } else {
             streak = 0
@@ -69,23 +72,27 @@ export class AegisCoreStrategy extends BaseCore {
     // Calculate final shields and streak after this answer
     const { shields: finalShields, streak: finalStreak } = this.getShieldAndStreak(ctx.initialShieldCount || 0, ctx.answerHistory)
     
+    const historyLower = ctx.historyCoreNames?.map(n => n.toLowerCase()) || []
+    
+    const hasBastionOfLight = this.bastionMult || historyLower.includes('bastion of light')
+    const hasIndomitable = this.coreName === 'indomitable' || historyLower.includes('indomitable')
+    const hasAegisNova = this.coreName === 'aegis nova' || historyLower.includes('aegis nova')
+    const hasShieldSynergy = this.coreName === 'shield synergy' || historyLower.includes('shield synergy')
+
     let activeMultiplier = ctx.multiplierBuff
-    if (this.bastionMult && currentShields === this.maxShields) {
+    if (hasBastionOfLight && currentShields === this.maxShields) {
       activeMultiplier *= 2
     }
     
-    if (this.coreName === 'indomitable') {
+    if (hasIndomitable) {
       activeMultiplier += (currentShields * 0.15)
     }
 
     let flatNova = 0
-    if (this.coreName === 'aegis nova' && currentShields === this.maxShields) {
+    if (hasAegisNova && currentShields === this.maxShields) {
       flatNova = 500
     }
-    if (this.coreName === 'shield synergy' && currentShields === this.maxShields) {
-      flatNova = 500
-    }
-    const synergyBonus = (this.coreName === 'shield synergy' && currentShields === this.maxShields) ? 50 : 0
+    const synergyBonus = (hasShieldSynergy && currentShields === this.maxShields) ? 50 : 0
 
     const beforeMult = BASE_POINTS + ctx.flatBuff + flatNova + synergyBonus
     const total      = Math.floor(beforeMult * activeMultiplier) - oraclePenalty
@@ -115,12 +122,17 @@ export class AegisCoreStrategy extends BaseCore {
     // Calculate final shields and streak after this wrong answer
     const { shields: finalShields, streak: finalStreak } = this.getShieldAndStreak(ctx.initialShieldCount || 0, ctx.answerHistory)
 
+    const historyLower = ctx.historyCoreNames?.map(n => n.toLowerCase()) || []
+
     if (currentShields > 0) {
       // Shield blocks the penalty!
       let reflectBonus = 0
-      if (this.coreName === 'spiked shield') {
+      const hasSpikedShield = this.coreName === 'spiked shield' || historyLower.includes('spiked shield')
+      const hasReflectDamage = this.reflectDamage || historyLower.includes('reflective aegis') || historyLower.includes('shield burst')
+      
+      if (hasSpikedShield) {
         reflectBonus = 200
-      } else if (this.reflectDamage) {
+      } else if (hasReflectDamage) {
         reflectBonus = 50
       }
       

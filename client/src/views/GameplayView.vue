@@ -782,6 +782,11 @@ const isSpeedDemon = computed(() => {
   if (name === 'speed demon') return true
   return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'speed demon')
 })
+const isGuardianAngel = computed(() => {
+  const name = getActiveName()
+  if (name === 'guardian-angel' || name === 'guardian angel') return true
+  return gameStore.coreHistory.some(c => c.name.toLowerCase() === 'guardian angel')
+})
 
 const isOracleFree = computed(() => {
   const name = getActiveName()
@@ -1172,6 +1177,9 @@ async function checkAnswer() {
       }
     }
     if (isAegisMode.value) {
+      if (isGuardianAngel.value && aegisShieldCount.value === maxShields.value) {
+        addTime(10000)
+      }
       aegisShieldCount.value = Math.min(maxShields.value, aegisShieldCount.value + 1)
     }
     triggerScoreFlash('correct')
