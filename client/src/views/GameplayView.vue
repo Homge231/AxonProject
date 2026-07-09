@@ -14,6 +14,12 @@
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
+    <!-- Prismatic Screen Flash -->
+    <div
+      v-if="showPrismaticFlash"
+      class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-yellow-500/20 pointer-events-none z-10 mix-blend-screen animate-pulse"
+    ></div>
+
 
 
     <!-- Floating points popup container -->
@@ -22,18 +28,21 @@
         <!-- Point Popups -->
         <div v-for="popup in pointPopups" :key="popup.id" class="fixed pointer-events-none z-[100] font-black uppercase tracking-wider transition-all"
           :class="[
-            popup.type === 'speedster' ? 'speedster-popup' : 'point-popup-anim',
+            popup.type === 'speedster' ? 'speedster-popup' : 
+              popup.type === 'prismatic' ? 'prismatic-explosion' : 'point-popup-anim',
             popup.type === 'typo' ? 'text-orange drop-shadow-[0_0_10px_rgba(255,165,0,0.8)]' :
               popup.type === 'wrong' ? 'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]' :
                 popup.type === 'speedster' ? 'speedster-fast-text' :
                   popup.type === 'shield_blocked' ? 'text-gray-300 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' :
-                    'text-success drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]'
+                    popup.type === 'prismatic' ? '' :
+                      'text-success drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]'
           ]" :style="{
             left: `${popup.x}px`,
             top: `${popup.y}px`
           }">
           {{ popup.type === 'shield_blocked' ? 'BLOCKED' : (popup.type === 'wrong' || popup.type === 'typo' ? `-${Math.abs(popup.value)}` : `+${Math.abs(popup.value)}`) }}
           <span v-if="popup.type === 'speedster'" class="ml-1">FAST!</span>
+          <span v-if="popup.type === 'prismatic'" class="ml-1">BOOM! 💥</span>
         </div>
       </transition-group>
     </div>
@@ -510,7 +519,7 @@ interface QuestionPayload {
 interface PointPopup {
   id: number
   value: number
-  type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked'
+  type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked' | 'prismatic'
   x: number
   y: number
 }
@@ -596,6 +605,7 @@ const maxShields = computed(() => {
 const aegisShieldCount = ref(0)
 const isShattering = ref(false)
 const showMissionCelebration = ref(false)
+const showPrismaticFlash = ref(false)
 
 // active_core_id / name sourced from gameStore (set in CoreSelectionView)
 const currentPandoraCoreId = ref<string | null>(null)
@@ -809,7 +819,7 @@ function triggerScoreFlash(type: ScoreFlash) {
 }
 
 // ── Floating popup helper ─────────────────────────────────────────────────
-function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked') {
+function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked' | 'prismatic') {
   let x = window.innerWidth / 2 - 50
   let y = window.innerHeight / 2 - 60
   if (letterSlotsRef.value) {
@@ -820,7 +830,7 @@ function spawnPointPopup(value: number, type: 'correct' | 'wrong' | 'typo' | 'sp
 
   const id = popupIdCounter++
   pointPopups.value.push({ id, value, type, x, y })
-  const duration = type === 'speedster' ? 1800 : 1200
+  const duration = type === 'speedster' || type === 'prismatic' ? 1800 : 1200
   setTimeout(() => {
     pointPopups.value = pointPopups.value.filter(p => p.id !== id)
   }, duration)
@@ -1295,10 +1305,16 @@ async function checkAnswer() {
             // Note: Mission celebration is now handled locally for instant feedback
             if (data.breakdown?.shield_blocked) {
               spawnPointPopup(0, 'shield_blocked')
+            } else if (data.correct && isPrismaticCombo.value) {
+              spawnPointPopup(data.points_earned, 'prismatic')
+              showPrismaticFlash.value = true
+              setTimeout(() => {
+                showPrismaticFlash.value = false
+              }, 300)
             } else if (data.correct && isSpeedsterCore.value) {
               spawnPointPopup(data.points_earned, 'speedster')
             } else {
-              const popupType: 'correct' | 'wrong' | 'typo' = data.correct
+              const popupType: 'correct' | 'wrong' | 'typo' | 'prismatic' = data.correct
                 ? 'correct'
                 : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
               spawnPointPopup(
