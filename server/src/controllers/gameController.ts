@@ -430,12 +430,6 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       return
     }
 
-    // Relax anti-cheat if the session is a Pandora variant
-    if (!isPandora && sessionCoreId !== submittedCoreId) {
-      res.status(403).json({ error: 'Core mismatch detected! (Anti-cheat triggered)' })
-      return
-    }
-
     // ── 4. Fetch core buffs ───────────────────────────────────────────────────
     // If Pandora mode, grab the buffs for the newly shifted core submitted by the client
     const coreIdToFetch = isPandora ? submittedCoreId : sessionCoreId
@@ -453,11 +447,15 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     const core: CoreRow = coreRow as CoreRow
 
-    // Strict Pandora anti-cheat: verify submitted core is a main Tier 1 core and NOT a Pandora variant
-    if (isPandora) {
+    // ── 3. Anti-cheat: validate submitted core matches session core, or is a valid Pandora shift ──
+    if (sessionCoreId !== submittedCoreId) {
+      if (!isPandora) {
+        res.status(403).json({ error: 'Core mismatch detected! (Anti-cheat triggered)' })
+        return
+      }
       const family = getCoreFamily(core.name)
       if (core.tier !== 1 || core.core_type !== 'main' || family === 'pandora') {
-        res.status(403).json({ error: 'Cheat detected: Submitted core is not a valid Tier 1 main core or is a Pandora variant.' })
+        res.status(403).json({ error: 'Cheat detected: Shifted core is not a valid Tier 1 main core or is a Pandora variant.' })
         return
       }
     }
