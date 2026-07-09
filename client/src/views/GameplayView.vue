@@ -1,12 +1,11 @@
 <template>
   <div
     class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
-    :class="{ 
+    :class="{
       'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting,
       'chaos-shift': isChaos && !isShifting,
       'exodia-shake': showMissionCelebration && isExodia
-    }"
-    @click="refocusInput">
+    }" @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
       :class="{ 'opacity-0': isBgFading, 'opacity-100': !isBgFading }" />
 
@@ -20,8 +19,8 @@
     <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
       <transition-group name="float-pts" tag="div">
         <!-- Point Popups -->
-        <div v-for="popup in pointPopups" :key="popup.id" class="fixed pointer-events-none z-[100] font-black uppercase tracking-wider transition-all"
-          :class="[
+        <div v-for="popup in pointPopups" :key="popup.id"
+          class="fixed pointer-events-none z-[100] font-black uppercase tracking-wider transition-all" :class="[
             popup.type === 'speedster' ? 'speedster-popup' : 'point-popup-anim',
             popup.type === 'typo' ? 'text-orange drop-shadow-[0_0_10px_rgba(255,165,0,0.8)]' :
               popup.type === 'wrong' ? 'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]' :
@@ -32,30 +31,23 @@
             left: `${popup.x}px`,
             top: `${popup.y}px`
           }">
-          {{ popup.type === 'shield_blocked' ? 'BLOCKED' : (popup.type === 'wrong' || popup.type === 'typo' ? `-${Math.abs(popup.value)}` : `+${Math.abs(popup.value)}`) }}
+          {{ popup.type === 'shield_blocked' ? 'BLOCKED' : (popup.type === 'wrong' || popup.type === 'typo' ?
+            `-${Math.abs(popup.value)}` : `+${Math.abs(popup.value)}`) }}
           <span v-if="popup.type === 'speedster'" class="ml-1">FAST!</span>
         </div>
       </transition-group>
     </div>
 
     <!-- Tutorial CoachMark -->
-    <CoachMark 
-      v-if="showTutorial"
-      targetId="tutorial-typing-area"
-      message="Type the target word as fast as you can. Mistakes will cost you points!"
-      placement="top"
-      @next="skipTutorialPermanently"
-      @skip="skipTutorialPermanently"
-    />
+    <CoachMark v-if="showTutorial" targetId="tutorial-typing-area"
+      message="Type the target word as fast as you can. Mistakes will cost you points!" placement="top"
+      @next="skipTutorialPermanently" @skip="skipTutorialPermanently" />
 
     <!-- Pandora overlays: shift announcements and indicator -->
-    <PandoraOverlay
-      :is-pandora-mode="isPandoraMode"
-      :active-core-name="gameStore.activeCoreName"
-      :shift-announcement="shiftAnnouncement"
-    />
+    <PandoraOverlay :is-pandora-mode="isPandoraMode" :active-core-name="gameStore.activeCoreName"
+      :shift-announcement="shiftAnnouncement" />
 
-    <header
+    <header v-show="gameState !== 'upgrade'"
       class="relative z-30 flex justify-between items-center px-8 lg:px-12 py-5 bg-darkNavy/30 backdrop-blur-md border-b border-white/10 shadow-lg">
       <div class="relative" ref="menuRef">
         <button @click.stop="menuOpen = !menuOpen"
@@ -79,7 +71,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-              }}</span>
+                  }}</span>
               </p>
             </div>
             <button @click.stop="goHome"
@@ -98,20 +90,19 @@
               </svg>
               Quit Match
             </button>
-            <button v-if="!matchStore.isFinalRound() && (gameState === 'playing' || gameState === 'correct' || gameState === 'wrong')"
+            <button
+              v-if="!matchStore.isFinalRound() && (gameState === 'playing' || gameState === 'correct' || gameState === 'wrong')"
               @click.stop="skipGameplay"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-yellow-400 hover:bg-yellow-400/10 transition-colors text-left border-t border-white/10">
               <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
               Skip to Core Selection
             </button>
             <button v-if="isDev" @click.stop="debugSkipRound"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-yellow-400 hover:bg-yellow-400/10 transition-colors text-left border-t border-white/10">
               <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
               Debug: Skip Round
             </button>
@@ -122,18 +113,20 @@
 
       <!-- Active Core History Badges in Center -->
       <div v-if="gameStore.coreHistory.length > 0" class="hidden md:flex flex-row items-center gap-2">
-        <div v-for="(core, index) in gameStore.coreHistory" :key="core.id" 
-             class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
-             :class="[
-               index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
-             ]">
+        <div v-for="(core, index) in gameStore.coreHistory" :key="core.id"
+          class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
+          :class="[
+            index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
+          ]">
           <span class="text-[8px] font-bold uppercase tracking-wider mb-0.5"
-                :class="[index === gameStore.coreHistory.length - 1 ? 'text-gray-300' : 'text-gray-500']">
-            {{ index === gameStore.coreHistory.length - 1 && isPandoraMode ? basePandoraCoreName : `Round ${index + 1}` }}
+            :class="[index === gameStore.coreHistory.length - 1 ? 'text-gray-300' : 'text-gray-500']">
+            {{ index === gameStore.coreHistory.length - 1 && isPandoraMode ? basePandoraCoreName : `Round ${index + 1}`
+            }}
           </span>
           <span class="text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-sm"
-                :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
-            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + gameStore.activeCoreName : core.name }}
+            :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
+            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: '
+              + gameStore.activeCoreName : core.name }}
           </span>
         </div>
       </div>
@@ -183,7 +176,7 @@
       <CoreUpgradeOverlay v-if="gameState === 'upgrade'" @selected="handleUpgradeSelected" />
     </transition>
 
-    <main
+    <main v-show="gameState !== 'upgrade'"
       class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
 
       <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
@@ -234,13 +227,11 @@
               </div>
 
               <!-- Letter slots (anchor for popup position) -->
-              <div id="tutorial-typing-area" class="w-full flex flex-col items-center gap-3 overflow-hidden" ref="letterSlotsRef">
+              <div id="tutorial-typing-area" class="w-full flex flex-col items-center gap-3 overflow-hidden"
+                ref="letterSlotsRef">
 
                 <!-- Speedster wind streak overlay component -->
-                <SpeedsterOverlay
-                  :active="!!activeCoreModule.showWindOverlay"
-                  :playing="gameState === 'playing'"
-                />
+                <SpeedsterOverlay :active="!!activeCoreModule.showWindOverlay" :playing="gameState === 'playing'" />
 
                 <div
                   class="flex flex-nowrap items-center justify-center gap-2 md:gap-3 w-full overflow-x-auto pb-3 scrollbar-none"
@@ -306,7 +297,7 @@
     </main>
 
     <!-- Timer progress bar -->
-    <div class="relative z-20 h-2 w-full flex bg-black/50">
+    <div v-show="gameState !== 'upgrade'" class="relative z-20 h-2 w-full flex bg-black/50">
       <div class="h-full rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]" :class="[
         timeLeft <= 10 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-blue to-lightBlue'
       ]" :style="{ width: `${showTutorial ? 0 : timerProgressPercent}%` }">
@@ -315,7 +306,7 @@
 
     <!-- Right-Side Indicators Container -->
     <div class="absolute top-28 right-8 z-20 flex flex-col items-end gap-4 transition-all duration-300">
-      
+
       <!-- Combo indicator: only visible when active core is the Combo Core -->
       <transition name="fade-scale">
         <div v-if="isComboCore">
@@ -359,7 +350,8 @@
           </h2>
           <div class="w-20 h-1 bg-gradient-to-r from-transparent via-hexred to-transparent mx-auto mb-10 mt-6"></div>
 
-          <div class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
+          <div
+            class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
             <div>
               <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Final Score</p>
               <p class="text-4xl font-black text-orange drop-shadow-md">{{ score }}</p>
@@ -383,11 +375,13 @@
               <tbody class="divide-y divide-white/5">
                 <template v-for="(group, roundNum) in groupedMatchHistory" :key="roundNum">
                   <tr>
-                    <td colspan="2" class="px-6 py-2 font-bold text-xs text-white/50 bg-black/80 uppercase tracking-widest border-b border-white/10">
+                    <td colspan="2"
+                      class="px-6 py-2 font-bold text-xs text-white/50 bg-black/80 uppercase tracking-widest border-b border-white/10">
                       Round {{ roundNum }}
                     </td>
                   </tr>
-                  <tr v-for="(item, idx) in group" :key="`${roundNum}-${idx}`" class="hover:bg-white/5 transition-colors">
+                  <tr v-for="(item, idx) in group" :key="`${roundNum}-${idx}`"
+                    class="hover:bg-white/5 transition-colors">
                     <td class="px-6 py-3 font-medium uppercase tracking-wider"
                       :class="item.isCorrect ? 'text-green bg-green/10' : 'text-hexred bg-hexred/10'">
                       {{ item.submitted }}
@@ -564,11 +558,11 @@ const isBgFading = ref(false)
 watch(() => matchStore.currentRound, (newRound, oldRound) => {
   const newTopic = matchStore.topics?.[newRound - 1]
   const newBg = THEME_MAP[newTopic] || THEME_MAP['daily-life']
-  
+
   if (oldRound === undefined) {
     currentBgImage.value = newBg
-  } 
-  
+  }
+
   else if (newRound && newRound !== oldRound) {
     isBgFading.value = true
 
@@ -578,7 +572,7 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
       setTimeout(() => {
         isBgFading.value = false
       }, 100)
-    }, 500) 
+    }, 500)
   }
 }, { immediate: true })
 
@@ -605,7 +599,7 @@ const activeCoreId = computed<string | null>(() => {
 // ── Core registry ──────────────────────────────────────────────────────────
 const effectiveCores = computed(() => {
   const cores = [...gameStore.coreHistory]
-  
+
   if (gameStore.activeCoreId && gameStore.activeCoreName) {
     cores.push({
       id: gameStore.activeCoreId,
@@ -613,7 +607,7 @@ const effectiveCores = computed(() => {
       icon: '⚙️'
     })
   }
-  
+
   if (isPandoraMode.value && currentPandoraCoreId.value) {
     const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
     if (shiftedCore) {
@@ -674,35 +668,35 @@ function triggerShapeshift() {
 
   // Determine current tier from matchStore (Round 1 = T1, Round 2 = T2, Round 3 = T3)
   const tier = matchStore.currentRound
-  
+
   // T1 names
   const upgradePaths: Record<string, string> = {
-      'Combo Core': 'Radiant Combo',
-      'Radiant Combo': 'Prismatic Combo',
-      'Speedster': 'Time Warp',
-      'Time Warp': 'Chronobreak',
-      'Oracle Core': 'Clairvoyance',
-      'Clairvoyance': 'Omniscience',
-      'Mission Core': 'Bounty Hunter',
-      'Bounty Hunter': 'Exodia',
-      'Aegis Shield': 'Reflective Aegis',
-      'Reflective Aegis': 'Bastion of Light',
-      'Balanced Core': 'Harmony Core',
-      'Harmony Core': 'Perfect Harmony',
-      'Power Core': 'Overclock Core',
-      'Overclock Core': 'Supernova Core',
-      "Pandora's Box": "Trickster's Glass",
-      "Trickster's Glass": "Chaos Theory"
+    'Combo Core': 'Radiant Combo',
+    'Radiant Combo': 'Prismatic Combo',
+    'Speedster': 'Time Warp',
+    'Time Warp': 'Chronobreak',
+    'Oracle Core': 'Clairvoyance',
+    'Clairvoyance': 'Omniscience',
+    'Mission Core': 'Bounty Hunter',
+    'Bounty Hunter': 'Exodia',
+    'Aegis Shield': 'Reflective Aegis',
+    'Reflective Aegis': 'Bastion of Light',
+    'Balanced Core': 'Harmony Core',
+    'Harmony Core': 'Perfect Harmony',
+    'Power Core': 'Overclock Core',
+    'Overclock Core': 'Supernova Core',
+    "Pandora's Box": "Trickster's Glass",
+    "Trickster's Glass": "Chaos Theory"
   }
   const tier1Names = Object.keys(upgradePaths).filter(k => !Object.values(upgradePaths).includes(k))
   const tier2Names = Object.keys(upgradePaths).filter(k => tier1Names.includes(Object.keys(upgradePaths).find(key => upgradePaths[key] === k) || ''))
   const tier3Names = Object.values(upgradePaths).filter(v => tier2Names.includes(Object.keys(upgradePaths).find(key => upgradePaths[key] === v) || ''))
-  
+
   // Pandora ALWAYS shifts between the 8 main (Tier 1) cores, regardless of round!
   const validNames = tier1Names
 
-  pandoraPool.value = allCores.value.filter((c: any) => 
-    validNames.some(name => name.toLowerCase() === c.name.toLowerCase()) && 
+  pandoraPool.value = allCores.value.filter((c: any) =>
+    validNames.some(name => name.toLowerCase() === c.name.toLowerCase()) &&
     c.id !== activeCoreId.value &&
     !checkPandoraCore(c.name)
   )
@@ -848,7 +842,7 @@ function startMatchTimer() {
     if (!isTimerPaused && !showTutorial.value && !isNaN(dt)) {
       remainingMatchMs -= dt
     }
-    
+
     remainingMatchMs = Math.max(0, remainingMatchMs)
 
     timerProgressPercent.value = (remainingMatchMs / (MATCH_DURATION * 1000)) * 100
@@ -859,7 +853,7 @@ function startMatchTimer() {
       let shiftInterval = 25000 // T1 Pandora: 25s
       if (isTrickster.value) shiftInterval = 20000 // T2 upgrades: 20s
       if (isChaos.value) shiftInterval = 15000 // T3 upgrades: 15s
-      
+
       if (Date.now() - lastShiftTime >= shiftInterval) {
         lastShiftTime = Date.now()
         triggerShapeshift()
@@ -986,14 +980,14 @@ async function loadQuestion() {
   questionStartTime.value = Date.now()
 
   gameState.value = 'playing'
-  
+
   if (isOmniscience.value && currentQuestion.value.target_length > 0) {
     const firstLetter = currentQuestion.value.oracle_hints?.[0]?.charAt(0)?.toLowerCase() || '_'
     if (firstLetter && firstLetter !== '·') {
       typedLetters.value = [firstLetter]
     }
   }
-  
+
   await nextTick()
   inputRef.value?.focus()
 }
@@ -1144,7 +1138,7 @@ async function checkAnswer() {
   if (isCorrectLocal) {
     gameState.value = 'correct'
     currentCombo.value++
-    
+
     // Core specific time modifiers
     if (isTimeWarp.value) {
       addTime(2000)
@@ -1413,20 +1407,20 @@ async function restartMatch() {
 
 async function playAgain() {
   if (gameState.value === 'loading') return
-  
+
   // Hard reset of global state
   score.value = 0
   questionsAnswered.value = 0
   currentCombo.value = 0
   aegisShieldCount.value = 0
   missionProgress.value = 0
-  
+
   matchStore.resetMatch()
   matchHistory.value = []
   gameStore.coreHistory = []
   gameStore.activeCoreId = null
   gameStore.activeCoreName = null
-  
+
   stopMatchTimer()
   resetTypingBoard()
 
@@ -2003,26 +1997,51 @@ onUnmounted(() => {
       0 0 20px rgba(255, 255, 255, 0.3);
   }
 }
+
 /* Chaos Theory Color Shift */
 .chaos-shift {
   animation: chaos-cycle 5s infinite linear;
 }
+
 @keyframes chaos-cycle {
-  0% { filter: hue-rotate(0deg) saturate(1.2); }
-  50% { filter: hue-rotate(180deg) saturate(1.5) contrast(1.1); }
-  100% { filter: hue-rotate(360deg) saturate(1.2); }
+  0% {
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
+
+  50% {
+    filter: hue-rotate(180deg) saturate(1.5) contrast(1.1);
+  }
+
+  100% {
+    filter: hue-rotate(360deg) saturate(1.2);
+  }
 }
 
 /* Exodia Shake */
 .exodia-shake {
   animation: exodia-tremor 0.1s infinite;
 }
+
 @keyframes exodia-tremor {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(5px, 5px) rotate(1deg); }
-  50% { transform: translate(0, 0) rotate(0deg); }
-  75% { transform: translate(-5px, 5px) rotate(-1deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(5px, 5px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  75% {
+    transform: translate(-5px, 5px) rotate(-1deg);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
 }
 
 /* Prismatic Explosion */
@@ -2031,9 +2050,22 @@ onUnmounted(() => {
   color: #fff;
   text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff, 0 0 30px #ffff00;
 }
+
 @keyframes prismatic-blast {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(2.5) rotate(10deg); opacity: 0.8; text-shadow: 0 0 20px #ff00ff, 0 0 40px #00ffff, 0 0 60px #ffff00; }
-  100% { transform: scale(3) rotate(0deg) translateY(-50px); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(2.5) rotate(10deg);
+    opacity: 0.8;
+    text-shadow: 0 0 20px #ff00ff, 0 0 40px #00ffff, 0 0 60px #ffff00;
+  }
+
+  100% {
+    transform: scale(3) rotate(0deg) translateY(-50px);
+    opacity: 0;
+  }
 }
 </style>
