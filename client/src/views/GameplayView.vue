@@ -597,10 +597,14 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
-const isAegisMode = computed(() => effectiveCores.value.some(c => checkAegisCore(c.name)))
+const isAegisMode = computed(() => 
+  checkAegisCore(activeCoreModule.value?.name || '') ||
+  effectiveCores.value.some(c => checkAegisCore(c.name))
+)
 const maxShields = computed(() => {
-  if (effectiveCores.value.length === 0) return checkMaxShields(gameStore.activeCoreName)
-  return Math.max(...effectiveCores.value.map(c => checkMaxShields(c.name)))
+  const activeMax = checkMaxShields(activeCoreModule.value?.name || '')
+  if (effectiveCores.value.length === 0) return activeMax
+  return Math.max(activeMax, ...effectiveCores.value.map(c => checkMaxShields(c.name)))
 })
 // Aegis Shield State
 const aegisShieldCount = ref(0)
@@ -666,16 +670,46 @@ const activeCoreModule = computed(() => {
 })
 
 // Convenience booleans
-const isComboCore = computed(() => effectiveCores.value.some(c => checkComboCore(c.name)))
-const isOracleCore = computed(() => effectiveCores.value.some(c => checkOracleCore(c.name)))
-const isSpeedsterCore = computed(() => effectiveCores.value.some(c => checkSpeedsterCore(c.name)))
-const isMissionCore = computed(() => effectiveCores.value.some(c => checkMissionCore(c.name)))
-const isTimeWarp = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'time warp'))
-const isChronobreak = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'chronobreak'))
-const isOmniscience = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'omniscience'))
-const isPrismaticCombo = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'prismatic combo'))
-const isExodia = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'exodia'))
-const isSpeedDemon = computed(() => effectiveCores.value.some(c => c.name.toLowerCase() === 'speed demon'))
+const isComboCore = computed(() => 
+  checkComboCore(activeCoreModule.value?.name || '') ||
+  effectiveCores.value.some(c => checkComboCore(c.name))
+)
+const isOracleCore = computed(() => 
+  checkOracleCore(activeCoreModule.value?.name || '') ||
+  effectiveCores.value.some(c => checkOracleCore(c.name))
+)
+const isSpeedsterCore = computed(() => 
+  checkSpeedsterCore(activeCoreModule.value?.name || '') ||
+  effectiveCores.value.some(c => checkSpeedsterCore(c.name))
+)
+const isMissionCore = computed(() => 
+  checkMissionCore(activeCoreModule.value?.name || '') ||
+  effectiveCores.value.some(c => checkMissionCore(c.name))
+)
+const isTimeWarp = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'time warp' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'time warp')
+)
+const isChronobreak = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'chronobreak' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'chronobreak')
+)
+const isOmniscience = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'omniscience' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'omniscience')
+)
+const isPrismaticCombo = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'prismatic combo' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'prismatic combo')
+)
+const isExodia = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'exodia' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'exodia')
+)
+const isSpeedDemon = computed(() => 
+  (activeCoreModule.value?.name || '').toLowerCase() === 'speed demon' ||
+  effectiveCores.value.some(c => c.name.toLowerCase() === 'speed demon')
+)
 
 // ── Pandora's Box Logic ──────────────────────────────────────────────────
 const basePandoraCoreName = computed(() => {
