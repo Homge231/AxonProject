@@ -492,10 +492,20 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     // ── 7. Fetch answer history for pattern-based cores ───────────────────────
     let answerHistory: boolean[] = []
     
-    // Default to the active core
-    const historyCoreNames = Array.isArray(core_history_names) && core_history_names.length > 0 
-      ? core_history_names 
-      : [core.name]
+    // Only stack cores that belong to the SAME family as the active core
+    const activeFamily = getCoreFamily(core.name)
+    let historyCoreNames = Array.isArray(core_history_names) ? [...core_history_names] : []
+    
+    if (activeFamily) {
+      historyCoreNames = historyCoreNames.filter(n => getCoreFamily(n) === activeFamily)
+    } else {
+      historyCoreNames = historyCoreNames.filter(n => n === core.name)
+    }
+    
+    // Ensure the active core is always included
+    if (!historyCoreNames.includes(core.name)) {
+      historyCoreNames.push(core.name)
+    }
       
     // Include secondaryCore if it exists (for Chaos Theory)
     if (secondaryCore && !historyCoreNames.includes(secondaryCore.name)) {

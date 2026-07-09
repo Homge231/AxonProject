@@ -478,6 +478,7 @@ import SpeedsterOverlay from '../components/game/SpeedsterOverlay.vue'
 import PandoraOverlay from '../components/game/PandoraOverlay.vue'
 import CoachMark from '../components/tutorial/CoachMark.vue'
 import { useGameStore } from '../stores/gameStore'
+import { getCoreFamily } from '../game/cores/families'
 import { useMatchStore } from '../stores/matchStore'
 import {
   getCoreModule,
@@ -604,10 +605,19 @@ const activeCoreId = computed<string | null>(() => {
 
 // ── Core registry ──────────────────────────────────────────────────────────
 const effectiveCores = computed(() => {
-  const cores = [...gameStore.coreHistory]
-  
-  if (gameStore.activeCoreId && gameStore.activeCoreName) {
-    cores.push({
+  const activeName = gameStore.activeCoreName || ''
+  const activeFamily = getCoreFamily(activeName)
+
+  let history = [...gameStore.coreHistory]
+
+  if (activeFamily) {
+    history = history.filter(c => getCoreFamily(c.name) === activeFamily)
+  } else {
+    history = history.filter(c => c.name === activeName)
+  }
+
+  if (gameStore.activeCoreId && gameStore.activeCoreName && !history.some(c => c.id === gameStore.activeCoreId)) {
+    history.push({
       id: gameStore.activeCoreId,
       name: gameStore.activeCoreName,
       icon: '⚙️'
@@ -616,11 +626,11 @@ const effectiveCores = computed(() => {
   
   if (isPandoraMode.value && currentPandoraCoreId.value) {
     const shiftedCore = allCores.value.find(c => c.id === currentPandoraCoreId.value)
-    if (shiftedCore) {
-      cores.push(shiftedCore)
+    if (shiftedCore && !history.some(c => c.id === shiftedCore.id)) {
+      history.push(shiftedCore)
     }
   }
-  return cores
+  return history
 })
 
 const activeCoreModule = computed(() => {

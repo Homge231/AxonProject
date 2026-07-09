@@ -105,7 +105,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   // Power Branch
   'power core': new PowerCoreStrategy('power core', 1.0),
   'overclock core': new PowerCoreStrategy('overclock core', 1.0),
-  'supernova core': new PowerCoreStrategy('supernova core', 2.0),
+  'supernova core': new PowerCoreStrategy('supernova core', 3.0),
   'hypercharge': new PowerCoreStrategy('hypercharge', 1.0),
   'power surge': new PowerCoreStrategy('power surge', 2.0),
   'brute force': new PowerCoreStrategy('brute force', 1.0),
