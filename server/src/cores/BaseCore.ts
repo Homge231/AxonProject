@@ -38,6 +38,8 @@ export interface ScoringContext {
   answerHistory: boolean[]
   /** Cross-round persistence: the player's shield count when the session started */
   initialShieldCount?: number
+  /** Names of all cores in the session's upgrade/history stack */
+  historyCoreNames?: string[]
 }
 
 /**
@@ -99,6 +101,19 @@ export abstract class BaseCore {
    */
   protected _oraclePenalty(ctx: ScoringContext): number {
     if (ctx.oracleRevealLevel <= 0) return 0
+
+    // If an upgraded Oracle core is present in history, hints are free
+    if (ctx.historyCoreNames) {
+      const upgradedOracleNames = [
+        'clairvoyance', 'third eye', 'future sight', 'divine guidance', 'oracle blessing',
+        'omniscience', 'mind reader', 'predictive strike', 'cosmic wisdom', 'divine eye'
+      ]
+      const hasUpgradedOracle = ctx.historyCoreNames.some(name =>
+        upgradedOracleNames.includes(name.toLowerCase())
+      )
+      if (hasUpgradedOracle) return 0
+    }
+
     const cumulativeCosts = [10, 30, 60]
     const idx = Math.min(Math.max(ctx.oracleRevealLevel, 1), cumulativeCosts.length) - 1
     return cumulativeCosts[idx]

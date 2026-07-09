@@ -77,10 +77,8 @@ export class OracleBlessingStrategy extends BaseCore {
   }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
-    const isNoHint   = ctx.oracleRevealLevel === 0
-    const multiplier = isNoHint ? 1.5 : 1.0
     const beforeMult = BASE_POINTS + ctx.flatBuff
-    const total      = Math.floor(beforeMult * ctx.multiplierBuff * multiplier)
+    const total      = Math.floor(beforeMult * ctx.multiplierBuff)
 
     return {
       pointsDelta: total,
@@ -88,7 +86,7 @@ export class OracleBlessingStrategy extends BaseCore {
         base:            BASE_POINTS,
         combo_bonus:     0,
         flat_buff:       ctx.flatBuff,
-        multiplier_buff: ctx.multiplierBuff * multiplier,
+        multiplier_buff: ctx.multiplierBuff,
         oracle_penalty:  0,
         penalty:         0,
       },

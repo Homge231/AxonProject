@@ -571,11 +571,19 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       flatBuff:          scoringCore.flat_buff,
       multiplierBuff:    scoringCore.multiplier_buff,
       answerHistory,
-      initialShieldCount
+      initialShieldCount,
+      historyCoreNames
     }
 
     // Always run the primary scoring core logic
     let { pointsDelta, breakdown } = runScoring(isCorrect, scoringCore.name, ctx)
+
+    // Apply Oracle Blessing points multiplier (1.5x on correct answer with no hints used)
+    const hasOracleBlessing = historyCoreNames.some(name => name.toLowerCase() === 'oracle blessing')
+    if (hasOracleBlessing && isCorrect && oracleRevealLevel === 0) {
+      pointsDelta = Math.floor(pointsDelta * 1.5)
+      breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * 1.5
+    }
 
     // Stack Mission progress if there is a Mission core in history
     const missionCoreName = historyCoreNames.find(name => getCoreStrategy(name).constructor.name === 'MissionCoreStrategy')
