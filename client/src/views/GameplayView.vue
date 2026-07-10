@@ -472,7 +472,7 @@
 
     <!-- US-24: input is disabled during the 15s timeout phase AND in the final timeout state -->
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay') || tutorial.isCurrentScreen('match-end')" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay')" @keydown="handleKeydown" />
   </div>
 </template>
 
