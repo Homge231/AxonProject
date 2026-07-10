@@ -232,7 +232,7 @@
                 :oracle-hint-text="oracleHintText" :oracle-next-cost="oracleNextCost" @use-hint="useOracleHint" />
 
               <div
-                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300"
+                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300 transform-gpu"
                 :class="{ 'burning-edge-active': isBurningComboActive }">
                 <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
                   <span v-if="currentQuestion?.question_text?.split(/_+/)[0]">
@@ -257,7 +257,7 @@
                   :class="{ 'speedster-slots-glow': isSpeedsterCore && gameState === 'playing' }">
                   <div v-for="(_, idx) in currentQuestion.target_length" :key="idx" class="flex-shrink-0">
                     <div
-                      class="relative w-10 h-14 md:w-14 md:h-20 bg-black/40 backdrop-blur-md rounded-t-lg flex items-center justify-center border-b-4 transition-all duration-200"
+                      class="relative w-10 h-14 md:w-14 md:h-20 bg-black/60 rounded-t-lg flex items-center justify-center border-b-4 transition-colors duration-200"
                       :class="{
                         'slot--active border-orange bg-black/60 shadow-[0_-4px_15px_rgba(255,165,0,0.25)]': idx === typedLetters.length && gameState === 'playing',
                         'slot--correct border-success': gameState === 'correct',
@@ -1605,9 +1605,16 @@ onUnmounted(() => {
   }
 }
 
+/* ── Popups & Float Animations ──────────────────────────────────────────────── */
+.point-popup-anim {
+  animation: floatUp 1.2s ease-out forwards;
+  will-change: transform, opacity;
+}
+
 /* ── Speedster FAST! popup ──────────────────────────────────────────────── */
 .speedster-popup {
   animation: fastPopup 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  will-change: transform, opacity;
 }
 
 .speedster-fast-text {
@@ -2041,6 +2048,7 @@ onUnmounted(() => {
 /* Prismatic Explosion */
 .prismatic-explosion {
   animation: prismatic-blast 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: transform, opacity;
   color: #fff;
   text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff, 0 0 30px #ffff00;
 }
