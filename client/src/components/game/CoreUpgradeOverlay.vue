@@ -53,9 +53,7 @@
             <!-- Icon circle -->
             <div class="relative w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-6 lg:mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
               :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
-              <span class="text-4xl lg:text-5xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300">
-                {{ core.icon || '🔮' }}
-              </span>
+              <img :src="core.icon" :alt="core.name" class="w-12 h-12 lg:w-16 lg:h-16 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300" />
             </div>
             
             <!-- Core name -->
@@ -86,6 +84,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
 import { useMatchStore } from '../../stores/matchStore'
+import { getCoreIconPath } from '../../game/cores/icons'
 
 const emit = defineEmits<{ (e: 'selected', coreId: string): void }>()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
@@ -93,12 +92,7 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const gameStore = useGameStore()
 const matchStore = useMatchStore()
 
-// ── Icon map ────────────────────────────────────────────────────────────────
-const DEFAULT_ICON = '🔮'
-const ICON_MAP: Record<string, string> = {
-  'balanced core': '⚖️', 'combo core': '🔥', 'oracle core': '👁️', 'speedster': '⚡',
-  'mission core': '🎯', 'power core': '💪', 'aegis shield': '🛡️', "pandora's box": '🎲'
-}
+// Icon mapping is now centralized in game/cores/icons.ts
 
 // ── State ───────────────────────────────────────────────────────────────────
 type CoreOption = { id: string; name: string; description: string; icon: string; flat_buff: number; multiplier_buff: number }
@@ -161,7 +155,7 @@ async function fetchUpgradeCores() {
       description: c.description,
       flat_buff: c.flat_buff,
       multiplier_buff: c.multiplier_buff,
-      icon: ICON_MAP[c.name?.toLowerCase()] || DEFAULT_ICON
+      icon: getCoreIconPath(c.name, c.icon_url)
     })).slice(0, 3)
   } catch (err) {
     console.error('Failed to fetch upgrade cores', err)
@@ -171,13 +165,41 @@ async function fetchUpgradeCores() {
   }
 }
 
+async function updateSessionCore(coreId: string) {
+  try {
+    const token = localStorage.getItem('arena_token')
+    const res = await fetch(`${SERVER_URL}/api/game/session/core`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ session_id: gameStore.sessionId, new_core_id: coreId })
+    })
+
+    if (!res.ok) {
+      console.error('Failed to update session core')
+    }
+  } catch (err) {
+    console.error('Error updating Session core:', err)
+  }
+}
+
 // ── Select a Core Upgrade ───────────────────────────────────────────────────
-function selectCore(core: CoreOption) {
+async function selectCore(core: CoreOption) {
   if (loading.value) return
 
   selectedCore.value = core
   loading.value = true
   stopTimer()
+
+  // Update Pinia state
+  gameStore.activeCoreId = core.id
+  gameStore.activeCoreName = core.name
+  gameStore.coreHistory.push({ id: core.id, name: core.name, icon: core.icon })
+
+  // Notify backend
+  await updateSessionCore(core.id)
 
   // Brief visual feedback before closing the overlay
   setTimeout(() => {

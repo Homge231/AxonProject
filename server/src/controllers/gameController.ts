@@ -220,7 +220,7 @@ export async function getCores(req: AuthRequest, res: Response): Promise<void> {
 
     const { data: allCores, error } = await supabase
       .from('cores')
-      .select('id, name, description, flat_buff, multiplier_buff, tier, upgrades_to, core_type, classification')
+      .select('id, name, description, flat_buff, multiplier_buff, tier, upgrades_to, core_type, classification, icon_url')
 
     if (error) throw error
     if (!allCores || allCores.length === 0) {

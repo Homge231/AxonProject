@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a0d0d" />
+      <stop offset="100%" stop-color="#0d0404" />
+    </radialGradient>
+
+    <!-- Glowing Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="50%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+
+    <!-- Inner Glow Gradient -->
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="70%" stop-color="#f97316" stop-opacity="0" />
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0.25" />
+    </radialGradient>
+
+    <!-- Symbol Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Drop Shadow for Depth -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Hexagon Outer Shape with Shadow -->
+  <g filter="url(#shadow)">
+    <!-- Glowing Hexagon Border -->
+    <polygon points="64,6 114,35 114,93 64,122 14,93 14,35" fill="url(#borderGrad)" />
+    
+    <!-- Dark Inner Hexagon Background -->
+    <polygon points="64,9 111,36 111,92 64,119 17,92 17,36" fill="url(#bgGrad)" />
+
+    <!-- Inner Hexagon Glow overlay -->
+    <polygon points="64,9 111,36 111,92 64,119 17,92 17,36" fill="url(#innerGlow)" />
+  </g>
+
+  <!-- Glowing Central Symbol -->
+  <g filter="url(#glow)">
+    
+        <!-- Hourglass of combo -->
+        <g stroke="#f97316" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="44" y1="36" x2="84" y2="36" stroke-width="5" />
+          <line x1="44" y1="92" x2="84" y2="92" stroke-width="5" />
+          <path d="M48,36 L52,54 C54,58 60,62 64,62 C68,62 74,58 76,54 L80,36" stroke="#ef4444" />
+          <path d="M48,92 L52,74 C54,70 60,66 64,66 C68,66 74,70 76,74 L80,92" stroke="#ef4444" />
+          <!-- Sand flow of fire -->
+          <circle cx="64" cy="64" r="3" fill="#eab308" stroke="none" />
+          <polygon points="64,48 60,84 68,84" fill="#eab308" fill-opacity="0.5" stroke="none" />
+        </g>
+      
+  </g>
+
+  <!-- Small geometric accent details -->
+  <circle cx="64" cy="22" r="1.5" fill="#fff" opacity="0.8" />
+  <circle cx="34" cy="98" r="1" fill="#eab308" opacity="0.4" />
+  <circle cx="94" cy="98" r="1" fill="#f97316" opacity="0.4" />
+</svg>

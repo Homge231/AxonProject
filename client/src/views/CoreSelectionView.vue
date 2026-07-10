@@ -60,9 +60,8 @@
             <div
               class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
               :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
-              <span class="text-5xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300">
-                {{ core.icon }}
-              </span>
+              <img :src="core.icon" :alt="core.name" 
+                class="w-16 h-16 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300" />
             </div>
             <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
               :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
@@ -119,6 +118,7 @@ import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import CoachMark from '../components/tutorial/CoachMark.vue'
+import { getCoreIconPath } from '../game/cores/icons'
 
 const router = useRouter()
 const gameStore = useGameStore()
@@ -133,97 +133,8 @@ interface CoreOption {
   multiplier_buff: number
   icon: string
 }
-const DEFAULT_ICON = '🔮'
-const ICON_MAP: Record<string, string> = {
-  'balanced core': '⚖️',
-  'harmony core': '☯️',
-  'perfect harmony': '💠',
-  'equilibrium': '⚖️',
-  'yin yang': '☯️',
-  'steady pace': '🚶',
-  'zenith core': '🏔️',
-  'nirvana': '🧘',
-  'cosmic balance': '🪐',
-  'combo core': '🔥',
-  'radiant combo': '☄️',
-  'prismatic combo': '💥',
-  'combo shield': '🧱',
-  'combo time': '⏱️',
-  'combo multiplier': '📈',
-  'golden combo': '🏆',
-  'chain lightning': '⚡',
-  'combo mastery': '🎓',
-  'oracle core': '👁️',
-  'clairvoyance': '🔭',
-  'omniscience': '🌟',
-  'third eye': '🧿',
-  'future sight': '🔮',
-  'divine guidance': '👼',
-  'mind reader': '🧠',
-  'predictive strike': '⚔️',
-  'cosmic wisdom': '🌌',
-  'speedster': '⚡',
-  'time warp': '⏳',
-  'chronobreak': '🛑',
-  'speed shield': '🛡️',
-  'mach speed': '🚀',
-  'overdrive': '⚙️',
-  'time freeze': '❄️',
-  'warp speed': '🌌',
-  'grand prix': '🏎️',
-  'mission core': '🎯',
-  'bounty hunter': '💰',
-  'exodia': '👑',
-  'daily quest': '📜',
-  'shield mission': '🛡️',
-  'time mission': '⏳',
-  'bounty overlord': '💰',
-  'apex predator': '🦁',
-  'mission specialist': '🕵️',
-  'power core': '💪',
-  'overclock core': '🔋',
-  'supernova core': '🌋',
-  'hypercharge': '⚡',
-  'power surge': '💥',
-  'brute force': '🔨',
-  'gigawatt core': '🔌',
-  'desperado': '🤠',
-  'absolute power': '👑',
-  'aegis shield': '🛡️',
-  'reflective aegis': '🪞',
-  'bastion of light': '🏰',
-  'shield battery': '🔋',
-  'fortress aegis': '🏰',
-  'shield synergy': '⛓️',
-  'spiked shield': '🔱',
-  'indomitable': '✊',
-  'aegis nova': '💥',
-  "pandora's box": '🎲',
-  "trickster's glass": '🃏',
-  "chaos theory": '🌀',
-  'chaos prism': '💎',
-  'warp reality': '🕳️',
-  "pandora's curse": '☠️',
-  'butterfly effect': '🦋',
-  "pandora's wrath": '👺',
-  'cosmic entropy': '🌪️',
-  'combo focus': '🎯',
-  'super combo': '💥',
-  'speed demon': '😈',
-  'sonic boom': '💥',
-  'oracle blessing': '😇',
-  'divine eye': '👁️',
-  'swift mission': '🏃',
-  'mission master': '🏆',
-  'shield burst': '💥',
-  'guardian angel': '👼',
-  'harmony wave': '🌊',
-  'universal harmony': '🌌',
-  'overload': '⚡',
-  'supermassive core': '🕳️',
-  "pandora's mirror": '🪞',
-  'reality collapse': '🌌'
-}
+// Icon mapping is now centralized in game/cores/icons.ts
+// Falls back to local path if icon_url not in DB response
 const THEME_MAP: Record<string, string> = {
   'daily-life': '/bg-daily-life.png',
   'cafe': '/bg-cafe.png',
@@ -352,7 +263,7 @@ async function fetchSupportCores() {
       description: c.description,
       flat_buff: c.flat_buff,
       multiplier_buff: c.multiplier_buff,
-      icon: ICON_MAP[c.name?.toLowerCase()] || DEFAULT_ICON
+      icon: getCoreIconPath(c.name, c.icon_url)
     }))
 
     randomCores.value = getRandomCores(supportCores.value, 2)

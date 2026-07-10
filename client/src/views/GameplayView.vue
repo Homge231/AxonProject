@@ -133,9 +133,10 @@
             }}
           </span>
           <span class="text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-sm"
-            :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
-            <span>{{ core.icon }}</span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: '
-              + gameStore.activeCoreName : core.name }}
+                :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
+            <span>
+              <img :src="core.icon" :alt="core.name" class="w-4 h-4 inline-block object-contain" />
+            </span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + gameStore.activeCoreName : core.name }}
           </span>
         </div>
       </div>
