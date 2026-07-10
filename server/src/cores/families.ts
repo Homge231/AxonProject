@@ -1,6 +1,6 @@
 export const CORE_FAMILIES: Record<string, { tier1: string[], tier2: string[], tier3: string[] }> = {
   'combo': {
-    tier1: ['Combo Core'],
+    tier1: ['Perfect Combo'],
     tier2: ['Radiant Combo', 'Combo Shield', 'Combo Time', 'Combo Multiplier', 'Combo Focus'],
     tier3: ['Prismatic Combo', 'Golden Combo', 'Chain Lightning', 'Combo Mastery', 'Super Combo']
   },
@@ -10,12 +10,12 @@ export const CORE_FAMILIES: Record<string, { tier1: string[], tier2: string[], t
     tier3: ['Chronobreak', 'Time Freeze', 'Warp Speed', 'Grand Prix', 'Sonic Boom']
   },
   'oracle': {
-    tier1: ['Oracle Core'],
+    tier1: ['Argus Eyes'],
     tier2: ['Clairvoyance', 'Third Eye', 'Future Sight', 'Divine Guidance', 'Oracle Blessing'],
     tier3: ['Omniscience', 'Mind Reader', 'Predictive Strike', 'Cosmic Wisdom', 'Divine Eye']
   },
   'mission': {
-    tier1: ['Mission Core'],
+    tier1: ['Mission Impossible'],
     tier2: ['Bounty Hunter', 'Daily Quest', 'Shield Mission', 'Time Mission', 'Swift Mission'],
     tier3: ['Exodia', 'Bounty Overlord', 'Apex Predator', 'Mission Specialist', 'Mission Master']
   },
@@ -25,12 +25,12 @@ export const CORE_FAMILIES: Record<string, { tier1: string[], tier2: string[], t
     tier3: ['Bastion of Light', 'Spiked Shield', 'Indomitable', 'Aegis Nova', 'Guardian Angel']
   },
   'balanced': {
-    tier1: ['Balanced Core'],
+    tier1: ['Balance'],
     tier2: ['Harmony Core', 'Equilibrium', 'Yin Yang', 'Steady Pace', 'Harmony Wave'],
     tier3: ['Perfect Harmony', 'Zenith Core', 'Nirvana', 'Cosmic Balance', 'Universal Harmony']
   },
   'power': {
-    tier1: ['Power Core'],
+    tier1: ['Power Strike'],
     tier2: ['Overclock Core', 'Hypercharge', 'Power Surge', 'Brute Force', 'Overload'],
     tier3: ['Supernova Core', 'Gigawatt Core', 'Desperado', 'Absolute Power', 'Supermassive Core']
   },

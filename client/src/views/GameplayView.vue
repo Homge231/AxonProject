@@ -153,7 +153,7 @@
           <span class="text-xl font-black text-white">{{ questionsAnswered }}</span>
         </div>
 
-        <div class="flex items-center gap-2" :class="timeLeft <= 10 ? 'text-hexred' : activeCoreModule.timerColor">
+        <div class="relative flex items-center gap-2" :class="timeLeft <= 10 ? 'text-hexred' : activeCoreModule.timerColor">
           <svg class="w-5 h-5 drop-shadow-md" :class="activeCoreModule.timerIconClass || undefined" fill="none"
             stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

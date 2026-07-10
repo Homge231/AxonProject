@@ -171,10 +171,13 @@ function stopTimer() {
 }
 
 function autoSelect() {
-  if (selectedCore.value) {
-    emit('selected', selectedCore.value.id)
-  } else if (upgradeCores.value.length > 0) {
-    emit('selected', upgradeCores.value[0].id)
+  if (selectedCore.value) return // Wait for the timeout in selectCore to finish
+
+  if (upgradeCores.value.length > 0) {
+    const randomIndex = Math.floor(Math.random() * upgradeCores.value.length)
+    selectCore(upgradeCores.value[randomIndex])
+  } else {
+    emit('selected', '')
   }
 }
 
