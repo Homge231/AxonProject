@@ -796,12 +796,11 @@ const isGuardianAngel = computed(() => {
 
 const isOracleFree = computed(() => {
   const name = getActiveName()
-  // Hints are free only for Oracle UPGRADE cores (not the base Oracle Core itself)
-  // BUG FIX #2: was `name && name !== 'oracle core'` which made ALL non-oracle cores show free hints
-  if (name && checkOracleCore(name) && name !== 'oracle core') return true
+  // Hints are free only for Oracle UPGRADE cores (not the base Argus Eyes itself)
+  if (name && checkOracleCore(name) && name !== 'argus eyes') return true
   return gameStore.coreHistory.some(c => {
     const family = getCoreFamily(c.name)
-    return family === 'oracle' && c.name.toLowerCase() !== 'oracle core'
+    return family === 'oracle' && c.name.toLowerCase() !== 'argus eyes'
   })
 })
 const timerSpeedMultiplier = computed(() => {
@@ -842,19 +841,19 @@ function triggerShapeshift() {
 
   // Determine T1 names via upgradePaths — Pandora always shifts to T1 regardless of round
   const upgradePaths: Record<string, string> = {
-    'Combo Core': 'Radiant Combo',
+    'Perfect Combo': 'Radiant Combo',
     'Radiant Combo': 'Prismatic Combo',
     'Speedster': 'Time Warp',
     'Time Warp': 'Chronobreak',
-    'Oracle Core': 'Clairvoyance',
+    'Argus Eyes': 'Clairvoyance',
     'Clairvoyance': 'Omniscience',
-    'Mission Core': 'Bounty Hunter',
+    'Mission Impossible': 'Bounty Hunter',
     'Bounty Hunter': 'Exodia',
     'Aegis Shield': 'Reflective Aegis',
     'Reflective Aegis': 'Bastion of Light',
-    'Balanced Core': 'Harmony Core',
+    'Balance': 'Harmony Core',
     'Harmony Core': 'Perfect Harmony',
-    'Power Core': 'Overclock Core',
+    'Power Strike': 'Overclock Core',
     'Overclock Core': 'Supernova Core',
     "Pandora's Box": "Trickster's Glass",
     "Trickster's Glass": "Chaos Theory"

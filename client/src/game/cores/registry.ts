@@ -374,7 +374,7 @@ export function isOracleCore(name: string | null | undefined): boolean {
   if (!name) return false
   const key = name.trim().toLowerCase()
   return [
-    'oracle core',
+    'argus eyes',
     'clairvoyance',
     'omniscience',
     'third eye',
@@ -419,7 +419,7 @@ export function isMissionCore(name: string | null | undefined): boolean {
   if (!name) return false
   const key = name.trim().toLowerCase()
   return [
-    'mission core',
+    'mission impossible',
     'bounty hunter',
     'exodia',
     'daily quest',
