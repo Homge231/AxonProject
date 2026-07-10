@@ -42,9 +42,14 @@
       <div v-else id="tutorial-core-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full px-4 md:px-0 items-stretch"
         :class="{ 'pointer-events-none': loading }">
 
-        <div v-for="(core, index) in randomCores" :key="index" class="flex flex-col items-center gap-6 w-full h-full">
+        <div v-for="(core, index) in randomCores" :key="index" class="flex flex-col items-center gap-6 w-full h-full relative">
 
-          <div @click="submitCore(core)"
+          <!-- Core detailed stats Tooltip -->
+          <transition name="fade">
+            <CoreTooltip v-if="activeTooltipIndex === index" :core="core" />
+          </transition>
+
+          <div 
             class="tech-border group flex-1 w-full relative backdrop-blur-xl rounded-2xl p-8 md:p-12 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
             :class="[
               selectedCore?.id === core.id
@@ -52,7 +57,13 @@
                 : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
               rerollingIndex === index ? 'reroll-anim pointer-events-none' : '',
               loading && selectedCore?.id !== core.id ? 'opacity-40 grayscale' : '' // Dims the unselected card when submitting
-            ]">
+            ]"
+            @mouseenter="showTooltip(index)"
+            @mouseleave="hideTooltip"
+            @touchstart="handleTouchStart(index, $event)"
+            @touchend="handleTouchEnd(core, $event)"
+            @click="submitCore(core)"
+          >
 
             <div
               class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -119,11 +130,49 @@ import { useAuthStore } from '../stores/authStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import CoachMark from '../components/tutorial/CoachMark.vue'
 import { getCoreIconPath } from '../game/cores/icons'
+import CoreTooltip from '../components/game/CoreTooltip.vue'
 
 const router = useRouter()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+
+// ── Hover & Touch-Hold Tooltip Logic ─────────────────────────────────────────
+const activeTooltipIndex = ref<number | null>(null)
+let touchTimeout: ReturnType<typeof setTimeout> | null = null
+let isHolding = false
+
+function showTooltip(index: number) {
+  activeTooltipIndex.value = index
+}
+
+function hideTooltip() {
+  activeTooltipIndex.value = null
+}
+
+function handleTouchStart(index: number, e: TouchEvent) {
+  isHolding = false
+  if (touchTimeout) clearTimeout(touchTimeout)
+  touchTimeout = setTimeout(() => {
+    isHolding = true
+    showTooltip(index)
+  }, 250)
+}
+
+function handleTouchEnd(core: any, e: TouchEvent) {
+  if (touchTimeout) {
+    clearTimeout(touchTimeout)
+    touchTimeout = null
+  }
+  
+  e.preventDefault()
+  
+  if (isHolding) {
+    hideTooltip()
+  } else {
+    submitCore(core)
+  }
+}
 
 interface CoreOption {
   id: string

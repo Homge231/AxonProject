@@ -36,8 +36,13 @@
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 w-full items-stretch"
         :class="{ 'pointer-events-none': loading && upgradeCores.length > 0 }">
         
-        <div v-for="(core, index) in upgradeCores" :key="core.id || index" class="flex flex-col items-center w-full h-full">
+        <div v-for="(core, index) in upgradeCores" :key="core.id || index" class="flex flex-col items-center w-full h-full relative">
           
+          <!-- Core detailed stats Tooltip -->
+          <transition name="fade">
+            <CoreTooltip v-if="activeTooltipIndex === index" :core="core" />
+          </transition>
+
           <div @click="selectCore(core)"
             class="tech-border group flex-1 w-full relative backdrop-blur-md rounded-2xl p-8 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
             :class="[
@@ -45,7 +50,12 @@
                 ? 'bg-black/60 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105'
                 : 'bg-black/40 border border-white/10 hover:bg-black/50 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
               loading && selectedCore?.id !== core.id && upgradeCores.length > 0 ? 'opacity-40 grayscale' : ''
-            ]">
+            ]"
+            @mouseenter="showTooltip(index)"
+            @mouseleave="hideTooltip"
+            @touchstart="handleTouchStart(index, $event)"
+            @touchend="handleTouchEnd(core, $event)"
+          >
             
             <!-- Hover shimmer overlay -->
             <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -85,12 +95,50 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
 import { useMatchStore } from '../../stores/matchStore'
 import { getCoreIconPath } from '../../game/cores/icons'
+import CoreTooltip from './CoreTooltip.vue'
 
 const emit = defineEmits<{ (e: 'selected', coreId: string): void }>()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
 const gameStore = useGameStore()
 const matchStore = useMatchStore()
+
+// ── Hover & Touch-Hold Tooltip Logic ─────────────────────────────────────────
+const activeTooltipIndex = ref<number | null>(null)
+let touchTimeout: ReturnType<typeof setTimeout> | null = null
+let isHolding = false
+
+function showTooltip(index: number) {
+  activeTooltipIndex.value = index
+}
+
+function hideTooltip() {
+  activeTooltipIndex.value = null
+}
+
+function handleTouchStart(index: number, e: TouchEvent) {
+  isHolding = false
+  if (touchTimeout) clearTimeout(touchTimeout)
+  touchTimeout = setTimeout(() => {
+    isHolding = true
+    showTooltip(index)
+  }, 250)
+}
+
+function handleTouchEnd(core: any, e: TouchEvent) {
+  if (touchTimeout) {
+    clearTimeout(touchTimeout)
+    touchTimeout = null
+  }
+  
+  e.preventDefault()
+  
+  if (isHolding) {
+    hideTooltip()
+  } else {
+    selectCore(core)
+  }
+}
 
 // Icon mapping is now centralized in game/cores/icons.ts
 
