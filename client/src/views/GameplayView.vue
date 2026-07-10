@@ -3,7 +3,6 @@
     class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
     :class="{
       'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting,
-      'chaos-shift': isChaos && !isShifting,
       'exodia-shake': showMissionCelebration && isExodia
     }" @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
