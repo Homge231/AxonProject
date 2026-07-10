@@ -92,7 +92,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     if (insertErr) {
       console.error('Pending Registration Insert Error:', insertErr.message)
-      res.status(500).json({ error: 'Failed to initiate verification' })
+      res.status(500).json({ error: `Failed to initiate verification: ${insertErr.message}` })
       return
     }
 
