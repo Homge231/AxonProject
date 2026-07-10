@@ -56,8 +56,19 @@ const popoverStyle = computed(() => {
   }
 
   if (p === 'bottom' || p === 'top' || p === 'center') {
-    left = `${rect.left + (rect.width / 2)}px`
-    transform = 'translateX(-50%)'
+    const rawLeft = rect.left + (rect.width / 2)
+    const popoverWidth = window.innerWidth < 500 ? window.innerWidth * 0.9 : 450
+    const halfWidth = popoverWidth / 2
+    
+    let popoverLeftEdge = rawLeft - halfWidth
+    const minLeft = 20
+    const maxLeft = window.innerWidth - popoverWidth - 20
+    
+    if (popoverLeftEdge < minLeft) popoverLeftEdge = minLeft
+    if (popoverLeftEdge > maxLeft) popoverLeftEdge = maxLeft
+    
+    left = `${popoverLeftEdge}px`
+    transform = 'none'
   }
 
   return { top, bottom, left, transform }
@@ -111,7 +122,7 @@ watch(() => props.targetId, () => {
 
       <!-- Popover Box -->
       <div 
-        class="absolute flex flex-col gap-4 bg-gray-900 border border-white/20 p-5 rounded-xl shadow-2xl max-w-sm z-[101]"
+        class="absolute flex flex-col gap-4 bg-gray-900 border border-white/20 p-5 rounded-xl shadow-2xl w-[450px] max-w-[90vw] z-[101]"
         :style="popoverStyle"
       >
         <!-- Header: Step counter and Skip button -->
