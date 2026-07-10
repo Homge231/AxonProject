@@ -1,9 +1,8 @@
 <template>
-  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md text-white select-none">
+  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm text-white select-none">
     
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
-    <!-- Timer (top-right) — identical to CoreSelectionView -->
     <div class="absolute top-8 right-8 z-20 flex items-center gap-2"
       :class="timeLeft <= 5 ? 'text-hexred animate-pulse' : 'text-lightOrange'">
       <svg class="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -15,15 +14,15 @@
       </span>
     </div>
 
-    <main class="relative z-10 flex flex-col items-center justify-center px-4 md:px-6 max-w-6xl mx-auto w-full">
-      <h2 class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
+    <main class="relative z-10 flex flex-col items-center justify-center px-4 md:px-6 max-w-4xl mx-auto w-full">
+      <h2
+        class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Upgrade
       </h2>
       <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
         Select a Support Core for Round {{ matchStore.currentRound + 1 }}
       </p>
 
-      <!-- Loading spinner -->
       <div v-if="loading && upgradeCores.length === 0" class="flex justify-center py-16">
         <svg class="animate-spin w-10 h-10 text-lightBlue" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -32,8 +31,7 @@
         </svg>
       </div>
 
-      <!-- 3-column card grid — all three Core Upgrades shown simultaneously -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 w-full items-stretch"
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full items-stretch"
         :class="{ 'pointer-events-none': loading && upgradeCores.length > 0 }">
         
         <div v-for="(core, index) in upgradeCores" :key="core.id || index" class="flex flex-col items-center w-full h-full relative">
@@ -44,11 +42,11 @@
           </transition>
 
           <div @click="selectCore(core)"
-            class="tech-border group flex-1 w-full relative backdrop-blur-md rounded-2xl p-8 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
+            class="tech-border group flex-1 w-full relative backdrop-blur-xl rounded-2xl p-8 md:p-12 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
             :class="[
               selectedCore?.id === core.id
-                ? 'bg-black/60 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105'
-                : 'bg-black/40 border border-white/10 hover:bg-black/50 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
+                ? 'bg-white/10 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105'
+                : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
               loading && selectedCore?.id !== core.id && upgradeCores.length > 0 ? 'opacity-40 grayscale' : ''
             ]"
             @mouseenter="showTooltip(index)"
@@ -65,22 +63,19 @@
               :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
               <img :src="core.icon" :alt="core.name" class="w-12 h-12 lg:w-16 lg:h-16 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300" />
             </div>
-            
-            <!-- Core name -->
-            <h3 class="text-2xl lg:text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
+
+            <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
               :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
               {{ core.name }}
             </h3>
-            
-            <!-- Core description -->
-            <p class="text-sm lg:text-base text-gray-300/80 leading-relaxed max-w-[250px]">{{ core.description }}</p>
+
+            <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px]">{{ core.description }}</p>
           </div>
-          
+
         </div>
       </div>
     </main>
 
-    <!-- Timer progress bar -->
     <div class="absolute bottom-0 left-0 z-20 h-2 w-full flex bg-black/50">
       <div class="h-full transition-all duration-1000 ease-linear rounded-r-full shadow-[0_0_10px_rgba(255,165,0,0.8)]"
         :class="timeLeft <= 5 ? 'bg-hexred shadow-[0_0_15px_rgba(230,57,70,0.8)]' : 'bg-gradient-to-r from-orange to-lightOrange'"
@@ -143,13 +138,18 @@ function handleTouchEnd(core: any, e: TouchEvent) {
 // Icon mapping is now centralized in game/cores/icons.ts
 
 // ── State ───────────────────────────────────────────────────────────────────
+const DEFAULT_ICON = '🔮'
+const ICON_MAP: Record<string, string> = {
+  'balanced core': '⚖️', 'combo core': '🔥', 'oracle core': '👁️', 'speedster': '⚡',
+  'mission core': '🎯', 'power core': '💪', 'aegis shield': '🛡️', "pandora's box": '🎲'
+}
+
 type CoreOption = { id: string; name: string; description: string; icon: string; flat_buff: number; multiplier_buff: number }
 
 const upgradeCores = ref<CoreOption[]>([])
 const selectedCore = ref<CoreOption | null>(null)
 const loading = ref(true)
 
-// ── Timer ───────────────────────────────────────────────────────────────────
 const SELECTION_DURATION = 15
 const timeLeft = ref(SELECTION_DURATION)
 let timer: ReturnType<typeof setInterval> | null = null
@@ -181,7 +181,6 @@ function autoSelect() {
   }
 }
 
-// ── Fetch all 3 Core Upgrades ───────────────────────────────────────────────
 async function fetchUpgradeCores() {
   loading.value = true
   try {
@@ -199,15 +198,14 @@ async function fetchUpgradeCores() {
     if (!res.ok) throw new Error('failed')
     const data = await res.json()
 
-    // Load all 3 Core Upgrades — no random selection, no reroll
     upgradeCores.value = (data.cores ?? []).map((c: any) => ({
       id: c.id,
       name: c.name,
       description: c.description,
       flat_buff: c.flat_buff,
       multiplier_buff: c.multiplier_buff,
-      icon: getCoreIconPath(c.name, c.icon_url)
-    })).slice(0, 3)
+      icon: ICON_MAP[c.name?.toLowerCase()] || DEFAULT_ICON
+    })).slice(0, 2)
   } catch (err) {
     console.error('Failed to fetch upgrade cores', err)
   } finally {
@@ -258,7 +256,6 @@ async function selectCore(core: CoreOption) {
   }, 500)
 }
 
-// ── Lifecycle ───────────────────────────────────────────────────────────────
 onMounted(() => fetchUpgradeCores())
 onUnmounted(() => stopTimer())
 </script>
@@ -271,7 +268,6 @@ onUnmounted(() => stopTimer())
   background-size: 64px 64px;
 }
 
-/* ── Animated tech border ──────────────────────────────────────────────────── */
 .tech-border {
   position: relative;
 }
@@ -282,14 +278,12 @@ onUnmounted(() => stopTimer())
   inset: 0;
   border-radius: inherit;
   padding: 2px;
-  background: linear-gradient(
-    60deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    #3b82f6 30%,
-    rgba(255, 165, 0, 0.8) 50%,
-    #3b82f6 70%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
+  background: linear-gradient(60deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      #3b82f6 30%,
+      rgba(255, 165, 0, 0.8) 50%,
+      #3b82f6 70%,
+      rgba(255, 255, 255, 0.1) 100%);
   background-size: 300% 300%;
   animation: sweepGlow 4s linear infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -305,7 +299,12 @@ onUnmounted(() => stopTimer())
 }
 
 @keyframes sweepGlow {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 100% 50%;
+  }
 }
 </style>
