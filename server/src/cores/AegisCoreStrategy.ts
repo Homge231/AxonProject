@@ -1,6 +1,6 @@
 import {
   BaseCore,
-  BASE_POINTS,
+  getBasePoints,
   ScoringContext,
   ScoringResult,
 } from './BaseCore'
@@ -100,13 +100,13 @@ export class AegisCoreStrategy extends BaseCore {
     }
     const synergyBonus = (hasShieldSynergy && currentShields === this.maxShields) ? 50 : 0
 
-    const beforeMult = BASE_POINTS + ctx.flatBuff + flatNova + synergyBonus
+    const beforeMult = getBasePoints(ctx.targetWord) + ctx.flatBuff + flatNova + synergyBonus
     const total      = Math.floor(beforeMult * activeMultiplier) - oraclePenalty
 
     return {
       pointsDelta: total,
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,
         flat_buff:       ctx.flatBuff + flatNova + synergyBonus,
         multiplier_buff: activeMultiplier,

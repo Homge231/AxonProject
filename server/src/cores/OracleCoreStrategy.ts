@@ -1,4 +1,4 @@
-import { BaseCore, BASE_POINTS, ScoringContext, ScoringResult } from './BaseCore'
+import { BaseCore, getBasePoints, ScoringContext, ScoringResult } from './BaseCore'
 
 /**
  * Oracle Core
@@ -40,7 +40,7 @@ export class OracleCoreStrategy extends BaseCore {
       multiplierBuff *= 2.0
     }
 
-    const beforeMult    = BASE_POINTS + flatBuff
+    const beforeMult    = getBasePoints(ctx.targetWord) + flatBuff
     let total         = Math.floor(beforeMult * multiplierBuff) - oraclePenalty
 
     // Predictive Strike: +300 bonus points if all 3 hints revealed
@@ -51,7 +51,7 @@ export class OracleCoreStrategy extends BaseCore {
     return {
       pointsDelta: total,
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,
         flat_buff:       flatBuff,
         multiplier_buff: multiplierBuff,
@@ -101,13 +101,13 @@ export class OracleBlessingStrategy extends BaseCore {
       multiplierBuff *= 2.0
     }
 
-    const beforeMult = BASE_POINTS + ctx.flatBuff
+    const beforeMult = getBasePoints(ctx.targetWord) + ctx.flatBuff
     const total      = Math.floor(beforeMult * multiplierBuff)
 
     return {
       pointsDelta: total,
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,
         flat_buff:       ctx.flatBuff,
         multiplier_buff: multiplierBuff,

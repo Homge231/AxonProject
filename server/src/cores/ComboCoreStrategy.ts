@@ -1,6 +1,6 @@
 import {
   BaseCore,
-  BASE_POINTS,
+  getBasePoints,
   COMBO_BONUS_PER_STREAK,
   MAX_COMBO_BONUS,
   ScoringContext,
@@ -30,13 +30,13 @@ export class ComboCoreStrategy extends BaseCore {
     const oraclePenalty = this._oraclePenalty(ctx)
     const bonusPerStreak = this.maxBonus > 100 ? 20 : COMBO_BONUS_PER_STREAK
     const comboBonus    = Math.min(ctx.combo * bonusPerStreak, this.maxBonus)
-    const beforeMult    = BASE_POINTS + comboBonus + ctx.flatBuff
+    const beforeMult    = getBasePoints(ctx.targetWord) + comboBonus + ctx.flatBuff
     const total         = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
 
     return {
       pointsDelta: total,
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     comboBonus,
         flat_buff:       ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff,

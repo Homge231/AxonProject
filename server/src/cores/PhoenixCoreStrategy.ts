@@ -1,8 +1,8 @@
-import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, getBasePoints } from './BaseCore'
 
 export class PhoenixCoreStrategy extends BaseCore {
   public readonly coreName: string
-  private basePointsOverride: number
+  
   private bonusAmount: number
   private requiredMisses: number
   private nullifyPenalty: boolean
@@ -12,14 +12,14 @@ export class PhoenixCoreStrategy extends BaseCore {
     bonusAmount: number = 200,
     requiredMisses: number = 1,
     nullifyPenalty: boolean = false,
-    basePointsOverride: number = BASE_POINTS
+    
   ) {
     super()
     this.coreName = coreName
     this.bonusAmount = bonusAmount
     this.requiredMisses = requiredMisses
     this.nullifyPenalty = nullifyPenalty
-    this.basePointsOverride = basePointsOverride
+    
   }
 
   private hasConsecutiveMisses(history: boolean[], amount: number): boolean {
@@ -41,14 +41,14 @@ export class PhoenixCoreStrategy extends BaseCore {
 
     const oraclePenalty = this._oraclePenalty(ctx)
     let finalScore = Math.floor(
-      (this.basePointsOverride + ctx.flatBuff + phoenixBonus) * ctx.multiplierBuff
+      (getBasePoints(ctx.targetWord) + ctx.flatBuff + phoenixBonus) * ctx.multiplierBuff
     )
     finalScore -= oraclePenalty
 
     return {
       pointsDelta: finalScore,
       breakdown: {
-        base: this.basePointsOverride,
+        base: getBasePoints(ctx.targetWord),
         combo_bonus: phoenixBonus,
         flat_buff: ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff,

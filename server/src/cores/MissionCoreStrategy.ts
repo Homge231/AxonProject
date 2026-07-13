@@ -1,4 +1,4 @@
-import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, getBasePoints } from './BaseCore'
 
 export class MissionCoreStrategy extends BaseCore {
   readonly coreName: string;
@@ -19,7 +19,7 @@ export class MissionCoreStrategy extends BaseCore {
   }
 
   private _evaluate(ctx: ScoringContext, isCorrect: boolean): ScoringResult {
-    const base = isCorrect ? BASE_POINTS : 0
+    const base = isCorrect ? getBasePoints(ctx.targetWord) : 0
     const penalty = isCorrect ? 0 : ctx.wrongPenalty
     const oraclePenalty = this._oraclePenalty(ctx)
 

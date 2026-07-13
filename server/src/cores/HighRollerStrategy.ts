@@ -1,8 +1,8 @@
-import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, getBasePoints } from './BaseCore'
 
 export class HighRollerStrategy extends BaseCore {
   public readonly coreName: string
-  private basePointsOverride: number
+  
   private winChance: number
   private winMultiplier: number
   private loseMultiplier: number
@@ -12,14 +12,14 @@ export class HighRollerStrategy extends BaseCore {
     winChance: number = 0.5,
     winMultiplier: number = 2,
     loseMultiplier: number = 0.5,
-    basePointsOverride: number = BASE_POINTS
+    
   ) {
     super()
     this.coreName = coreName
     this.winChance = winChance
     this.winMultiplier = winMultiplier
     this.loseMultiplier = loseMultiplier
-    this.basePointsOverride = basePointsOverride
+    
   }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
@@ -27,7 +27,7 @@ export class HighRollerStrategy extends BaseCore {
 
     // Calculate base first
     const baseScore = Math.floor(
-      (this.basePointsOverride + ctx.flatBuff) * ctx.multiplierBuff
+      (getBasePoints(ctx.targetWord) + ctx.flatBuff) * ctx.multiplierBuff
     )
     
     const isLucky = Math.random() < this.winChance
@@ -39,7 +39,7 @@ export class HighRollerStrategy extends BaseCore {
     return {
       pointsDelta: finalScore,
       breakdown: {
-        base: this.basePointsOverride,
+        base: getBasePoints(ctx.targetWord),
         combo_bonus: 0, 
         flat_buff: ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff * multiplier, // Show the effective multiplier

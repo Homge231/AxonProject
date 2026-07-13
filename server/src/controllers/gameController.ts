@@ -591,7 +591,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       initialShieldCount,
       historyCoreNames,
       currentShields:    typeof current_shields === 'number' ? Math.floor(current_shields) : undefined,
-      missionProgress:   typeof mission_progress === 'number' ? Math.floor(mission_progress) : undefined
+      missionProgress:   typeof mission_progress === 'number' ? Math.floor(mission_progress) : undefined,
+      targetWord:        question.target_word
     }
 
     // Always run the primary scoring core logic
