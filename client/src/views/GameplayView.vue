@@ -827,12 +827,6 @@ const timerSpeedMultiplier = computed(() => {
   return Math.max(0.1, mult)
 })
 
-watch([maxShields, isAegisMode], ([newMax, isAegis]) => {
-  if (isAegis && aegisShieldCount.value < newMax) {
-    aegisShieldCount.value = newMax
-  }
-}, { immediate: true })
-
 const isShifting = ref(false)
 const shiftAnnouncement = ref('')
 const pandoraPool = ref<any[]>([])
@@ -1521,6 +1515,10 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(async () => {
+  if (isAegisMode.value && aegisShieldCount.value < maxShields.value) {
+    aegisShieldCount.value = maxShields.value
+  }
+
   if (!activeCoreId.value) {
     router.replace('/core')
     return
@@ -1552,6 +1550,12 @@ onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
   for (const t of activeBgTimeouts) clearTimeout(t)
   activeBgTimeouts.clear()
+})
+
+watch([maxShields, isAegisMode], ([newMax, isAegis]) => {
+  if (isAegis && aegisShieldCount.value < newMax) {
+    aegisShieldCount.value = newMax
+  }
 })
 </script>
 
