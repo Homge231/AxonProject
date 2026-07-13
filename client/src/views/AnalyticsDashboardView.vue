@@ -114,9 +114,10 @@ async function fetchAnalytics() {
   loading.value = true
   error.value = null
   try {
+    const token = localStorage.getItem('arena_token')
     const res = await fetch(`${SERVER_URL}/api/user/analytics`, {
       headers: {
-        'Authorization': `Bearer ${authStore.token}`
+        'Authorization': `Bearer ${token}`
       }
     })
     
@@ -152,7 +153,7 @@ function getAccuracyBgClass(accuracy: number): string {
 }
 
 onMounted(() => {
-  if (!authStore.isAuthenticated) {
+  if (!authStore.isLoggedIn) {
     router.push('/login')
     return
   }
