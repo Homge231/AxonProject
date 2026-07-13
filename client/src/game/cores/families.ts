@@ -26,13 +26,13 @@ export const CORE_FAMILIES: Record<string, { tier1: string[], tier2: string[], t
   },
   'balanced': {
     tier1: ['Balance'],
-    tier2: ['Harmony Core', 'Equilibrium', 'Yin Yang', 'Steady Pace', 'Harmony Wave'],
-    tier3: ['Perfect Harmony', 'Zenith Core', 'Nirvana', 'Cosmic Balance', 'Universal Harmony']
+    tier2: ['Harmony', 'Equilibrium', 'Yin Yang', 'Steady Pace', 'Harmony Wave'],
+    tier3: ['Perfect Harmony', 'Zenith', 'Nirvana', 'Cosmic Balance', 'Universal Harmony']
   },
   'power': {
     tier1: ['Power Strike'],
-    tier2: ['Overclock Core', 'Hypercharge', 'Power Surge', 'Brute Force', 'Overload'],
-    tier3: ['Supernova Core', 'Gigawatt Core', 'Desperado', 'Absolute Power', 'Supermassive Core']
+    tier2: ['Overclock', 'Hypercharge', 'Power Surge', 'Brute Force', 'Overload'],
+    tier3: ['Supernova', 'Gigawatt', 'Desperado', 'Absolute Power', 'Supermassive']
   },
   'pandora': {
     tier1: ["Pandora's Box"],
@@ -40,8 +40,8 @@ export const CORE_FAMILIES: Record<string, { tier1: string[], tier2: string[], t
     tier3: ['Chaos Theory', 'Butterfly Effect', "Pandora's Wrath", 'Cosmic Entropy', 'Reality Collapse']
   },
   'phoenix': {
-    tier1: ['Phoenix Core'],
-    tier2: ['Phoenix Flame', 'Rebirth Core', 'Ashes to Ashes'],
+    tier1: ['Phoenix'],
+    tier2: ['Phoenix Flame', 'Rebirth', 'Ashes to Ashes'],
     tier3: ['Immortal Phoenix', 'Eternal Rebirth', 'Supernova Ashes']
   },
   'highroller': {

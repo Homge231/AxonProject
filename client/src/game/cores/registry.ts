@@ -26,9 +26,9 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   },
 
   // ── Phoenix Branch (US-29 Upgrades) ────────────────────────────────────────
-  'phoenix core': {
+  'phoenix': {
     id:           '11111111-1111-1111-1111-111111111111',
-    name:         'Phoenix Core',
+    name:         'Phoenix',
     timerColor:   'text-hexred',
     timerClass:   'drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]',
     timerIconClass: '',
@@ -42,9 +42,9 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     timerIconClass: '',
     popupType:    'correct',
   },
-  'rebirth core': {
+  'rebirth': {
     id:           '11111111-1111-1111-1111-333333333333',
-    name:         'Rebirth Core',
+    name:         'Rebirth',
     timerColor:   'text-green-400',
     timerClass:   'drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]',
     timerIconClass: '',
@@ -283,9 +283,9 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     timerIconClass: '',
     popupType:    'correct',
   },
-  'harmony core': {
+  'harmony': {
     id:           'harmony-core',
-    name:         'Harmony Core',
+    name:         'Harmony',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
@@ -309,17 +309,17 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     timerIconClass: '',
     popupType:    'correct',
   },
-  'overclock core': {
+  'overclock': {
     id:           'overclock-core',
-    name:         'Overclock Core',
+    name:         'Overclock',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
     popupType:    'correct',
   },
-  'supernova core': {
+  'supernova': {
     id:           'supernova-core',
-    name:         'Supernova Core',
+    name:         'Supernova',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
@@ -395,7 +395,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'equilibrium': { id: 'equilibrium', name: 'Equilibrium', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'yin yang': { id: 'yin-yang', name: 'Yin Yang', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'steady pace': { id: 'steady-pace', name: 'Steady Pace', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'zenith core': { id: 'zenith-core', name: 'Zenith Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'zenith': { id: 'zenith-core', name: 'Zenith', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'nirvana': { id: 'nirvana', name: 'Nirvana', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'cosmic balance': { id: 'cosmic-balance', name: 'Cosmic Balance', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
 
@@ -403,7 +403,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'hypercharge': { id: 'hypercharge', name: 'Hypercharge', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'power surge': { id: 'power-surge', name: 'Power Surge', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'brute force': { id: 'brute-force', name: 'Brute Force', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'gigawatt core': { id: 'gigawatt-core', name: 'Gigawatt Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'gigawatt': { id: 'gigawatt-core', name: 'Gigawatt', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'desperado': { id: 'desperado', name: 'Desperado', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'absolute power': { id: 'absolute-power', name: 'Absolute Power', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
 
@@ -427,7 +427,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'shield burst': { id: 'shield-burst', name: 'Shield Burst', timerColor: 'text-cyan-400', timerClass: 'shadow-cyan-500', timerIconClass: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]', popupType: 'correct' },
   'guardian angel': { id: 'guardian-angel', name: 'Guardian Angel', timerColor: 'text-cyan-400', timerClass: 'shadow-cyan-500', timerIconClass: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]', popupType: 'correct' },
   'overload': { id: 'overload', name: 'Overload', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'supermassive core': { id: 'supermassive-core', name: 'Supermassive Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'supermassive': { id: 'supermassive-core', name: 'Supermassive', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'pandora\'s mirror': { id: 'pandoras-mirror', name: 'Pandora\'s Mirror', timerColor: 'text-purple-400', timerClass: 'animate-pulse shadow-purple-500', timerIconClass: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]', popupType: 'correct' },
   'reality collapse': { id: 'reality-collapse', name: 'Reality Collapse', timerColor: 'text-purple-400', timerClass: 'animate-pulse shadow-purple-500', timerIconClass: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]', popupType: 'correct' },
 }
