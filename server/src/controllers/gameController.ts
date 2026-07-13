@@ -555,12 +555,17 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       .in('name', historyCoreNames)
     const coreRows = (dbCores && dbCores.length > 0 ? dbCores : [core]) as CoreRow[]
 
-    // Identify the best Power Core in history to use for scoring calculation
-    const powerCores = coreRows.filter(r => r.classification === 'power')
+    // Determine the primary scoring core.
+    // If the active core is Pandora (and has shape-shifted), we use the shifted secondary core for calculation.
     let scoringCore = core
-    if (powerCores.length > 0) {
-      // Pick the most recent power core in history
-      scoringCore = powerCores.sort((a, b) => historyCoreNames.indexOf(b.name) - historyCoreNames.indexOf(a.name))[0]
+    if (secondaryCore) {
+      scoringCore = secondaryCore
+    } else {
+      const powerCores = coreRows.filter(r => r.classification === 'power')
+      if (powerCores.length > 0) {
+        // Pick the most recent power core in history
+        scoringCore = powerCores.sort((a, b) => historyCoreNames.indexOf(b.name) - historyCoreNames.indexOf(a.name))[0]
+      }
     }
 
     // Find if ANY core in history grants initial shields
@@ -646,19 +651,6 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       }
     }
 
-    // Apply Chaos Theory secondary score
-    if (secondaryCore) {
-      const secCtx = { ...ctx, flatBuff: secondaryCore.flat_buff, multiplierBuff: secondaryCore.multiplier_buff }
-      const secResult = runScoring(isCorrect, secondaryCore.name, secCtx)
-      pointsDelta += secResult.pointsDelta
-      // Merge breakdown for basic values
-      breakdown.base += secResult.breakdown.base
-      breakdown.combo_bonus += secResult.breakdown.combo_bonus
-      breakdown.flat_buff += secResult.breakdown.flat_buff
-      breakdown.penalty += secResult.breakdown.penalty
-      breakdown.speed_bonus = (breakdown.speed_bonus || 0) + (secResult.breakdown.speed_bonus || 0)
-    }
-
     // ── Apply Pandora Base Passive Effects ────────────────────────────────────
     if (isPandora) {
       const baseName = sessionCoreName.toLowerCase()
@@ -704,7 +696,11 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
         }
       } 
       else if (baseName === "pandora's wrath") {
-        if (!isCorrect) {
+        if (isCorrect) {
+          // Correct answers give +500 flat points
+          pointsDelta += 500
+          breakdown.flat_buff = (breakdown.flat_buff || 0) + 500
+        } else {
           // Destroys incorrect answers, granting flat +200 points instead of losing points.
           pointsDelta = 200
         }
