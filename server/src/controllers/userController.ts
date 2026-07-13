@@ -155,3 +155,45 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
     return res.status(500).json({ error: 'Internal Server Error' })
   }
 }
+
+export const getVocabAnalytics = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_vocab_stats')
+      .select('correct_count, incorrect_count, questions(topic)')
+      .eq('user_id', req.user!.id)
+
+    if (error) {
+      console.error('getVocabAnalytics error:', error)
+      return res.status(400).json({ error: error.message })
+    }
+
+    const topics: Record<string, { correct: number, total: number }> = {}
+    
+    for (const row of data || []) {
+      const topic = (row.questions as any)?.topic || 'unknown'
+      if (!topics[topic]) {
+        topics[topic] = { correct: 0, total: 0 }
+      }
+      topics[topic].correct += row.correct_count
+      topics[topic].total += row.correct_count + row.incorrect_count
+    }
+
+    const result = Object.keys(topics).map(topic => {
+      const correct = topics[topic].correct
+      const total = topics[topic].total
+      const accuracy = total > 0 ? (correct / total) * 100 : 0
+      return {
+        topic,
+        accuracy: Math.round(accuracy * 10) / 10, // round to 1 decimal place
+        totalQuestions: total,
+        correctAnswers: correct
+      }
+    }).sort((a, b) => b.totalQuestions - a.totalQuestions) // sort by most answered topics first
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('getVocabAnalytics exception:', error)
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
