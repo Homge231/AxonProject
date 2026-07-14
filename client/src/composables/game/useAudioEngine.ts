@@ -368,22 +368,88 @@ export function playOracleHint() {
   osc.stop(audioCtx.currentTime + 0.1);
 }
 
-// ── 8. Core BGM Layer (Drone) ───────────────────────────────────────────
+// ── 8. Core Algorithmic BGM Layer ───────────────────────────────────────────
+
+let bgmInterval: ReturnType<typeof setInterval> | null = null;
+let bgmStep = 0;
+let currentScale: number[] = [];
+let currentPattern: number[] = [];
+let currentSpeed = 300;
+
+function playBGMNote() {
+  if (!audioCtx || !masterGainNode) return;
+  
+  const noteIndex = currentPattern[bgmStep % currentPattern.length];
+  bgmStep++;
+
+  if (noteIndex === -1) return; // -1 is a Rest (no note)
+
+  const freq = currentScale[noteIndex];
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = 'triangle'; // Soft pluck
+  osc.frequency.value = freq;
+
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.08, now + 0.05); // Very soft
+  gain.gain.exponentialRampToValueAtTime(0.001, now + (currentSpeed / 1000) * 1.5);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 1000;
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGainNode);
+
+  osc.start(now);
+  osc.stop(now + (currentSpeed / 1000) * 1.5);
+}
 
 export function updateCoreDrone(coreName: string) {
-  // Disabled background drone as per user feedback
+  const name = coreName.toLowerCase();
+  
+  // Set scale and pattern based on core theme
+  if (name.includes('strike') || name.includes('power')) {
+    // Aggressive minor sequence
+    currentScale = [164.81, 196.00, 220.00, 246.94, 293.66]; // E3 G3 A3 B3 D4
+    currentPattern = [0, 1, 2, 1, 0, -1, 3, 2];
+    currentSpeed = 220;
+  } else if (name.includes('shield') || name.includes('aegis')) {
+    // Heroic Major sequence
+    currentScale = [261.63, 329.63, 392.00, 523.25]; // C4 E4 G4 C5
+    currentPattern = [0, 1, 2, 3, 2, 1, 0, -1];
+    currentSpeed = 350;
+  } else if (name.includes('mission') || name.includes('bounty')) {
+    // Tension (Diminished feel)
+    currentScale = [220.00, 261.63, 311.13, 349.23]; // A3 C4 Eb4 F4
+    currentPattern = [0, -1, 1, -1, 2, -1, 3, 2];
+    currentSpeed = 200;
+  } else if (name.includes('speedster')) {
+    // Fast high-pitch sequence
+    currentScale = [329.63, 392.00, 440.00, 523.25, 587.33]; // E4 G4 A4 C5 D5
+    currentPattern = [0, 1, 2, 3, 4, 3, 2, 1];
+    currentSpeed = 150;
+  } else {
+    // Default mysterious pentatonic
+    currentScale = [220.00, 261.63, 293.66, 329.63, 392.00]; // A Minor Pentatonic
+    currentPattern = [0, 2, 1, 3, 2, 4, 3, -1];
+    currentSpeed = 300;
+  }
+
+  if (bgmInterval) {
+    clearInterval(bgmInterval);
+  }
+  bgmStep = 0;
+  bgmInterval = setInterval(playBGMNote, currentSpeed);
 }
 
 export function stopCoreDrone() {
-  // Disabled background drone as per user feedback
-  if (droneGain && audioCtx) {
-    droneGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
-    setTimeout(() => {
-      if (droneOsc) {
-        droneOsc.stop();
-        droneOsc.disconnect();
-        droneOsc = null;
-      }
-    }, 1000);
+  if (bgmInterval) {
+    clearInterval(bgmInterval);
+    bgmInterval = null;
   }
 }
