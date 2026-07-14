@@ -13,10 +13,9 @@
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
     <!-- Prismatic Screen Flash -->
-    <div
-      v-if="showPrismaticFlash"
-      class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-yellow-500/20 pointer-events-none z-10 mix-blend-screen animate-pulse"
-    ></div>
+    <div v-if="showPrismaticFlash"
+      class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-yellow-500/20 pointer-events-none z-10 mix-blend-screen animate-pulse">
+    </div>
 
 
 
@@ -24,9 +23,9 @@
     <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
       <transition-group name="float-pts" tag="div">
         <!-- Point Popups -->
-        <div v-for="popup in pointPopups" :key="popup.id" class="fixed pointer-events-none z-[100] font-black uppercase tracking-wider transition-all"
-          :class="[
-            popup.type === 'speedster' ? 'speedster-popup' : 
+        <div v-for="popup in pointPopups" :key="popup.id"
+          class="fixed pointer-events-none z-[100] font-black uppercase tracking-wider transition-all" :class="[
+            popup.type === 'speedster' ? 'speedster-popup' :
               popup.type === 'prismatic' ? 'prismatic-explosion' : 'point-popup-anim',
             popup.type === 'typo' ? 'text-orange drop-shadow-[0_0_10px_rgba(255,165,0,0.8)]' :
               popup.type === 'wrong' ? 'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]' :
@@ -47,19 +46,12 @@
     </div>
 
     <!-- Tutorial CoachMark -->
-    <CoachMark 
-      v-if="tutorial.isCurrentScreen('gameplay') || tutorial.isCurrentScreen('match-end')"
+    <CoachMark v-if="tutorial.isCurrentScreen('gameplay') || tutorial.isCurrentScreen('match-end')"
       :targetId="tutorial.currentStepData.value?.targetId || ''"
-      :message="tutorial.currentStepData.value?.message || ''"
-      :title="tutorial.currentStepData.value?.title"
-      :icon="tutorial.currentStepData.value?.icon"
-      :step="tutorial.currentStepNumber.value"
-      :totalSteps="tutorial.totalSteps"
-      :keyHints="tutorial.currentStepData.value?.keyHints"
-      :placement="tutorial.currentStepData.value?.placement"
-      @next="tutorial.next"
-      @skip="tutorial.complete"
-    />
+      :message="tutorial.currentStepData.value?.message || ''" :title="tutorial.currentStepData.value?.title"
+      :icon="tutorial.currentStepData.value?.icon" :step="tutorial.currentStepNumber.value"
+      :totalSteps="tutorial.totalSteps" :keyHints="tutorial.currentStepData.value?.keyHints"
+      :placement="tutorial.currentStepData.value?.placement" @next="tutorial.next" @skip="tutorial.complete" />
 
     <!-- Pandora overlays: shift announcements and indicator -->
     <PandoraOverlay :is-pandora-mode="isPandoraMode" :active-core-name="activeCoreNameDynamic"
@@ -89,7 +81,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-                  }}</span>
+              }}</span>
               </p>
             </div>
             <button @click.stop="goHome"
@@ -131,21 +123,24 @@
 
       <!-- Active Core History Badges in Center -->
       <div v-if="gameStore.coreHistory.length > 0" class="hidden md:flex flex-row items-center gap-2">
-        <div v-for="(core, index) in gameStore.coreHistory" :key="`${core.id}-${index}`" 
-             class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
-             :class="[
-               index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
-             ]">
+        <div v-for="(core, index) in gameStore.coreHistory" :key="`${core.id}-${index}`"
+          class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
+          :class="[
+            index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
+          ]">
           <span class="text-[8px] font-bold uppercase tracking-wider mb-0.5"
             :class="[index === gameStore.coreHistory.length - 1 ? 'text-gray-300' : 'text-gray-500']">
             {{ index === gameStore.coreHistory.length - 1 && isPandoraMode ? basePandoraCoreName : `Round ${index + 1}`
             }}
           </span>
           <span class="text-xs font-black uppercase tracking-widest flex items-center gap-1 shadow-sm"
-                :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
+            :class="[index === gameStore.coreHistory.length - 1 ? (activeCoreModule.timerColor || 'text-lightBlue') : 'text-gray-400']">
             <span>
-              <img :src="(index === gameStore.coreHistory.length - 1 && isPandoraMode) ? activeCoreIconUrlDynamic : core.icon" :alt="core.name" class="w-4 h-4 inline-block object-contain" />
-            </span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' + activeCoreNameDynamic : core.name }}
+              <img
+                :src="(index === gameStore.coreHistory.length - 1 && isPandoraMode) ? activeCoreIconUrlDynamic : core.icon"
+                :alt="core.name" class="w-4 h-4 inline-block object-contain" />
+            </span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' +
+              activeCoreNameDynamic : core.name }}
           </span>
         </div>
       </div>
@@ -163,7 +158,8 @@
           <span class="text-xl font-black text-white">{{ questionsAnswered }}</span>
         </div>
 
-        <div class="relative flex items-center gap-2" :class="timeLeft <= 10 ? 'text-hexred' : activeCoreModule.timerColor">
+        <div class="relative flex items-center gap-2"
+          :class="timeLeft <= 10 ? 'text-hexred' : activeCoreModule.timerColor">
           <svg class="w-5 h-5 drop-shadow-md" :class="activeCoreModule.timerIconClass || undefined" fill="none"
             stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -433,14 +429,26 @@
               <span class="relative z-10 text-white">Next Round ({{ timeoutCountdown }}s)</span>
             </button>
 
-            <!-- Play Again (Round 3) -->
-            <button v-else @click="playAgain"
-              class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-shadow">
-              <div
-                class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-              </div>
-              <span class="relative z-10 text-white">Play Again</span>
-            </button>
+            <!-- Play Again & Feedback (Round 3) -->
+            <template v-else>
+              <!-- Nút Feedback mới thêm -->
+              <button @click="showFeedback = true"
+                class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-shadow">
+                <div
+                  class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                </div>
+                <span class="relative z-10 text-white">Feedback</span>
+              </button>
+
+              <!-- Nút Play Again giữ nguyên -->
+              <button @click="playAgain"
+                class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-shadow">
+                <div
+                  class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                </div>
+                <span class="relative z-10 text-white">Play Again</span>
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -472,8 +480,17 @@
 
     <!-- US-24: input is disabled during the 15s timeout phase AND in the final timeout state -->
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-      spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay')" @keydown="handleKeydown" />
+      spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay')"
+      @keydown="handleKeydown" />
+    <FeedbackOverlay :is-visible="showFeedback" @close="showFeedback = false" @success="handleFeedbackSuccess" />
+
+    <!-- US-24: input is disabled... -->
+    <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
+      spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay')"
+      @keydown="handleKeydown" />
+
   </div>
+
 </template>
 
 <script setup lang="ts">
@@ -508,10 +525,16 @@ import {
 } from '../game/cores/registry'
 import { getCoreIconPath } from '../game/cores/icons'
 import { fetchWithAuth } from '../services/api'
+import FeedbackOverlay from '../components/game/FeedbackOverlay.vue';
 const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
 const matchStore = useMatchStore()
+const showFeedback = ref(false);
+
+const handleFeedbackSuccess = () => {
+  console.log('Feedback đã được gửi!');
+};
 
 // QuestionPayload and PointPopup used by composables — re-export so IDE recognises usage
 export interface QuestionPayload {
@@ -651,7 +674,7 @@ watch(() => matchStore.currentRound, (newRound, oldRound) => {
 const currentCombo = ref(0)
 const isBurningComboActive = computed(() => isComboCore.value && currentCombo.value >= 3)
 const missionProgress = ref(0)
-const isAegisMode = computed(() => 
+const isAegisMode = computed(() =>
   checkAegisCore(activeCoreModule.value?.name || '') ||
   effectiveCores.value.some(c => checkAegisCore(c.name))
 )
@@ -811,7 +834,7 @@ const isOracleFree = computed(() => {
 const timerSpeedMultiplier = computed(() => {
   let mult = 1.0
   const activeName = getActiveName()
-  
+
   const hasHypercharge = activeName === 'hypercharge' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'hypercharge')
   const hasOverdrive = activeName === 'overdrive' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'overdrive')
   if (hasHypercharge) mult += 0.15

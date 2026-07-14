@@ -12,6 +12,8 @@ const auth = useAuthStore(pinia)
 app.use(pinia)
 app.use(router)
 
-auth.init().finally(() => router.isReady()).then(() => {
-  app.mount('#app')
+auth.init().finally(() => {
+  router.isReady().then(() => {
+    app.mount('#app')
+  })
 })
