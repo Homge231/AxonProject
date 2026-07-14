@@ -23,8 +23,10 @@ export const useSettingsStore = defineStore('settings', () => {
   // Persist and apply changes
   watch(volumeLevel, (newVal) => {
     localStorage.setItem('arena_volume', String(newVal))
-    // Trigger a silent unlock trick if volume > 0 and wasn't playing, though slider slide is an interaction.
-    // We let audioService handle the volume dynamically when playing.
+    // Apply immediately to Web Audio API
+    import('../composables/game/useAudioEngine').then(({ setMasterVolume }) => {
+      setMasterVolume(newVal / 100.0)
+    }).catch(() => {})
   })
 
   watch(vfxEnabled, (newVal) => {

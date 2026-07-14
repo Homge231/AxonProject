@@ -19,6 +19,13 @@ function getMasterVolume(): number {
 }
 
 // Initialize the Audio Context on first user interaction
+export function setMasterVolume(vol: number) {
+  if (masterGainNode) {
+    // Smoothly transition volume to avoid popping
+    masterGainNode.gain.linearRampToValueAtTime(vol, audioCtx!.currentTime + 0.1);
+  }
+}
+
 export function initAudio() {
   try {
     if (!audioCtx) {
@@ -31,13 +38,11 @@ export function initAudio() {
       masterGainNode.gain.value = getMasterVolume();
       
       isAudioEnabled = true;
+    } else {
+      // Update volume if it changed
+      masterGainNode!.gain.linearRampToValueAtTime(getMasterVolume(), audioCtx.currentTime + 0.1);
     }
     
-    // Update volume if it changed
-    if (masterGainNode) {
-      masterGainNode.gain.value = getMasterVolume();
-    }
-
     if (audioCtx.state === 'suspended') {
       audioCtx.resume().then(() => {
         console.log('[AudioEngine] AudioContext resumed successfully.');

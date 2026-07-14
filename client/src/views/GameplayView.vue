@@ -1719,6 +1719,7 @@ onMounted(async () => {
 onUnmounted(() => {
   stopMatchTimer()
   stopTimeoutInterval()
+  stopCoreDrone()
   document.removeEventListener('click', handleOutsideClick)
   window.removeEventListener('beforeunload', handleBeforeUnload)
   for (const t of activeBgTimeouts) clearTimeout(t)
