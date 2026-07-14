@@ -539,6 +539,22 @@ import { useGameStore } from '../stores/gameStore'
 import { getCoreFamily } from '../game/cores/families'
 import { useMatchStore } from '../stores/matchStore'
 import {
+  initAudio, 
+  playKeystroke, 
+  updateFireLoop, 
+  stopFireLoop, 
+  playFireBurst,
+  playJackpot,
+  playShieldGain,
+  playShieldBreak,
+  updateCoreDrone,
+  stopCoreDrone,
+  playSpeedWhoosh,
+  playPandoraWarp,
+  playPandoraTransform,
+  playOracleHint
+} from '../composables/game/useAudioEngine'
+import {
   getCoreModule,
   isComboCore as checkComboCore,
   isOracleCore as checkOracleCore,
@@ -930,10 +946,12 @@ function triggerShapeshift() {
   if (pandoraPool.value.length === 0) return
 
   isShifting.value = true
+  playPandoraWarp()
 
   const randomCore = pandoraPool.value[Math.floor(Math.random() * pandoraPool.value.length)]
 
   setTimeout(() => {
+    playPandoraTransform()
     currentPandoraCoreId.value = randomCore.id
     shiftAnnouncement.value = randomCore.name
     isShifting.value = false
@@ -964,6 +982,8 @@ const oracleHintText = computed(() => {
 function useOracleHint() {
   if (oracleRevealLevel.value >= oracleMaxAllowed.value) return
   if (gameState.value !== 'playing') return
+
+  playOracleHint()
 
   const cost = isOracleFree.value ? 0 : ORACLE_COSTS[oracleRevealLevel.value]
   oracleRevealLevel.value++
@@ -1177,6 +1197,8 @@ async function skipQuestion() {
 
 // ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
+  initAudio()
+  
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
@@ -1194,6 +1216,7 @@ function handleKeydown(e: KeyboardEvent) {
 
   if (e.key === 'Backspace') {
     typedLetters.value = typedLetters.value.slice(0, -1)
+    playKeystroke(isSpeedsterCore.value, 0.8) // slightly lower pitch for backspace
     return
   }
 
@@ -1202,6 +1225,10 @@ function handleKeydown(e: KeyboardEvent) {
     if (typedLetters.value.length >= maxLen) return
 
     typedLetters.value = [...typedLetters.value, e.key.toLowerCase()]
+    
+    // Play keystroke sound
+    playKeystroke(isSpeedsterCore.value, isSpeedsterCore.value ? 1.15 : 1.0)
+    
     if (typedLetters.value.length === maxLen) checkAnswer()
   }
 }
@@ -1396,6 +1423,7 @@ async function checkAnswer() {
 
         if (mySeq === submitAnswerSeq) {
           if (data.breakdown?.mission_completed === 1) {
+            playJackpot(true)
             showMissionCelebration.value = true
             setTimeout(() => {
               showMissionCelebration.value = false
@@ -1403,28 +1431,27 @@ async function checkAnswer() {
             }, 2000)
           }
 
-
-          if (mySeq === submitAnswerSeq) {
-            // Note: Mission celebration is now handled locally for instant feedback
-            if (data.breakdown?.shield_blocked) {
-              spawnPointPopup(0, 'shield_blocked')
-            } else if (data.correct && isPrismaticCombo.value) {
-              spawnPointPopup(data.points_earned, 'prismatic')
-              showPrismaticFlash.value = true
-              setTimeout(() => {
-                showPrismaticFlash.value = false
-              }, 300)
-            } else if (data.correct && isSpeedsterCore.value) {
-              spawnPointPopup(data.points_earned, 'speedster')
-            } else {
-              const popupType: 'correct' | 'wrong' | 'typo' | 'prismatic' = data.correct
-                ? 'correct'
-                : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
-              spawnPointPopup(
-                data.correct ? data.points_earned : data.points_deducted,
-                popupType
-              )
-            }
+          // Note: Mission celebration is now handled locally for instant feedback
+          if (data.breakdown?.shield_blocked) {
+            spawnPointPopup(0, 'shield_blocked')
+          } else if (data.correct && isPrismaticCombo.value) {
+            spawnPointPopup(data.points_earned, 'prismatic')
+            showPrismaticFlash.value = true
+            playFireBurst() // Burst of fire for prismatic
+            setTimeout(() => {
+              showPrismaticFlash.value = false
+            }, 300)
+          } else if (data.correct && isSpeedsterCore.value) {
+            spawnPointPopup(data.points_earned, 'speedster')
+            if (timeTaken <= 2000) playSpeedWhoosh()
+          } else {
+            const popupType: 'correct' | 'wrong' | 'typo' | 'prismatic' = data.correct
+              ? 'correct'
+              : (data.penalty_type === 'typo' ? 'typo' : 'wrong')
+            spawnPointPopup(
+              data.correct ? data.points_earned : data.points_deducted,
+              popupType
+            )
           }
         }
 
@@ -1632,6 +1659,31 @@ watch(() => settingsStore.isSettingsOpen, (isOpen) => {
     nextTick(() => {
       refocusInput()
     })
+  }
+})
+
+// Audio watchers
+watch(aegisShieldCount, (newVal, oldVal) => {
+  if (newVal > oldVal) {
+    playShieldGain(newVal === maxShields.value)
+  } else if (newVal < oldVal) {
+    playShieldBreak()
+  }
+})
+
+watch(activeCoreModule, (newCore) => {
+  if (newCore) {
+    updateCoreDrone(newCore.name)
+  } else {
+    stopCoreDrone()
+  }
+}, { immediate: true })
+
+watch(() => currentCombo.value, (newVal) => {
+  if (newVal >= 2) {
+    updateFireLoop(newVal)
+  } else if (newVal === 0) {
+    stopFireLoop(true)
   }
 })
 

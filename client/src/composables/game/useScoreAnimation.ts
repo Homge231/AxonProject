@@ -3,12 +3,13 @@ import { ref, onUnmounted } from 'vue'
 export interface PointPopup {
   id: number
   value: number
-  type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked' | 'prismatic'
+  type: 'correct' | 'wrong' | 'typo' | 'speedster' | 'shield_blocked' | 'prismatic' | 'custom'
   x: number
   y: number
+  message?: string
 }
 
-export type ScoreFlash = 'correct' | 'wrong' | null
+export type ScoreFlash = 'correct' | 'wrong' | 'typo' | 'prismatic' | 'forgive' | null
 
 export function useScoreAnimation(letterSlotsRef: any) {
   const score = ref(0)
@@ -28,7 +29,7 @@ export function useScoreAnimation(letterSlotsRef: any) {
     flashTimer = setTimeout(() => { scoreFlash.value = null }, 400)
   }
 
-  function spawnPointPopup(value: number, type: PointPopup['type']) {
+  function spawnPointPopup(value: number, type: PointPopup['type'], message?: string) {
     let x = window.innerWidth / 2 - 50
     let y = window.innerHeight / 2 - 60
     if (letterSlotsRef.value) {
@@ -38,7 +39,7 @@ export function useScoreAnimation(letterSlotsRef: any) {
     }
 
     const id = popupIdCounter++
-    pointPopups.value.push({ id, value, type, x, y })
+    pointPopups.value.push({ id, value, type, x, y, message })
     const duration = type === 'speedster' || type === 'prismatic' ? 1800 : 1200
     
     const timer = setTimeout(() => {

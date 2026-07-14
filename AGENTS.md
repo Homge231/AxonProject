@@ -31,8 +31,6 @@
 | Session lifecycle (create / timeout / abandon) | `gameController.ts` |
 | **Core selection screen** | `CoreSelectionView.vue` |
 | **Anti-cheat core validation** | `submitAnswer()` in `gameController.ts` |
-| **Core upgrade validation** | `updateSessionCore()` checks consecutive tier ($T+1$) and same core family |
-| **ELO updates after match** | `timeoutSession()` applies ELO calculation and updates player stats (wins/losses/matches) |
 | **Levenshtein-based penalty** (typo vs wrong) | `getWrongAnswerPenalty()` |
 | **Core Strategy Pattern — Backend** | `server/src/cores/` |
 | **Core Strategy Pattern — Frontend** | `client/src/game/cores/` |
@@ -46,19 +44,13 @@
 
 | Item | Notes |
 |---|---|
-| Colyseus multiplayer | Planned Sprint 3 |
-| Real-time opponent sync | Planned Sprint 3 |
+| Speedster Supabase row | ✅ Created. UUID: `00000000-0000-0000-0000-000000000007`. Registry fully wired. |
+| ELO updates after match | Planned Sprint 4 |
+| Colyseus multiplayer | Planned Sprint 4 |
+| Real-time opponent sync | Planned Sprint 4 |
 | Rate limiting on auth endpoints | Deferred |
-
-### Completed Sprint 3 Items ✅
-- **Database-driven Core Classifications**: Added `core_type` and `classification` columns to database. Removed hardcoded family lists.
-- **OTP Database Persistence**: Migrated OTP/registration transient storage to database-backed `pending_registrations` table.
-- **Atomic Scoring Engine**: Implemented `submit_answer_atomic` RPC to prevent concurrent update Race Conditions.
-- **Audio Context Leak Fix**: Disposed window `AudioContext` inside `AegisShieldIndicator.vue`.
-- **Typing Buffer Flush**: Flushed hidden keystroke input value on `nextTick` in `GameplayView.vue`.
-- **VDOM Keys & Frame Clashing**: Resolved concurrent score animation frame clashes and key conflicts in core history list.
-- **Pandora Core Redesign**: Rebalanced Pandora cores (Trickster's Glass, Chaos Theory, Butterfly Effect) with new mechanics.
-- **Vocabulary Analytics Dashboard (US-34)**: Created `/analytics` view showing mastery badges, unique word counts, and weakest words per topic.
+| OTP store persistence | Currently in-memory, lost on restart |
+| Avatar storage | Currently base64 in DB column, should move to Supabase Storage |
 
 ---
 
@@ -159,26 +151,6 @@ If accuracy < 80% or empty (skip):
 
 ---
 
-## Core Stacking & Hybrid Synergy Mechanics
-
-Future AI agents must understand how "stacking" works in Naenra. Naenra does **not** stack cores by wearing multiple cores at once. Instead, it uses a **Replacement** model combined with **Hybrid Cores**.
-
-### 1. Upgrade = Replacement (No Mechanical Stacking)
-When a player upgrades from Round 1 (`Tier 1`) to Round 2 (`Tier 2`), the old core is completely removed from the session (`active_core_id` is overwritten).
-- Pure Upgrade Paths (e.g., `Power Strike` -> `Brute Force`) do not "stack" effects. The new core simply has higher mathematical multipliers and flat buffs. The old stats are discarded.
-
-### 2. Hybrid Synergy Cores (Structural Stacking)
-The game simulates stacking by offering "Hybrid Cores" at Tier 2 and Tier 3. These cores combine the code logic (mechanics) of two different core families into one single Strategy file.
-- Example: `Combo Shield` (Combo + Aegis).
-- A player moving from `Perfect Combo` (Round 1) to `Combo Shield` (Round 2) replaces their core. However, because `Combo Shield` internally tracks both `comboBonus` and `isShieldActive`, the player experiences a **"Mechanic Stack"** (They keep the combo mechanics AND gain shield mechanics).
-
-### 3. Mathematical Stacking
-- **Combo Stacking:** `current_combo` increments on consecutive correct answers and is multiplied by 10 (capped at 100) inside the core strategy.
-- **Oracle Penalty Stacking:** Each hint click increments `oracle_reveal_level`, which exponentially increases the score penalty (-10, -30, -60) for a single word.
-- **Score Modifiers:** Final score is `(100 + ComboBonus + FlatBuff) * MultiplierBuff`. (Note: Speedster ignores this entirely and overwrites the formula with a time-based calculation).
-
----
-
 ## Frontend: How time_taken is Tracked
 
 ```ts
@@ -242,7 +214,6 @@ Speedster is fully wired. The next focus is Sprint 3.
 3. **ELO update after match** — call a PATCH on `players.elo` in `timeoutSession()` using a simple Elo formula
 4. **Colyseus multiplayer** — create rooms in `server/src/index.ts`, sync opponent score/progress via WebSocket
 5. **Real-time opponent UI** — add opponent score bar + letter-slot shadow in `GameplayView.vue`
-6. **Clean up / Delete test skip button** — delete the test "Skip to Core Selection" button (and the `skipGameplay` function) in `client/src/views/GameplayView.vue` before production.
 
 ---
 
