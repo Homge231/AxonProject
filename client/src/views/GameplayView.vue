@@ -2,9 +2,7 @@
   <div
     class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
     :class="{
-      'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting,
-      'exodia-shake': showMissionCelebration && isExodia,
-      'chaos-shift': isChaos
+      'exodia-shake': showMissionCelebration && isExodia
     }" @click="refocusInput">
     <PhaserBackground :vfx-enabled="settingsStore.vfxEnabled" :image-url="currentBgImage"
       class="transition-opacity duration-500 ease-in-out"
@@ -14,6 +12,24 @@
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
+    <!-- Dice Roll Shift Overlay  -->
+    <transition name="fade">
+      <div v-if="isShifting"
+        class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+        <svg class="w-28 h-28 text-white animate-spin-fast drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] mb-6"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+          <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
+          <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
+        </svg>
+        <p class="text-2xl font-black uppercase tracking-widest text-white animate-pulse">
+          Rolling Core...
+        </p>
+      </div>
+    </transition>
     <!-- Prismatic Screen Flash -->
     <div v-if="showPrismaticFlash && settingsStore.vfxEnabled"
       class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-yellow-500/20 pointer-events-none z-10 mix-blend-screen animate-pulse">
@@ -83,7 +99,7 @@
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
               <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-                  }}</span>
+              }}</span>
               </p>
             </div>
             <button @click.stop="goHome"
@@ -200,7 +216,8 @@
       class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
 
       <!-- Speedster wind streak overlay component -->
-      <SpeedsterOverlay :active="!!activeCoreModule.showWindOverlay && settingsStore.vfxEnabled" :playing="gameState === 'playing'" />
+      <SpeedsterOverlay :active="!!activeCoreModule.showWindOverlay && settingsStore.vfxEnabled"
+        :playing="gameState === 'playing'" />
 
       <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
 
@@ -924,7 +941,7 @@ function triggerShapeshift() {
     setTimeout(() => {
       shiftAnnouncement.value = ''
     }, 2000)
-  }, 400) // 400ms glitch duration
+  }, 1200) 
 }
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
@@ -2070,22 +2087,20 @@ watch([maxShields, isAegisMode], ([newMax, isAegis]) => {
 }
 
 /* Chaos Theory Color Shift */
-.chaos-shift {
-  animation: chaos-cycle 5s infinite linear;
+@keyframes spin-fast {
+  from {
+    transform: rotate(0deg) scale(0.9);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  to {
+    transform: rotate(360deg) scale(0.9);
+  }
 }
 
-@keyframes chaos-cycle {
-  0% {
-    filter: hue-rotate(0deg) saturate(1.2);
-  }
-
-  50% {
-    filter: hue-rotate(180deg) saturate(1.5) contrast(1.1);
-  }
-
-  100% {
-    filter: hue-rotate(360deg) saturate(1.2);
-  }
+.animate-spin-fast {
+  animation: spin-fast 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 }
 
 /* Exodia Shake */
