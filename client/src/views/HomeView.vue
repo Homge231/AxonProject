@@ -110,30 +110,37 @@
           </p>
         </div>
 
-        <div class="flex gap-4 mt-8">
-          <!-- Replace the existing Unranked 1v1 button with this -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-[600px]">
+          
           <button @click="goToCustomRoom" :disabled="isJoiningCustom"
-            class="flex items-center justify-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-
-            <!-- Loading Spinner -->
+            class="h-12 w-full flex items-center justify-center gap-2 rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
             <svg v-if="isJoiningCustom" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-              </path>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-
-            <span>{{ isJoiningCustom ? 'CONNECTING...' : 'Unranked 1v1' }}</span>
+            <span>{{ isJoiningCustom ? 'CONNECTING...' : 'Create 1v1 Room' }}</span>
           </button>
+
+          <div class="group h-12 w-full flex items-center rounded-md bg-white/10 border border-white/20 hover:border-lightBlue hover:bg-white/20 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 overflow-hidden focus-within:border-lightBlue focus-within:bg-white/20 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+            <input v-model="joinCode" @keyup.enter="joinExistingRoom" type="text" placeholder="ENTER CODE..."
+              class="bg-transparent text-white pl-5 pr-2 h-full w-full outline-none uppercase tracking-widest text-sm placeholder:text-gray-400"
+              maxlength="8" />
+            <button @click="joinExistingRoom" :disabled="!joinCode || isJoiningCustom"
+              class="h-full px-5 text-gray-200 hover:text-white hover:bg-white/20 font-bold text-sm uppercase tracking-widest transition-colors border-l border-white/20 group-hover:border-lightBlue/50 focus-within:border-lightBlue/50 disabled:opacity-50 disabled:cursor-not-allowed">
+              Join
+            </button>
+          </div>
+
           <button
-            class="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors">
+            class="h-12 w-full flex items-center justify-center rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase">
             Leaderboard
           </button>
 
           <button @click="startMatchmaking"
-            class="px-8 py-3 bg-purple-900/30 hover:bg-purple-800/50 border border-purple-500/30 text-purple-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors">
+            class="h-12 w-full flex items-center justify-center rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase">
             Single Player (Test)
           </button>
+
         </div>
       </div>
     </main>
@@ -154,6 +161,24 @@ import { useAuthStore } from '../stores/authStore'
 const router = useRouter()
 const authStore = useAuthStore()
 const isSearching = ref(false)
+const joinCode = ref('')
+
+function joinExistingRoom() {
+  if (!joinCode.value) return
+  
+  isJoiningCustom.value = true
+  setTimeout(() => {
+    let code = joinCode.value.toUpperCase().trim()
+    if (!code.startsWith('NRA-')) {
+      code = `NRA-${code}`
+    }
+
+    router.push(`/room/custom?id=${code}`).finally(() => {
+      isJoiningCustom.value = false
+      joinCode.value = '' 
+    })
+  }, 600)
+}
 
 const username = computed(() =>
   authStore.profile?.username ||
@@ -171,11 +196,11 @@ const elo = computed(() => authStore.profile?.elo ?? 0)
 const isJoiningCustom = ref(false)
 function goToCustomRoom() {
   isJoiningCustom.value = true
-  
- 
+
+
   setTimeout(() => {
     router.push('/room/custom').finally(() => {
-      isJoiningCustom.value = false 
+      isJoiningCustom.value = false
     })
   }, 600)
 }
