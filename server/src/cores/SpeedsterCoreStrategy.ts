@@ -40,12 +40,64 @@ export class SpeedsterCoreStrategy extends BaseCore {
     // Clamp timeTaken to guard against clock drift or missing data
     const safeTaken     = Math.max(ctx.timeTaken, 0)
     const speedRatio    = Math.max(0, 1 - safeTaken / SPEEDSTER_TIME_BUDGET_MS) // 1.0 = instant, 0.0 = budget exhausted
-    const speedBonus    = Math.floor(speedRatio * SPEEDSTER_MULTIPLIER)
-    const baseTotal     = getBasePoints(ctx.targetWord) + speedBonus
-    const total         = Math.floor(baseTotal * ctx.multiplierBuff) - oraclePenalty
+    let speedBonus      = Math.floor(speedRatio * SPEEDSTER_MULTIPLIER)
+    
+    let timerDelta = 0
+    let pauseTimerMs = 0
+    let shieldDelta = 0
+
+    // Apply Core Effects
+    if (this.coreName === 'warp speed') {
+      speedBonus *= 3
+    }
+    if (this.coreName === 'sonic boom' && safeTaken < 1000) {
+      speedBonus *= 4
+    }
+
+    let baseTotal = getBasePoints(ctx.targetWord) + speedBonus
+
+    if (this.coreName === 'mach speed' && safeTaken < 2000) {
+      baseTotal *= 2
+    }
+    if (this.coreName === 'overdrive') {
+      baseTotal *= 2
+    }
+
+    if (this.coreName === 'time warp') {
+      timerDelta = 2000
+    }
+    if (this.coreName === 'time freeze') {
+      pauseTimerMs = 1000
+    }
+    if (this.coreName === 'speed shield' && safeTaken < 3000) {
+      shieldDelta = 1
+    }
+    if (this.coreName === 'sonic boom') {
+      const isCorrect = typeof ctx.wrongPenalty === 'number' && ctx.wrongPenalty > 0 ? false : true;
+      if (isCorrect) {
+        // Bonus is 5s * combo, max +30s
+        timerDelta = Math.min(ctx.combo * 5000, 30000)
+      } else {
+        // Penalty is fixed -5s
+        timerDelta = -5000
+      }
+    }
+    if (this.coreName === 'speed demon' && safeTaken < 1500) {
+      timerDelta = 3000
+    }
+    if (this.coreName === 'chronobreak') {
+      if ((ctx.combo + 1) % 3 === 0) {
+        pauseTimerMs = 3000
+      }
+    }
+
+    const total = Math.floor(baseTotal * ctx.multiplierBuff) - oraclePenalty
 
     return {
       pointsDelta: Math.max(0, total),  // never go negative on a correct answer
+      timerDelta: timerDelta > 0 ? timerDelta : undefined,
+      pauseTimerMs: pauseTimerMs > 0 ? pauseTimerMs : undefined,
+      shieldDelta: shieldDelta > 0 ? shieldDelta : undefined,
       breakdown: {
         base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,             // Speedster ignores combo

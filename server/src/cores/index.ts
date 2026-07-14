@@ -12,7 +12,7 @@
 import { BaseCore, ScoringContext, ScoringResult } from './BaseCore'
 import { NoCoreStrategy } from './NoCoreStrategy'
 import { ComboCoreStrategy } from './ComboCoreStrategy'
-import { OracleCoreStrategy, OracleBlessingStrategy } from './OracleCoreStrategy'
+import { OracleCoreStrategy } from './OracleCoreStrategy'
 import { SpeedsterCoreStrategy } from './SpeedsterCoreStrategy'
 import { MissionCoreStrategy } from './MissionCoreStrategy'
 import { AegisCoreStrategy } from './AegisCoreStrategy'
@@ -44,19 +44,18 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'house advantage': new HighRollerStrategy('house advantage', 0.7, 2, 0.5),
   'russian roulette': new HighRollerStrategy('russian roulette', 1/6, 12, 0),
   // Balanced Branch
-  'balance': new BalancedCoreStrategy('balance', false),
-  'balanced core': new BalancedCoreStrategy('balanced core', false),
-  'harmony': new BalancedCoreStrategy('harmony', false),
-  'perfect harmony': new BalancedCoreStrategy('perfect harmony', true),
-  'equilibrium': new BalancedCoreStrategy('equilibrium', false),
-  'yin yang': new BalancedCoreStrategy('yin yang', false),
-  'steady pace': new BalancedCoreStrategy('steady pace', false),
-  'zenith': new BalancedCoreStrategy('zenith', false),
-  'nirvana': new BalancedCoreStrategy('nirvana', false),
-  'cosmic balance': new BalancedCoreStrategy('cosmic balance', false),
-  // BUG FIX #5: Harmony Wave now has harmonyWaveImmunity=true (first 2 wrong answers blocked)
-  'harmony wave': new BalancedCoreStrategy('harmony wave', false, true),
-  'universal harmony': new BalancedCoreStrategy('universal harmony', true),
+  'balance': new BalancedCoreStrategy('balance'),
+  'balanced core': new BalancedCoreStrategy('balanced core'),
+  'harmony': new BalancedCoreStrategy('harmony'),
+  'perfect harmony': new BalancedCoreStrategy('perfect harmony'),
+  'equilibrium': new BalancedCoreStrategy('equilibrium'),
+  'yin yang': new BalancedCoreStrategy('yin yang'),
+  'steady pace': new BalancedCoreStrategy('steady pace'),
+  'zenith': new BalancedCoreStrategy('zenith'),
+  'nirvana': new BalancedCoreStrategy('nirvana'),
+  'cosmic balance': new BalancedCoreStrategy('cosmic balance'),
+  'harmony wave': new BalancedCoreStrategy('harmony wave'),
+  'universal harmony': new BalancedCoreStrategy('universal harmony'),
 
   // Combo Branch
   'perfect combo': new ComboCoreStrategy('perfect combo', 100),
@@ -83,7 +82,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'mind reader': new OracleCoreStrategy('mind reader', true),
   'predictive strike': new OracleCoreStrategy('predictive strike', true),
   'cosmic wisdom': new OracleCoreStrategy('cosmic wisdom', true),
-  'oracle blessing': new OracleBlessingStrategy('oracle blessing'),
+  'oracle blessing': new OracleCoreStrategy('oracle blessing', true),
   'divine eye': new OracleCoreStrategy('divine eye', true),
 
   // Speedster Branch
@@ -147,16 +146,16 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
 
   // Pandora Branch
   "pandora's box": new PandoraCoreStrategy(),
-  "trickster's glass": new PandoraCoreStrategy(),
-  "chaos theory": new PandoraCoreStrategy(),
-  'chaos prism': new PandoraCoreStrategy(),
-  'warp reality': new PandoraCoreStrategy(),
-  "pandora's curse": new PandoraCoreStrategy(),
-  'butterfly effect': new PandoraCoreStrategy(),
-  "pandora's wrath": new PandoraCoreStrategy(),
-  'cosmic entropy': new PandoraCoreStrategy(),
-  "pandora's mirror": new PandoraCoreStrategy(),
-  'reality collapse': new PandoraCoreStrategy(),
+  "trickster's glass": new PandoraCoreStrategy("trickster's glass"),
+  "chaos theory": new PandoraCoreStrategy("chaos theory"),
+  'chaos prism': new PandoraCoreStrategy('chaos prism'),
+  'warp reality': new PandoraCoreStrategy('warp reality'),
+  "pandora's curse": new PandoraCoreStrategy("pandora's curse"),
+  'butterfly effect': new PandoraCoreStrategy('butterfly effect'),
+  "pandora's wrath": new PandoraCoreStrategy("pandora's wrath"),
+  'cosmic entropy': new PandoraCoreStrategy('cosmic entropy'),
+  "pandora's mirror": new PandoraCoreStrategy("pandora's mirror"),
+  'reality collapse': new PandoraCoreStrategy('reality collapse'),
   
   // Fallback
   'no core':    new NoCoreStrategy(),

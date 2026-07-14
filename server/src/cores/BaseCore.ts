@@ -53,6 +53,8 @@ export interface ScoringContext {
   currentShields?: number
   /** (US-33) Client-reported mission progress before this answer */
   missionProgress?: number
+  /** Name of the secondary core equipped by the player, if any */
+  secondaryCoreName?: string
   /** The target word for this question, used to determine base points based on length */
   targetWord: string
 }
@@ -63,6 +65,18 @@ export interface ScoringContext {
 export interface ScoringResult {
   /** Net change to the player's total score (negative = deduction) */
   pointsDelta: number
+  
+  /** (v2 Engine) Delta to apply to the match timer (in milliseconds). E.g. 1000 = +1s */
+  timerDelta?: number
+  /** (v2 Engine) Delta to apply to Aegis shields. E.g. 1 = +1 shield */
+  shieldDelta?: number
+  /** (v2 Engine) If true, a wrong answer will NOT break the combo streak */
+  forgiveMistake?: boolean
+  /** (v2 Engine) If set, locks the player input for the specified milliseconds on a wrong answer */
+  lockInputMs?: number
+  /** (v2 Engine) If set, pauses the match timer for the specified milliseconds */
+  pauseTimerMs?: number
+
   /** Fine-grained breakdown sent to the client for display/debugging */
   breakdown: {
     base: number

@@ -30,10 +30,26 @@ export class PowerCoreStrategy extends BaseCore {
 
   calculateWrong(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)
-    const penalty = Math.floor(ctx.wrongPenalty * this.penaltyMultiplier)
+    let penalty = Math.floor(ctx.wrongPenalty * this.penaltyMultiplier)
+    let lockInputMs = 0
+    let timerDelta = 0
     
+    if (this.coreName === 'brute force') {
+      penalty = 50
+    } else if (this.coreName === 'supermassive') {
+      penalty = 200
+    } else if (this.coreName === 'absolute power') {
+      penalty = 100
+    } else if (this.coreName === 'overload') {
+      lockInputMs = 2000
+    } else if (this.coreName === 'desperado') {
+      timerDelta = -999000 // Instantly ends the match
+    }
+
     return {
       pointsDelta: -(penalty + oraclePenalty),
+      lockInputMs: lockInputMs > 0 ? lockInputMs : undefined,
+      timerDelta: timerDelta < 0 ? timerDelta : undefined,
       breakdown: {
         base: 0,
         combo_bonus: 0,

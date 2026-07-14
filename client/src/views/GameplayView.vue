@@ -864,13 +864,13 @@ const timerSpeedMultiplier = computed(() => {
   let mult = 1.0
   const activeName = getActiveName()
 
-  const hasHypercharge = activeName === 'hypercharge' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'hypercharge')
-  const hasOverdrive = activeName === 'overdrive' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'overdrive')
+  const hasHypercharge = activeName === 'hypercharge'
+  const hasOverdrive = activeName === 'overdrive'
   if (hasHypercharge) mult += 0.15
   if (hasOverdrive) mult += 0.20
 
-  const hasDivineGuidance = activeName === 'divine guidance' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'divine guidance')
-  const hasOmniscienceCore = activeName === 'omniscience' || gameStore.coreHistory.some(c => c.name.toLowerCase() === 'omniscience')
+  const hasDivineGuidance = activeName === 'divine guidance'
+  const hasOmniscienceCore = activeName === 'omniscience'
   if (hasDivineGuidance) mult -= 0.10
   if (hasOmniscienceCore) mult -= 0.20
 
@@ -1136,11 +1136,28 @@ async function skipQuestion() {
             missionProgress.value = data.breakdown.mission_streak
           }
 
+          // --- Core Effect Engine (v2) Handlers ---
+          if (data.timer_delta) {
+            addTime(data.timer_delta)
+            if (data.timer_delta > 0) {
+              spawnPointPopup(0, 'custom', `+${data.timer_delta/1000}s TIME!`)
+            }
+          }
+          
+          if (data.forgive_mistake) {
+            // Restore proactive resets
+            currentCombo.value = capturedCombo
+            missionProgress.value = capturedMission
+            
+            triggerScoreFlash('forgive')
+            spawnPointPopup(0, 'custom', 'FORGIVEN!')
+          }
+
           // Only show popup if it's the latest question to avoid spam, but ALWAYS update history
           if (mySeq === submitAnswerSeq) {
             if (data.breakdown?.shield_blocked) {
               spawnPointPopup(0, 'shield_blocked')
-            } else {
+            } else if (!data.forgive_mistake) {
               spawnPointPopup(data.points_deducted, 'wrong')
             }
           }
@@ -1295,6 +1312,7 @@ async function checkAnswer() {
   }
 
   ; (async () => {
+    let lockInputMs = 0
     try {
       const res = await fetchWithAuth(`/api/game/submit-answer`, {
         method: 'POST',
@@ -1316,6 +1334,10 @@ async function checkAnswer() {
 
       if (res.ok) {
         const data = await res.json()
+        
+        if (data.lock_input_ms) {
+          lockInputMs = data.lock_input_ms
+        }
 
         updateScoreAnimated(data.new_total_score ?? score.value)
 
@@ -1328,6 +1350,37 @@ async function checkAnswer() {
         }
         if (data.breakdown?.mission_streak !== undefined) {
           missionProgress.value = data.breakdown.mission_streak
+        }
+
+        // --- Core Effect Engine (v2) Handlers ---
+        if (data.timer_delta) {
+          addTime(data.timer_delta)
+          // Optional: spawn some text popup for +1s
+          if (data.timer_delta > 0) {
+            spawnPointPopup(0, 'custom', `+${data.timer_delta/1000}s TIME!`)
+          }
+        }
+
+        if (data.pause_timer_ms) {
+          pauseTimerFor(data.pause_timer_ms)
+          spawnPointPopup(0, 'custom', 'TIME FROZEN!')
+        }
+        
+        if (data.shield_delta) {
+          aegisShieldCount.value = Math.min(maxShields.value, aegisShieldCount.value + data.shield_delta)
+          if (data.shield_delta > 0) {
+            spawnPointPopup(0, 'custom', '+1 SHIELD!')
+          }
+        }
+        
+        // Handle forgive_mistake (prevent streak loss)
+        if (!data.correct && data.forgive_mistake) {
+          // Restore proactive resets
+          currentCombo.value = capturedCombo
+          missionProgress.value = capturedMission
+          
+          triggerScoreFlash('forgive')
+          spawnPointPopup(0, 'custom', 'FORGIVEN!')
         }
 
         if (mySeq === submitAnswerSeq && !data.correct && data.correct_word) {
@@ -1380,9 +1433,16 @@ async function checkAnswer() {
       console.error('Failed to sync answer:', err)
     } finally {
       if (!isCorrectLocal && mySeq === submitAnswerSeq) {
+        const feedbackDelay = lockInputMs > 0 ? lockInputMs : FEEDBACK_MS
+        
+        if (lockInputMs > 0) {
+          triggerScoreFlash('wrong') // Trigger a stronger flash or effect
+          spawnPointPopup(0, 'custom', 'SYSTEM OVERLOAD!')
+        }
+
         setTimeout(() => {
           if (gameState.value !== 'timeout') loadQuestion()
-        }, FEEDBACK_MS)
+        }, feedbackDelay)
       }
     }
   })()

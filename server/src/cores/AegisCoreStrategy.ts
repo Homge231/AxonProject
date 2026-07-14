@@ -30,7 +30,6 @@ export class AegisCoreStrategy extends BaseCore {
     this.bastionMult = bastionMult
   }
 
-  // Helper to calculate both current shields and consecutive correct streak
   private getShieldAndStreak(initialShields: number, history: boolean[]): { shields: number, streak: number } {
     let shields = initialShields
     let streak = 0
@@ -40,11 +39,14 @@ export class AegisCoreStrategy extends BaseCore {
 
     for (const isCorrect of history) {
       if (isCorrect) {
-        shields = Math.min(shields + 1, this.maxShields)
         streak++
-        if (isShieldMission && streak >= 3) {
-          shields = this.maxShields
-          streak = 0
+        if (isShieldMission) {
+          if (streak >= 3) {
+            shields = this.maxShields
+            streak = 0
+          }
+        } else {
+          shields = Math.min(shields + 1, this.maxShields)
         }
       } else {
         if (shields > 0) {
@@ -78,12 +80,10 @@ export class AegisCoreStrategy extends BaseCore {
       nextHistory
     )
     
-    const historyLower = ctx.historyCoreNames?.map(n => n.toLowerCase()) || []
-    
-    const hasBastionOfLight = this.bastionMult || historyLower.includes('bastion of light')
-    const hasIndomitable = this.coreName === 'indomitable' || historyLower.includes('indomitable')
-    const hasAegisNova = this.coreName === 'aegis nova' || historyLower.includes('aegis nova')
-    const hasShieldSynergy = this.coreName === 'shield synergy' || historyLower.includes('shield synergy')
+    const hasBastionOfLight = this.bastionMult || this.coreName === 'bastion of light'
+    const hasIndomitable = this.coreName === 'indomitable'
+    const hasAegisNova = this.coreName === 'aegis nova'
+    const hasShieldSynergy = this.coreName === 'shield synergy'
 
     let activeMultiplier = ctx.multiplierBuff
     if (hasBastionOfLight && currentShields === this.maxShields) {
@@ -95,16 +95,30 @@ export class AegisCoreStrategy extends BaseCore {
     }
 
     let flatNova = 0
-    if (hasAegisNova && currentShields === this.maxShields) {
-      flatNova = 500
+    let timerDelta = 0
+
+    if (hasAegisNova && currentShields === this.maxShields && finalShields === this.maxShields) {
+       // Wait, "Earning a shield stack while at max capacity triggers an explosion of +500 points."
+       // If currentShields was max before, and they answered correct, they earn +500 points.
+       flatNova = 500
     }
+    if (this.coreName === 'guardian angel' && currentShields === this.maxShields && finalShields === this.maxShields) {
+       // "Earning a shield when at max capacity adds +10s to the timer."
+       timerDelta = 10000
+    }
+
     const synergyBonus = (hasShieldSynergy && currentShields === this.maxShields) ? 50 : 0
+    if (this.coreName === 'shield burst' && currentShields === this.maxShields) {
+       // "Correct answers while maximum shields are active grant +100 points."
+       flatNova += 100
+    }
 
     const beforeMult = getBasePoints(ctx.targetWord) + ctx.flatBuff + flatNova + synergyBonus
     const total      = Math.floor(beforeMult * activeMultiplier) - oraclePenalty
 
     return {
       pointsDelta: total,
+      timerDelta: timerDelta > 0 ? timerDelta : undefined,
       breakdown: {
         base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,
@@ -134,13 +148,11 @@ export class AegisCoreStrategy extends BaseCore {
       nextHistory
     )
 
-    const historyLower = ctx.historyCoreNames?.map(n => n.toLowerCase()) || []
-
     if (currentShields > 0) {
       // Shield blocks the penalty!
       let reflectBonus = 0
-      const hasSpikedShield = this.coreName === 'spiked shield' || historyLower.includes('spiked shield')
-      const hasReflectDamage = this.reflectDamage || historyLower.includes('reflective aegis') || historyLower.includes('shield burst')
+      const hasSpikedShield = this.coreName === 'spiked shield'
+      const hasReflectDamage = this.reflectDamage || this.coreName === 'reflective aegis'
       
       if (hasSpikedShield) {
         reflectBonus = 200

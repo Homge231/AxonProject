@@ -614,9 +614,9 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
 
     // Determine the primary scoring core.
     let scoringCore = core
-    if (secondaryCore) {
-      scoringCore = secondaryCore
-    } else {
+    
+    // In Hybrid Mode (T2 + T3), if we aren't Pandora, power cores take priority for formula
+    if (!secondaryCore) {
       const powerCores = coreRows.filter(r => r.classification === 'power')
       if (powerCores.length > 0) {
         // Pick the most recent power core in history
@@ -634,13 +634,12 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       activeMultBuff *= otherCore.multiplier_buff
     }
 
-    // Find if ANY core in history grants initial shields
+    // Check if the current core grants initial shields
     let initialShieldCount = 0
-    const historyLower = historyCoreNames.map(n => n.toLowerCase())
     const activeLower = core.name.toLowerCase()
-    if (historyLower.includes('guardian angel') || activeLower === 'guardian angel') {
+    if (activeLower === 'guardian angel') {
       initialShieldCount = 3
-    } else if (historyLower.includes('shield battery') || activeLower === 'shield battery') {
+    } else if (activeLower === 'shield battery') {
       initialShieldCount = 2
     }
 
@@ -657,64 +656,27 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       historyCoreNames,
       currentShields:    typeof current_shields === 'number' ? current_shields : undefined,
       missionProgress:   typeof mission_progress === 'number' ? mission_progress : undefined,
+      secondaryCoreName: secondaryCore?.name,
       targetWord:        question.target_word
     }
 
     // Always run the primary scoring core logic
-    let { pointsDelta, breakdown } = runScoring(isCorrect, scoringCore.name, ctx)
+    let scoringResult = runScoring(isCorrect, scoringCore.name, ctx)
 
-    // Apply Oracle Blessing points multiplier (1.5x on correct answer with no hints used)
-    const hasOracleBlessing = historyCoreNames.some(name => name.toLowerCase() === 'oracle blessing')
-    if (hasOracleBlessing && isCorrect && oracleRevealLevel === 0 && scoringCore.name.toLowerCase() !== 'oracle blessing') {
-      pointsDelta = Math.floor(pointsDelta * 1.5)
-      breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * 1.5
+    // Apply Pandora specific modifiers on top if the active core is a Pandora core
+    if (core.name !== scoringCore.name) {
+      const pandoraStrategy = getCoreStrategy(core.name) as any
+      if (typeof pandoraStrategy.applyModifiers === 'function') {
+        scoringResult = pandoraStrategy.applyModifiers(scoringResult, isCorrect, ctx, normalizedAnswer)
+      }
     }
 
-    // Cosmic Wisdom: 2.0x multiplier if no hints used
-    const hasCosmicWisdom = historyCoreNames.some(name => name.toLowerCase() === 'cosmic wisdom')
-    if (hasCosmicWisdom && isCorrect && oracleRevealLevel === 0 && scoringCore.name.toLowerCase() !== 'cosmic wisdom') {
-      pointsDelta = Math.floor(pointsDelta * 2.0)
-      breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * 2.0
-    }
-
-    // Predictive Strike: +300 points if all 3 hints revealed
-    const hasPredictiveStrike = historyCoreNames.some(name => name.toLowerCase() === 'predictive strike')
-    if (hasPredictiveStrike && isCorrect && oracleRevealLevel === 3 && scoringCore.name.toLowerCase() !== 'predictive strike') {
-      pointsDelta += 300
-      breakdown.flat_buff = (breakdown.flat_buff || 0) + 300
-    }
-
-    // Future Sight: +50 points (scaled by current multiplier) if correct in under 4s
-    const hasFutureSight = historyCoreNames.some(name => name.toLowerCase() === 'future sight')
-    if (hasFutureSight && isCorrect && serverTimeTaken <= 4000 && scoringCore.name.toLowerCase() !== 'future sight') {
-      const bonus = Math.floor(50 * (breakdown.multiplier_buff || 1))
-      pointsDelta += bonus
-      breakdown.flat_buff = (breakdown.flat_buff || 0) + 50
-    }
-
-    // Trickster's Glass: Skipping a question (submitting empty) costs 0 points.
-    const hasTrickstersGlass = historyCoreNames.some(name => name.toLowerCase() === "trickster's glass")
-    if (hasTrickstersGlass && !isCorrect && normalizedAnswer === '') {
-      pointsDelta = 0
-      breakdown.penalty = 0
-      breakdown.oracle_penalty = 0
-    }
-
-    // Chaos Theory: Random bonus between +100 and +500 on correct answers
-    const hasChaosTheory = historyCoreNames.some(name => name.toLowerCase() === 'chaos theory')
-    if (hasChaosTheory && isCorrect) {
-      const chaosPts = Math.floor(Math.random() * 401) + 100 // 100 to 500
-      pointsDelta += chaosPts
-      breakdown.flat_buff = (breakdown.flat_buff || 0) + chaosPts
-    }
-
-    // Butterfly Effect: Multiplier scales with combo
-    const hasButterflyEffect = historyCoreNames.some(name => name.toLowerCase() === 'butterfly effect')
-    if (hasButterflyEffect && isCorrect) {
-      const bonusMult = 1 + (serverCombo * 0.1) // e.g., combo 0 = 1.0, combo 1 = 1.1, combo 5 = 1.5
-      pointsDelta = Math.floor(pointsDelta * bonusMult)
-      breakdown.multiplier_buff = (breakdown.multiplier_buff || 1) * bonusMult
-    }
+    let pointsDelta = scoringResult.pointsDelta
+    let breakdown = scoringResult.breakdown
+    let timerDelta = scoringResult.timerDelta
+    let forgiveMistake = scoringResult.forgiveMistake
+    let lockInputMs = scoringResult.lockInputMs
+    let pauseTimerMs = scoringResult.pauseTimerMs
 
     // Stack Mission progress if there is a Mission core in history
     const missionCoreName = historyCoreNames.find(name => getCoreStrategy(name).constructor.name === 'MissionCoreStrategy')
@@ -888,6 +850,11 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       accuracy: Math.round(accuracy * 1000) / 1000,
       questions_answered: newQuestionsAnswered,
       correct_word: !isCorrect ? question.target_word : undefined,
+      timer_delta: timerDelta,
+      forgive_mistake: forgiveMistake,
+      lock_input_ms: lockInputMs,
+      pause_timer_ms: pauseTimerMs,
+      shield_delta: scoringResult.shieldDelta,
       breakdown: {
         base_score: breakdown.base,
         combo_bonus: breakdown.combo_bonus,

@@ -21,7 +21,8 @@ export class OracleCoreStrategy extends BaseCore {
   constructor(name: string = 'oracle core', forgivePenalty: boolean = false) {
     super()
     this.coreName = name.toLowerCase()
-    this.forgivePenalty = forgivePenalty
+    // Clairvoyance forgives the oracle hint penalty
+    this.forgivePenalty = this.coreName === 'clairvoyance' || forgivePenalty
   }
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
@@ -38,6 +39,11 @@ export class OracleCoreStrategy extends BaseCore {
     // Cosmic Wisdom: 2.0x multiplier if no hints used
     if (this.coreName === 'cosmic wisdom' && ctx.oracleRevealLevel === 0) {
       multiplierBuff *= 2.0
+    }
+    
+    // Oracle Blessing: 1.5x multiplier if no hints used
+    if (this.coreName === 'oracle blessing' && ctx.oracleRevealLevel === 0) {
+      multiplierBuff *= 1.5
     }
 
     const beforeMult    = getBasePoints(ctx.targetWord) + flatBuff
@@ -65,7 +71,8 @@ export class OracleCoreStrategy extends BaseCore {
   calculateWrong(ctx: ScoringContext): ScoringResult {
     // If the player answers incorrectly, they must ALWAYS pay for the hints they revealed,
     // even if they have a "free oracle" core like Future Sight.
-    const oraclePenalty = this._oraclePenalty(ctx)
+    // Exception: Clairvoyance
+    const oraclePenalty = this.forgivePenalty ? 0 : this._oraclePenalty(ctx)
     return {
       pointsDelta: -(ctx.wrongPenalty + oraclePenalty),
       breakdown: {
@@ -74,58 +81,6 @@ export class OracleCoreStrategy extends BaseCore {
         flat_buff:       0,
         multiplier_buff: 1,
         oracle_penalty:  oraclePenalty,
-        penalty:         ctx.wrongPenalty,
-      },
-    }
-  }
-}
-
-/**
- * Oracle Blessing (Tier 2 Oracle Upgrade Core)
- *
- * Hints are completely free (no point cost).
- * If the player answers correctly, they receive a 2.0x point multiplier
- * if they used any hints.
- */
-export class OracleBlessingStrategy extends BaseCore {
-  readonly coreName: string;
-
-  constructor(name: string = 'oracle blessing') {
-    super()
-    this.coreName = name.toLowerCase()
-  }
-
-  calculateCorrect(ctx: ScoringContext): ScoringResult {
-    let multiplierBuff = ctx.multiplierBuff
-    if (ctx.oracleRevealLevel > 0) {
-      multiplierBuff *= 2.0
-    }
-
-    const beforeMult = getBasePoints(ctx.targetWord) + ctx.flatBuff
-    const total      = Math.floor(beforeMult * multiplierBuff)
-
-    return {
-      pointsDelta: total,
-      breakdown: {
-        base:            getBasePoints(ctx.targetWord),
-        combo_bonus:     0,
-        flat_buff:       ctx.flatBuff,
-        multiplier_buff: multiplierBuff,
-        oracle_penalty:  0,
-        penalty:         0,
-      },
-    }
-  }
-
-  calculateWrong(ctx: ScoringContext): ScoringResult {
-    return {
-      pointsDelta: -ctx.wrongPenalty,
-      breakdown: {
-        base:            0,
-        combo_bonus:     0,
-        flat_buff:       0,
-        multiplier_buff: 1,
-        oracle_penalty:  0,
         penalty:         ctx.wrongPenalty,
       },
     }

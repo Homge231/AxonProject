@@ -83,11 +83,10 @@ export function useQuestionQueue(options: UseQuestionQueueOptions) {
     options.gameState.value = 'playing'
 
     const activeName = (options.gameStore.activeCoreName || '').toLowerCase()
-    const historyNames = options.gameStore.coreHistory.map((c: any) => c.name.toLowerCase())
-    const hasThirdEye = activeName === 'third eye' || historyNames.includes('third eye')
-    const hasOmniscience = activeName === 'omniscience' || historyNames.includes('omniscience')
-    const hasMindReader = activeName === 'mind reader' || historyNames.includes('mind reader')
-    const hasDivineEye = activeName === 'divine eye' || historyNames.includes('divine eye')
+    const hasThirdEye = activeName === 'third eye'
+    const hasOmniscience = activeName === 'omniscience'
+    const hasMindReader = activeName === 'mind reader'
+    const hasDivineEye = activeName === 'divine eye'
 
     if ((hasOmniscience || hasThirdEye || hasDivineEye) && currentQuestion.value.target_length > 0) {
       const firstLetter = currentQuestion.value.oracle_hints?.[0]?.charAt(0)?.toLowerCase() || '_'
