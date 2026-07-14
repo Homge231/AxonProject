@@ -56,6 +56,12 @@ const router = createRouter({
       component: () => import('../views/ResetPasswordView.vue')
     },
     {
+      path: '/analytics',
+      name: 'analytics',
+      component: () => import('../views/AnalyticsDashboardView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/' 
     },

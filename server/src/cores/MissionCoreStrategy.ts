@@ -1,4 +1,4 @@
-import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, getBasePoints } from './BaseCore'
 
 export class MissionCoreStrategy extends BaseCore {
   readonly coreName: string;
@@ -19,7 +19,7 @@ export class MissionCoreStrategy extends BaseCore {
   }
 
   private _evaluate(ctx: ScoringContext, isCorrect: boolean): ScoringResult {
-    const base = isCorrect ? BASE_POINTS : 0
+    const base = isCorrect ? getBasePoints(ctx.targetWord) : 0
     const penalty = isCorrect ? 0 : ctx.wrongPenalty
     const oraclePenalty = this._oraclePenalty(ctx)
 
@@ -29,11 +29,26 @@ export class MissionCoreStrategy extends BaseCore {
     const hist = ctx.answerHistory || []
     
     let consecutiveCorrect = 0
-    for (let i = hist.length - 1; i >= 0; i--) {
-      if (hist[i] === true) {
-        consecutiveCorrect++
-      } else {
-        break
+    if (ctx.missionProgress !== undefined) {
+      consecutiveCorrect = ctx.missionProgress + (isCorrect ? 1 : 0)
+      if (!isCorrect) {
+        // Shield Mission Special: streak does NOT break if protected by a shield
+        const historyLower = ctx.historyCoreNames?.map(n => n.toLowerCase()) || []
+        const isShieldMission = this.coreName === 'shield mission' || historyLower.includes('shield mission')
+        const currentShields = ctx.currentShields || 0
+        if (isShieldMission && currentShields > 0) {
+          consecutiveCorrect = ctx.missionProgress
+        } else {
+          consecutiveCorrect = 0
+        }
+      }
+    } else {
+      for (let i = hist.length - 1; i >= 0; i--) {
+        if (hist[i] === true) {
+          consecutiveCorrect++
+        } else {
+          break
+        }
       }
     }
 

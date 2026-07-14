@@ -25,6 +25,122 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     popupType:    'correct',
   },
 
+  // ── Phoenix Branch (US-29 Upgrades) ────────────────────────────────────────
+  'phoenix': {
+    id:           '11111111-1111-1111-1111-111111111111',
+    name:         'Phoenix',
+    timerColor:   'text-hexred',
+    timerClass:   'drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'phoenix flame': {
+    id:           '11111111-1111-1111-1111-222222222222',
+    name:         'Phoenix Flame',
+    timerColor:   'text-orange',
+    timerClass:   'drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'rebirth': {
+    id:           '11111111-1111-1111-1111-333333333333',
+    name:         'Rebirth',
+    timerColor:   'text-green-400',
+    timerClass:   'drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'ashes to ashes': {
+    id:           '11111111-1111-1111-1111-444444444444',
+    name:         'Ashes to Ashes',
+    timerColor:   'text-gray-400',
+    timerClass:   'drop-shadow-[0_0_10px_rgba(156,163,175,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'immortal phoenix': {
+    id:           '11111111-1111-1111-1111-555555555555',
+    name:         'Immortal Phoenix',
+    timerColor:   'text-red-500',
+    timerClass:   'drop-shadow-[0_0_20px_rgba(239,68,68,1)] animate-pulse',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'eternal rebirth': {
+    id:           '11111111-1111-1111-1111-666666666666',
+    name:         'Eternal Rebirth',
+    timerColor:   'text-emerald-400',
+    timerClass:   'drop-shadow-[0_0_20px_rgba(52,211,153,1)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'supernova ashes': {
+    id:           '11111111-1111-1111-1111-777777777777',
+    name:         'Supernova Ashes',
+    timerColor:   'text-yellow-300',
+    timerClass:   'drop-shadow-[0_0_25px_rgba(253,224,71,1)] animate-bounce',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+
+  // ── High Roller Branch (US-29 Upgrades) ────────────────────────────────────
+  'high roller': {
+    id:           '22222222-2222-2222-2222-222222222222',
+    name:         'High Roller',
+    timerColor:   'text-purple-400',
+    timerClass:   'drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'jackpot': {
+    id:           '22222222-2222-2222-2222-111111111111',
+    name:         'Jackpot',
+    timerColor:   'text-yellow-400',
+    timerClass:   'drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'safe bet': {
+    id:           '22222222-2222-2222-2222-333333333333',
+    name:         'Safe Bet',
+    timerColor:   'text-blue-400',
+    timerClass:   'drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'double or nothing': {
+    id:           '22222222-2222-2222-2222-444444444444',
+    name:         'Double or Nothing',
+    timerColor:   'text-pink-500',
+    timerClass:   'drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'all in': {
+    id:           '22222222-2222-2222-2222-555555555555',
+    name:         'All In',
+    timerColor:   'text-red-600',
+    timerClass:   'drop-shadow-[0_0_20px_rgba(220,38,38,1)] animate-pulse',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'house advantage': {
+    id:           '22222222-2222-2222-2222-666666666666',
+    name:         'House Advantage',
+    timerColor:   'text-indigo-400',
+    timerClass:   'drop-shadow-[0_0_15px_rgba(129,140,248,0.8)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+  'russian roulette': {
+    id:           '22222222-2222-2222-2222-777777777777',
+    name:         'Russian Roulette',
+    timerColor:   'text-zinc-500',
+    timerClass:   'drop-shadow-[0_0_15px_rgba(113,113,122,1)]',
+    timerIconClass: '',
+    popupType:    'correct',
+  },
+
   // ── Combo Branch ───────────────────────────────────────────────────────────
   'perfect combo': {
     id:           'perfect-combo',
@@ -167,9 +283,9 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     timerIconClass: '',
     popupType:    'correct',
   },
-  'harmony core': {
+  'harmony': {
     id:           'harmony-core',
-    name:         'Harmony Core',
+    name:         'Harmony',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
@@ -193,17 +309,17 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
     timerIconClass: '',
     popupType:    'correct',
   },
-  'overclock core': {
+  'overclock': {
     id:           'overclock-core',
-    name:         'Overclock Core',
+    name:         'Overclock',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
     popupType:    'correct',
   },
-  'supernova core': {
+  'supernova': {
     id:           'supernova-core',
-    name:         'Supernova Core',
+    name:         'Supernova',
     timerColor:   'text-lightOrange',
     timerClass:   '',
     timerIconClass: '',
@@ -279,7 +395,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'equilibrium': { id: 'equilibrium', name: 'Equilibrium', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'yin yang': { id: 'yin-yang', name: 'Yin Yang', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'steady pace': { id: 'steady-pace', name: 'Steady Pace', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'zenith core': { id: 'zenith-core', name: 'Zenith Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'zenith': { id: 'zenith-core', name: 'Zenith', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'nirvana': { id: 'nirvana', name: 'Nirvana', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'cosmic balance': { id: 'cosmic-balance', name: 'Cosmic Balance', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
 
@@ -287,7 +403,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'hypercharge': { id: 'hypercharge', name: 'Hypercharge', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'power surge': { id: 'power-surge', name: 'Power Surge', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'brute force': { id: 'brute-force', name: 'Brute Force', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'gigawatt core': { id: 'gigawatt-core', name: 'Gigawatt Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'gigawatt': { id: 'gigawatt-core', name: 'Gigawatt', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'desperado': { id: 'desperado', name: 'Desperado', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'absolute power': { id: 'absolute-power', name: 'Absolute Power', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
 
@@ -311,7 +427,7 @@ const CORE_REGISTRY: Record<string, CoreModule> = {
   'shield burst': { id: 'shield-burst', name: 'Shield Burst', timerColor: 'text-cyan-400', timerClass: 'shadow-cyan-500', timerIconClass: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]', popupType: 'correct' },
   'guardian angel': { id: 'guardian-angel', name: 'Guardian Angel', timerColor: 'text-cyan-400', timerClass: 'shadow-cyan-500', timerIconClass: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]', popupType: 'correct' },
   'overload': { id: 'overload', name: 'Overload', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
-  'supermassive core': { id: 'supermassive-core', name: 'Supermassive Core', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
+  'supermassive': { id: 'supermassive-core', name: 'Supermassive', timerColor: 'text-lightOrange', timerClass: '', timerIconClass: '', popupType: 'correct' },
   'pandora\'s mirror': { id: 'pandoras-mirror', name: 'Pandora\'s Mirror', timerColor: 'text-purple-400', timerClass: 'animate-pulse shadow-purple-500', timerIconClass: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]', popupType: 'correct' },
   'reality collapse': { id: 'reality-collapse', name: 'Reality Collapse', timerColor: 'text-purple-400', timerClass: 'animate-pulse shadow-purple-500', timerIconClass: 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]', popupType: 'correct' },
 }

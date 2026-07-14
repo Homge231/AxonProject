@@ -25,11 +25,11 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     headers
   })
 
-  // Optional: you could handle 401 Unauthorized globally here
-  // if (response.status === 401) {
-  //   localStorage.removeItem('arena_token')
-  //   window.location.href = '/login'
-  // }
+  // Handle 401 Unauthorized globally
+  if (response.status === 401) {
+    localStorage.removeItem('arena_token')
+    window.location.href = '/login'
+  }
 
   return response
 }

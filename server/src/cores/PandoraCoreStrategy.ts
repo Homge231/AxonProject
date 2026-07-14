@@ -1,6 +1,6 @@
 import {
   BaseCore,
-  BASE_POINTS,
+  getBasePoints,
   ScoringContext,
   ScoringResult,
 } from './BaseCore'
@@ -21,13 +21,13 @@ export class PandoraCoreStrategy extends BaseCore {
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)
     // Formula: floor( (BASE + flat_buff) * multiplier_buff )
-    const beforeMult = BASE_POINTS + ctx.flatBuff
+    const beforeMult = getBasePoints(ctx.targetWord) + ctx.flatBuff
     const total      = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
 
     return {
       pointsDelta: total,
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,
         flat_buff:       ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff,

@@ -96,6 +96,16 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     screen: 'gameplay',
     targetId: 'tutorial-score-area',
+    icon: '📈',
+    title: 'Dynamic Base Points',
+    message:
+      'Longer and more difficult words reward significantly MORE base points (up to 200 points)! ' +
+      'Think twice before skipping those long words — they are your ticket to victory!',
+    placement: 'bottom',
+  },
+  {
+    screen: 'gameplay',
+    targetId: 'tutorial-score-area',
     icon: '📊',
     title: 'Your Score',
     message:

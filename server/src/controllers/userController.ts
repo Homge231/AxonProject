@@ -155,3 +155,70 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
     return res.status(500).json({ error: 'Internal Server Error' })
   }
 }
+
+export const getVocabAnalytics = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_vocab_stats')
+      .select('correct_count, incorrect_count, questions(topic, target_word)')
+      .eq('user_id', req.user!.id)
+
+    if (error) {
+      console.error('getVocabAnalytics error:', error)
+      return res.status(400).json({ error: error.message })
+    }
+
+    const topics: Record<string, { 
+      correct: number; 
+      total: number; 
+      words: { word: string; incorrect: number; correct: number }[] 
+    }> = {}
+    
+    for (const row of data || []) {
+      const q = row.questions as any
+      const topic = q?.topic || 'unknown'
+      const targetWord = q?.target_word || 'unknown'
+      
+      if (!topics[topic]) {
+        topics[topic] = { correct: 0, total: 0, words: [] }
+      }
+      topics[topic].correct += row.correct_count
+      topics[topic].total += row.correct_count + row.incorrect_count
+      topics[topic].words.push({
+        word: targetWord,
+        incorrect: row.incorrect_count,
+        correct: row.correct_count
+      })
+    }
+
+    const result = Object.keys(topics).map(topic => {
+      const correct = topics[topic].correct
+      const total = topics[topic].total
+      const accuracy = total > 0 ? (correct / total) * 100 : 0
+      
+      const words = topics[topic].words
+      const uniqueWordsCount = words.length
+      
+      // Get weakest words (most incorrect answers, must have at least 1 incorrect)
+      const weakestWords = words
+        .filter(w => w.incorrect > 0)
+        .sort((a, b) => b.incorrect - a.incorrect)
+        .slice(0, 3)
+        .map(w => ({ word: w.word, incorrect: w.incorrect }))
+
+      return {
+        topic,
+        accuracy: Math.round(accuracy * 10) / 10,
+        totalQuestions: total,
+        correctAnswers: correct,
+        uniqueWordsCount,
+        weakestWords
+      }
+    }).sort((a, b) => b.totalQuestions - a.totalQuestions)
+
+    return res.status(200).json(result)
+  } catch (error) {
+    console.error('getVocabAnalytics exception:', error)
+    return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}

@@ -42,7 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
     // Email login users have no Supabase session — restore from arena JWT
     if (!user.value && token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
+        const base64Url = token.split('.')[1]
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+        const payload = JSON.parse(atob(base64))
         user.value = { id: payload.id, email: payload.email }
       } catch {}
     }

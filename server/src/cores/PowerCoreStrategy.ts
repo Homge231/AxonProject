@@ -1,4 +1,4 @@
-import { BaseCore, ScoringContext, ScoringResult, BASE_POINTS } from './BaseCore'
+import { BaseCore, ScoringContext, ScoringResult, getBasePoints } from './BaseCore'
 
 export class PowerCoreStrategy extends BaseCore {
   readonly coreName: string
@@ -12,13 +12,13 @@ export class PowerCoreStrategy extends BaseCore {
 
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     const oraclePenalty = this._oraclePenalty(ctx)
-    const beforeMult    = BASE_POINTS + ctx.flatBuff
+    const beforeMult    = getBasePoints(ctx.targetWord) + ctx.flatBuff
     const total         = Math.floor(beforeMult * ctx.multiplierBuff) - oraclePenalty
 
     return {
       pointsDelta: total,
       breakdown: {
-        base:           BASE_POINTS,
+        base:           getBasePoints(ctx.targetWord),
         combo_bonus:    0,
         flat_buff:      ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff,

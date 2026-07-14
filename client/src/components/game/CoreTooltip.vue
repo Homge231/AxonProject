@@ -26,6 +26,7 @@ const FAMILY_CONFIGS: Record<string, {
   bg: string
   border: string
   dot: string
+  pointerBorder: string
   displayName: string
 }> = {
   balanced: {
@@ -33,6 +34,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-blue-950/90 to-slate-950/90',
     border: 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]',
     dot: 'bg-blue-500',
+    pointerBorder: 'border-t-blue-500/50',
     displayName: 'Balanced'
   },
   combo: {
@@ -40,6 +42,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-orange-950/90 to-slate-950/90',
     border: 'border-orange-500/50 shadow-[0_0_15px_rgba(255,123,0,0.3)]',
     dot: 'bg-orange-500',
+    pointerBorder: 'border-t-orange-500/50',
     displayName: 'Combo'
   },
   speedster: {
@@ -47,6 +50,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-blue-950/90 to-slate-950/90',
     border: 'border-lightBlue/50 shadow-[0_0_15px_rgba(96,165,250,0.3)]',
     dot: 'bg-lightBlue',
+    pointerBorder: 'border-t-cyan-500/50',
     displayName: 'Speedster'
   },
   oracle: {
@@ -54,6 +58,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-blue-950/90 to-slate-950/90',
     border: 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]',
     dot: 'bg-blue-500',
+    pointerBorder: 'border-t-violet-500/50',
     displayName: 'Oracle'
   },
   mission: {
@@ -61,6 +66,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-orange-950/90 to-slate-950/90',
     border: 'border-lightOrange/50 shadow-[0_0_15px_rgba(255,166,43,0.3)]',
     dot: 'bg-lightOrange',
+    pointerBorder: 'border-t-amber-500/50',
     displayName: 'Mission'
   },
   aegis: {
@@ -68,6 +74,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-blue-950/90 to-slate-950/90',
     border: 'border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]',
     dot: 'bg-blue-500',
+    pointerBorder: 'border-t-sky-500/50',
     displayName: 'Aegis'
   },
   power: {
@@ -75,6 +82,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-red-950/90 to-slate-950/90',
     border: 'border-hexred/50 shadow-[0_0_15px_rgba(230,57,70,0.3)]',
     dot: 'bg-hexred',
+    pointerBorder: 'border-t-pink-500/50',
     displayName: 'Power'
   },
   pandora: {
@@ -82,6 +90,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-orange-950/90 to-slate-950/90',
     border: 'border-orange-500/50 shadow-[0_0_15px_rgba(255,123,0,0.3)]',
     dot: 'bg-orange-500',
+    pointerBorder: 'border-t-purple-500/50',
     displayName: 'Pandora'
   },
   unknown: {
@@ -89,6 +98,7 @@ const FAMILY_CONFIGS: Record<string, {
     bg: 'from-gray-950/90 to-slate-950/90',
     border: 'border-gray-500/50',
     dot: 'bg-gray-400',
+    pointerBorder: 'border-t-gray-500/50',
     displayName: 'Standard'
   }
 }
@@ -262,7 +272,7 @@ const stats = computed(() => {
     <!-- Speech bubble pointer arrow -->
     <div 
       class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px]"
-      :class="familyName === 'unknown' ? 'border-t-gray-500/50' : `border-t-${familyName === 'balanced' ? 'blue' : (familyName === 'combo' ? 'orange' : (familyName === 'speedster' ? 'cyan' : (familyName === 'oracle' ? 'violet' : (familyName === 'mission' ? 'amber' : (familyName === 'aegis' ? 'sky' : (familyName === 'power' ? 'pink' : 'purple'))))))}-500/50`"
+      :class="currentConfig.pointerBorder"
       style="border-top-color: inherit;"
     ></div>
   </div>

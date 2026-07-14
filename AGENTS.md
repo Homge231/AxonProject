@@ -57,6 +57,8 @@
 - **Audio Context Leak Fix**: Disposed window `AudioContext` inside `AegisShieldIndicator.vue`.
 - **Typing Buffer Flush**: Flushed hidden keystroke input value on `nextTick` in `GameplayView.vue`.
 - **VDOM Keys & Frame Clashing**: Resolved concurrent score animation frame clashes and key conflicts in core history list.
+- **Pandora Core Redesign**: Rebalanced Pandora cores (Trickster's Glass, Chaos Theory, Butterfly Effect) with new mechanics.
+- **Vocabulary Analytics Dashboard (US-34)**: Created `/analytics` view showing mastery badges, unique word counts, and weakest words per topic.
 
 ---
 

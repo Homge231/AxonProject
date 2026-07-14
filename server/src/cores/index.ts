@@ -19,19 +19,39 @@ import { AegisCoreStrategy } from './AegisCoreStrategy'
 import { PandoraCoreStrategy } from './PandoraCoreStrategy'
 import { PowerCoreStrategy } from './PowerCoreStrategy'
 import { BalancedCoreStrategy } from './BalancedCoreStrategy'
+import { PhoenixCoreStrategy } from './PhoenixCoreStrategy'
+import { HighRollerStrategy } from './HighRollerStrategy'
 
 // ── Registry ──────────────────────────────────────────────────────────────────
 // Key = lowercase core name as stored in the DB `cores.name` column.
 
 const CORE_REGISTRY: Record<string, BaseCore> = {
+  // Phoenix Branch
+  'phoenix': new PhoenixCoreStrategy('phoenix', 200, 1, false),
+  'phoenix flame': new PhoenixCoreStrategy('phoenix flame', 400, 1, false),
+  'rebirth': new PhoenixCoreStrategy('rebirth', 200, 1, true),
+  'ashes to ashes': new PhoenixCoreStrategy('ashes to ashes', 800, 2, false),
+  'immortal phoenix': new PhoenixCoreStrategy('immortal phoenix', 800, 1, false),
+  'eternal rebirth': new PhoenixCoreStrategy('eternal rebirth', 400, 1, true),
+  'supernova ashes': new PhoenixCoreStrategy('supernova ashes', 1500, 2, false),
+
+  // High Roller Branch
+  'high roller': new HighRollerStrategy('high roller', 0.5, 2, 0.5),
+  'jackpot': new HighRollerStrategy('jackpot', 0.3, 3, 0.5),
+  'safe bet': new HighRollerStrategy('safe bet', 0.8, 1.5, 0.5),
+  'double or nothing': new HighRollerStrategy('double or nothing', 0.5, 2, 0),
+  'all in': new HighRollerStrategy('all in', 0.1, 10, 0.1),
+  'house advantage': new HighRollerStrategy('house advantage', 0.7, 2, 0.5),
+  'russian roulette': new HighRollerStrategy('russian roulette', 1/6, 12, 0),
   // Balanced Branch
+  'balance': new BalancedCoreStrategy('balance', false),
   'balanced core': new BalancedCoreStrategy('balanced core', false),
-  'harmony core': new BalancedCoreStrategy('harmony core', false),
+  'harmony': new BalancedCoreStrategy('harmony', false),
   'perfect harmony': new BalancedCoreStrategy('perfect harmony', true),
   'equilibrium': new BalancedCoreStrategy('equilibrium', false),
   'yin yang': new BalancedCoreStrategy('yin yang', false),
   'steady pace': new BalancedCoreStrategy('steady pace', false),
-  'zenith core': new BalancedCoreStrategy('zenith core', false),
+  'zenith': new BalancedCoreStrategy('zenith', false),
   'nirvana': new BalancedCoreStrategy('nirvana', false),
   'cosmic balance': new BalancedCoreStrategy('cosmic balance', false),
   // BUG FIX #5: Harmony Wave now has harmonyWaveImmunity=true (first 2 wrong answers blocked)
@@ -39,6 +59,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'universal harmony': new BalancedCoreStrategy('universal harmony', true),
 
   // Combo Branch
+  'perfect combo': new ComboCoreStrategy('perfect combo', 100),
   'combo core': new ComboCoreStrategy('combo core', 100),
   'radiant combo': new ComboCoreStrategy('radiant combo', 200),
   'prismatic combo': new ComboCoreStrategy('prismatic combo', 300),
@@ -52,6 +73,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'super combo': new ComboCoreStrategy('super combo', 250),
 
   // Oracle Branch
+  'argus eyes': new OracleCoreStrategy('argus eyes', false),
   'oracle core': new OracleCoreStrategy('oracle core', false),
   'clairvoyance': new OracleCoreStrategy('clairvoyance', true),
   'omniscience': new OracleCoreStrategy('omniscience', true),
@@ -79,6 +101,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'sonic boom': new SpeedsterCoreStrategy('sonic boom'),
 
   // Mission Branch
+  'mission impossible': new MissionCoreStrategy('mission impossible', 5),
   'mission core': new MissionCoreStrategy('mission core', 5),
   'bounty hunter': new MissionCoreStrategy('bounty hunter', 5),
   'exodia': new MissionCoreStrategy('exodia', 10),
@@ -107,19 +130,20 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
 
   // Power Branch
   // penaltyMultiplier: T1=1.0×, T2=2.0×, T3=3.0× — consistent risk/reward escalation
+  'power strike': new PowerCoreStrategy('power strike', 1.0),
   'power core': new PowerCoreStrategy('power core', 1.0),
   // T2 Power: all have 2.0× penalty
-  'overclock core': new PowerCoreStrategy('overclock core', 2.0),
+  'overclock': new PowerCoreStrategy('overclock', 2.0),
   'hypercharge': new PowerCoreStrategy('hypercharge', 2.0),
   'power surge': new PowerCoreStrategy('power surge', 2.0),
   'brute force': new PowerCoreStrategy('brute force', 2.0),
   'overload': new PowerCoreStrategy('overload', 2.0),
   // T3 Power: all have 3.0× penalty
-  'supernova core': new PowerCoreStrategy('supernova core', 3.0),
-  'gigawatt core': new PowerCoreStrategy('gigawatt core', 3.0),
+  'supernova': new PowerCoreStrategy('supernova', 3.0),
+  'gigawatt': new PowerCoreStrategy('gigawatt', 3.0),
   'desperado': new PowerCoreStrategy('desperado', 3.0),
   'absolute power': new PowerCoreStrategy('absolute power', 3.0),
-  'supermassive core': new PowerCoreStrategy('supermassive core', 3.0),
+  'supermassive': new PowerCoreStrategy('supermassive', 3.0),
 
   // Pandora Branch
   "pandora's box": new PandoraCoreStrategy(),

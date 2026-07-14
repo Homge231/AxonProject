@@ -1,6 +1,6 @@
 import {
   BaseCore,
-  BASE_POINTS,
+  getBasePoints,
   SPEEDSTER_MULTIPLIER,
   SPEEDSTER_TIME_BUDGET_MS,
   ScoringContext,
@@ -15,7 +15,7 @@ import {
  *
  * Formula:
  *   speedBonus = max(0, floor( (1 - timeTaken / budget) * SPEEDSTER_MULTIPLIER ))
- *   total      = BASE_POINTS + speedBonus
+ *   total      = getBasePoints(ctx.targetWord) + speedBonus
  *
  * Examples (SPEEDSTER_MULTIPLIER = 150, budget = 8000 ms):
  *   Answer in  1s  →  +131 bonus  → 231 pts
@@ -41,13 +41,13 @@ export class SpeedsterCoreStrategy extends BaseCore {
     const safeTaken     = Math.max(ctx.timeTaken, 0)
     const speedRatio    = Math.max(0, 1 - safeTaken / SPEEDSTER_TIME_BUDGET_MS) // 1.0 = instant, 0.0 = budget exhausted
     const speedBonus    = Math.floor(speedRatio * SPEEDSTER_MULTIPLIER)
-    const baseTotal     = BASE_POINTS + speedBonus
+    const baseTotal     = getBasePoints(ctx.targetWord) + speedBonus
     const total         = Math.floor(baseTotal * ctx.multiplierBuff) - oraclePenalty
 
     return {
       pointsDelta: Math.max(0, total),  // never go negative on a correct answer
       breakdown: {
-        base:            BASE_POINTS,
+        base:            getBasePoints(ctx.targetWord),
         combo_bonus:     0,             // Speedster ignores combo
         flat_buff:       ctx.flatBuff,
         multiplier_buff: ctx.multiplierBuff,

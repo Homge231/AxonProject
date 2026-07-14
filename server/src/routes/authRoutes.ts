@@ -4,9 +4,35 @@ import { authMiddleware, AuthRequest } from '../middleware/authMiddleware'
 import { generateOTP } from '../utils/otp'
 import { sendOTPEmail } from '../utils/mailer'
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import dotenv from 'dotenv'
 import { supabase } from '../config/supabase'
 dotenv.config()
+
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.SUPABASE_SERVICE_KEY || 'default-secret').digest()
+const IV_LENGTH = 16
+
+function encryptPassword(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH)
+  const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv)
+  let encrypted = cipher.update(text, 'utf8', 'hex')
+  encrypted += cipher.final('hex')
+  return iv.toString('hex') + ':' + encrypted
+}
+
+function decryptPassword(text: string): string {
+  try {
+    const parts = text.split(':')
+    const iv = Buffer.from(parts.shift()!, 'hex')
+    const encryptedText = Buffer.from(parts.join(':'), 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv)
+    let decrypted = decipher.update(encryptedText, undefined, 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch (e) {
+    return text // fallback for previously unencrypted testing rows
+  }
+}
 
 const router = Router()
 
@@ -79,11 +105,12 @@ router.post('/register', async (req: Request, res: Response) => {
     const otp = generateOTP()
 
     // Upsert pending registration details
+    const encryptedPassword = encryptPassword(password)
     const { error: insertErr } = await supabase
       .from('pending_registrations')
       .upsert({
         email,
-        password,
+        password: encryptedPassword,
         hashed_password: hashedPassword,
         username,
         otp,
@@ -139,9 +166,10 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
       return
     }
 
+    const rawPassword = decryptPassword(pending.password)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: pending.email,
-      password: pending.password,
+      password: rawPassword,
       email_confirm: true,
       user_metadata: { full_name: pending.username }
     })

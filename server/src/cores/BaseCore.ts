@@ -6,7 +6,16 @@
 //   Done — gameController.ts never needs to be touched.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const BASE_POINTS             = 100
+export function getBasePoints(word: string): number {
+  if (!word) return 100
+  const len = word.length
+  if (len <= 5) return 100
+  if (len <= 7) return 125
+  if (len <= 9) return 150
+  if (len <= 11) return 175
+  return 200
+}
+
 export const MATCH_DURATION_MS       = 90_000          // 90-second match
 export const SPEEDSTER_MULTIPLIER    = 140             // max bonus pts from speed
 export const SPEEDSTER_TIME_BUDGET_MS= 8_000           // 8-second window to get speed bonus
@@ -40,6 +49,12 @@ export interface ScoringContext {
   initialShieldCount?: number
   /** Names of all cores in the session's upgrade/history stack */
   historyCoreNames?: string[]
+  /** (US-33) Client-reported shield count before this answer (especially useful for Pandora shifting) */
+  currentShields?: number
+  /** (US-33) Client-reported mission progress before this answer */
+  missionProgress?: number
+  /** The target word for this question, used to determine base points based on length */
+  targetWord: string
 }
 
 /**

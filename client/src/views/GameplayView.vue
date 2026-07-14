@@ -3,7 +3,8 @@
     class="h-screen w-full overflow-hidden relative font-sans flex flex-col select-none text-white transition-all duration-75"
     :class="{
       'sepia hue-rotate-[180deg] blur-[2px] scale-[1.02] saturate-200 contrast-150 animate-pulse': isShifting,
-      'exodia-shake': showMissionCelebration && isExodia
+      'exodia-shake': showMissionCelebration && isExodia,
+      'chaos-shift': isChaos
     }" @click="refocusInput">
     <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
       :class="{ 'opacity-0': isBgFading, 'opacity-100': !isBgFading }" />
@@ -146,6 +147,17 @@
       </div>
 
       <div class="flex items-center gap-8">
+        <!-- Sound Toggle -->
+        <button @click="audioService.toggleSound(); refocusInput()" class="hover:opacity-80 transition-opacity focus:outline-none" title="Toggle Sound">
+          <svg v-if="audioService.isEnabled.value" class="w-6 h-6 text-lightBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"></path>
+          </svg>
+          <svg v-else class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h2.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+          </svg>
+        </button>
+
         <div id="tutorial-score-area"
           class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
           <span class="text-xs font-bold text-orange tracking-[0.2em] uppercase">Score</span>
@@ -505,6 +517,7 @@ import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
 import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
 import CoreUpgradeOverlay from '../components/game/CoreUpgradeOverlay.vue'
 import OracleCoreIndicator from '../components/game/OracleCoreIndicator.vue'
+import FeedbackOverlay from '../components/game/FeedbackOverlay.vue'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import Avatar from '../components/Avatar.vue'
 import PandoraOverlay from '../components/game/PandoraOverlay.vue'
@@ -525,7 +538,7 @@ import {
 } from '../game/cores/registry'
 import { getCoreIconPath } from '../game/cores/icons'
 import { fetchWithAuth } from '../services/api'
-import FeedbackOverlay from '../components/game/FeedbackOverlay.vue';
+import { audioService } from '../services/audioService'
 const router = useRouter()
 const authStore = useAuthStore()
 const gameStore = useGameStore()
@@ -685,6 +698,7 @@ const maxShields = computed(() => {
 })
 // Aegis Shield State
 const aegisShieldCount = ref(0)
+
 const isShattering = ref(false)
 const showMissionCelebration = ref(false)
 const showPrismaticFlash = ref(false)
@@ -1051,8 +1065,11 @@ async function skipQuestion() {
   const questionId = currentQuestion.value.id
   const capturedOracleLevel = oracleRevealLevel.value
   const capturedCombo = currentCombo.value
+  const capturedShields = aegisShieldCount.value
+  const capturedMission = missionProgress.value
 
   // Immediate local feedback
+  audioService.playSkip()
   gameState.value = 'wrong'
   currentCombo.value = 0
   if (isMissionCore.value) {
@@ -1086,7 +1103,9 @@ async function skipQuestion() {
             secondary_core_id: isPandoraMode.value ? currentPandoraCoreId.value : undefined,
             core_history_names: gameStore.coreHistory.map(c => c.name),
             oracle_reveal_level: capturedOracleLevel,
-            time_taken: timeTaken
+            time_taken: timeTaken,
+            current_shields: capturedShields,
+            mission_progress: capturedMission
           })
         })
         if (res.ok) {
@@ -1171,11 +1190,14 @@ async function checkAnswer() {
   const questionId = currentQuestion.value.id
   const capturedOracleLevel = oracleRevealLevel.value
   const capturedCombo = currentCombo.value
+  const capturedShields = aegisShieldCount.value
+  const capturedMission = missionProgress.value
 
   const hashVal = await sha256(typed)
   const isCorrectLocal = hashVal === currentQuestion.value.target_hash
 
   if (isCorrectLocal) {
+    audioService.playCorrect()
     gameState.value = 'correct'
     currentCombo.value++
 
@@ -1215,6 +1237,7 @@ async function checkAnswer() {
     }
     triggerScoreFlash('correct')
   } else {
+    audioService.playSkip()
     gameState.value = 'wrong'
     currentCombo.value = 0
     if (isMissionCore.value) {
@@ -1270,7 +1293,9 @@ async function checkAnswer() {
           core_history_names: gameStore.coreHistory.map(c => c.name),
           core_history: gameStore.coreHistory.map(c => c.id),
           oracle_reveal_level: capturedOracleLevel,
-          time_taken: timeTaken
+          time_taken: timeTaken,
+          current_shields: capturedShields,
+          mission_progress: capturedMission
         })
       })
 
@@ -1528,6 +1553,10 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(async () => {
+  if (isAegisMode.value && aegisShieldCount.value < maxShields.value) {
+    aegisShieldCount.value = maxShields.value
+  }
+
   if (!activeCoreId.value) {
     router.replace('/core')
     return
@@ -1559,6 +1588,12 @@ onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
   for (const t of activeBgTimeouts) clearTimeout(t)
   activeBgTimeouts.clear()
+})
+
+watch([maxShields, isAegisMode], ([newMax, isAegis]) => {
+  if (isAegis && aegisShieldCount.value < newMax) {
+    aegisShieldCount.value = newMax
+  }
 })
 </script>
 

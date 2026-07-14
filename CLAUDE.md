@@ -388,6 +388,8 @@ MAIL_FROM=
   - Frontend bug fixes (leak, animation frames, keys, input bloat) ✅ (resolved audio context leak, cancelled pending frames, composite keys for duplicate items, nextTick input flush)
   - [US-31] Custom Support Core Icons ✅ (88 vector SVG icons generated, uploaded to Supabase Storage, mapped to DB cores table)
   - [US-37] Hover/Hold Tooltips for Cores ✅ (detailed tooltip popups on mouseover on Desktop and touch-hold on Mobile for all cores)
+  - **Pandora Core Redesign** ✅ (Rebalanced Pandora cores: Trickster's Glass skip cost 0, Chaos Theory +100-500 random bonus, Butterfly Effect +0.1x multiplier per combo)
+  - **[US-34] Vocabulary Analytics Dashboard** ✅ (Created `/analytics` view grouping `user_vocab_stats` by topic, showing unique words count, mastery badges, and top 3 weakest words per topic)
   - Colyseus multiplayer rooms + matchmaking (planned)
   - Real-time opponent sync (planned)
   - **Clean up / Delete test \"Skip to Core Selection\" button** (added in settings menu of `GameplayView.vue`) before production
