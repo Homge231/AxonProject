@@ -1,6 +1,6 @@
 <template>
   <transition name="wind-fade">
-    <div v-if="active && playing" class="speedster-wind-container pointer-events-none">
+    <div class="speedster-wind-container pointer-events-none" style="border: 4px solid red; background: rgba(255,0,0,0.1);">
       <span class="wind-streak ws1"></span>
       <span class="wind-streak ws2"></span>
       <span class="wind-streak ws3"></span>

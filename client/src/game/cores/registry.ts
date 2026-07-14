@@ -450,7 +450,8 @@ const _fallback: CoreModule = {
  */
 export function getCoreModule(name: string | null | undefined): CoreModule {
   if (!name) return _fallback
-  const key = name.trim().toLowerCase()
+  let key = name.trim().toLowerCase()
+  if (key.endsWith(' core')) key = key.substring(0, key.length - 5)
   return CORE_REGISTRY[key] ?? _fallback
 }
 
@@ -509,7 +510,8 @@ export function isOracleCore(name: string | null | undefined): boolean {
  */
 export function isSpeedsterCore(name: string | null | undefined): boolean {
   if (!name) return false
-  const key = name.trim().toLowerCase()
+  let key = name.trim().toLowerCase()
+  if (key.endsWith(' core')) key = key.substring(0, key.length - 5)
   return [
     'speedster',
     'time warp',

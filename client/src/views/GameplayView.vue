@@ -199,6 +199,9 @@
     <main v-show="gameState !== 'upgrade'"
       class="relative z-20 flex-1 flex flex-col items-center justify-center py-10 px-6 lg:px-16 max-w-5xl mx-auto w-full">
 
+      <!-- Speedster wind streak overlay component -->
+      <SpeedsterOverlay :active="!!activeCoreModule.showWindOverlay && settingsStore.vfxEnabled" :playing="gameState === 'playing'" />
+
       <section class="w-full max-w-4xl flex flex-col gap-10" style="perspective: 1500px;">
 
         <div v-if="gameState === 'loading'" class="w-full flex flex-col gap-10">
@@ -250,9 +253,6 @@
               <div id="tutorial-typing-area" class="w-full flex flex-col items-center gap-3 overflow-hidden"
                 ref="letterSlotsRef">
 
-                <!-- Speedster wind streak overlay component -->
-                <SpeedsterOverlay :active="!!activeCoreModule.showWindOverlay && settingsStore.vfxEnabled"
-                  :playing="gameState === 'playing'" />
 
                 <div
                   class="flex flex-nowrap items-center justify-center gap-2 md:gap-3 w-full overflow-x-auto pb-3 scrollbar-none"
