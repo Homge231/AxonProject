@@ -630,8 +630,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       answerHistory,
       initialShieldCount,
       historyCoreNames,
-      currentShields:    undefined, // Force AegisCoreStrategy to compute from history
-      missionProgress:   undefined, // Force MissionCoreStrategy to compute from history
+      currentShields:    typeof current_shields === 'number' ? current_shields : undefined,
+      missionProgress:   typeof mission_progress === 'number' ? mission_progress : undefined,
       targetWord:        question.target_word
     }
 
