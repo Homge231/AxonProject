@@ -6,8 +6,8 @@ class AudioService {
   public isEnabled = ref(true);
 
   constructor() {
-    this.correctAudio = new Audio('/audio/correct.ogg');
-    this.skipAudio = new Audio('/audio/skip.ogg');
+    this.correctAudio = new Audio('/audio/correct.wav');
+    this.skipAudio = new Audio('/audio/skip.wav');
     
     const stored = localStorage.getItem('arena_sound');
     if (stored !== null) {
