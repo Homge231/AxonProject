@@ -596,8 +596,23 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
     historyCoreNames = sanitizedHistoryNames
     coreRows = coreRows.filter(r => sanitizedHistoryNames.includes(r.name))
 
+    // ── Apply Hybrid / Replacement Matrix ──
+    const t2Core = coreRows.find(c => c.tier === 2)
+    const t3Core = coreRows.find(c => c.tier === 3)
+    let isHybrid = false
+
+    if (t2Core && t3Core) {
+      if (t2Core.classification === t3Core.classification) {
+        // Replacement Matrix: Power->Power or Effect->Effect. Old core is completely discarded.
+        historyCoreNames = historyCoreNames.filter(name => name !== t2Core.name)
+        coreRows = coreRows.filter(c => c.id !== t2Core.id)
+      } else {
+        // Hybrid Matrix: Power->Effect or Effect->Power. Both are kept!
+        isHybrid = true
+      }
+    }
+
     // Determine the primary scoring core.
-    // If the active core is Pandora (and has shape-shifted), we use the shifted secondary core for calculation.
     let scoringCore = core
     if (secondaryCore) {
       scoringCore = secondaryCore
@@ -607,6 +622,16 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
         // Pick the most recent power core in history
         scoringCore = powerCores.sort((a, b) => historyCoreNames.indexOf(b.name) - historyCoreNames.indexOf(a.name))[0]
       }
+    }
+    
+    // In Hybrid mode, combine the raw DB buffs of both T2 and T3.
+    let activeFlatBuff = scoringCore.flat_buff
+    let activeMultBuff = scoringCore.multiplier_buff
+    if (isHybrid && t2Core && t3Core) {
+      // Avoid double-counting scoringCore
+      const otherCore = scoringCore.id === t3Core.id ? t2Core : t3Core
+      activeFlatBuff += otherCore.flat_buff
+      activeMultBuff *= otherCore.multiplier_buff
     }
 
     // Find if ANY core in history grants initial shields
@@ -625,8 +650,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       combo:             serverCombo,
       wrongPenalty,
       oracleRevealLevel,
-      flatBuff:          scoringCore.flat_buff,
-      multiplierBuff:    scoringCore.multiplier_buff,
+      flatBuff:          activeFlatBuff,
+      multiplierBuff:    activeMultBuff,
       answerHistory,
       initialShieldCount,
       historyCoreNames,

@@ -390,6 +390,7 @@ MAIL_FROM=
   - [US-37] Hover/Hold Tooltips for Cores ✅ (detailed tooltip popups on mouseover on Desktop and touch-hold on Mobile for all cores)
   - **Pandora Core Redesign** ✅ (Rebalanced Pandora cores: Trickster's Glass skip cost 0, Chaos Theory +100-500 random bonus, Butterfly Effect +0.1x multiplier per combo)
   - **[US-34] Vocabulary Analytics Dashboard** ✅ (Created `/analytics` view grouping `user_vocab_stats` by topic, showing unique words count, mastery badges, and top 3 weakest words per topic)
+  - **Core System Standardization (v1)** ✅ (Refactored scoring engine to strictly implement Hybrid Matrix for T2 -> T3 upgrades: Power/Effect merge buffs, matching classifications are completely replaced. Updated FE badges for Anchor, Power, Effect)
   - Colyseus multiplayer rooms + matchmaking (planned)
   - Real-time opponent sync (planned)
   - **Clean up / Delete test \"Skip to Core Selection\" button** (added in settings menu of `GameplayView.vue`) before production

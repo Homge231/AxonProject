@@ -82,15 +82,17 @@
               class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
             </div>
 
-            <!-- ⚔️/🔮 Power / Effect mini badge (top-left of card) -->
+            <!-- 🛡️/⚔️/🔮 Main / Power / Effect mini badge (top-left of card) -->
             <span
               class="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest select-none"
-              :class="core.classification === 'power'
-                ? 'text-orange-400 bg-orange-500/10 border-orange-500/30'
-                : 'text-violet-400 bg-violet-500/10 border-violet-500/30'"
+              :class="core.classification === 'main'
+                ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                : core.classification === 'power'
+                  ? 'text-orange-400 bg-orange-500/10 border-orange-500/30'
+                  : 'text-violet-400 bg-violet-500/10 border-violet-500/30'"
             >
-              {{ core.classification === 'power' ? '⚔️' : '🔮' }}
-              {{ core.classification === 'power' ? 'Power' : 'Effect' }}
+              {{ core.classification === 'main' ? '🛡️' : (core.classification === 'power' ? '⚔️' : '🔮') }}
+              {{ core.classification === 'main' ? 'Anchor' : (core.classification === 'power' ? 'Power' : 'Effect') }}
             </span>
             <div
               class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
