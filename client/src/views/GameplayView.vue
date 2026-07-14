@@ -250,7 +250,7 @@
               </div>
 
               <!-- Letter slots (anchor for popup position) -->
-              <div id="tutorial-typing-area" class="relative w-full flex flex-col items-center gap-3 overflow-hidden"
+              <div id="tutorial-typing-area" class="w-full flex flex-col items-center gap-3 overflow-hidden"
                 ref="letterSlotsRef">
 
                 <!-- Speedster wind streak overlay component -->
