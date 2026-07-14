@@ -4,7 +4,7 @@
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
     <div class="absolute top-8 right-8 z-20 flex items-center gap-2"
-      :class="timeLeft <= 5 ? 'text-hexred animate-pulse' : 'text-lightOrange'">
+      :class="timeLeft <= 5 ? (settingsStore.vfxEnabled ? 'text-hexred animate-pulse' : 'text-hexred') : 'text-lightOrange'">
       <svg class="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -24,7 +24,7 @@
       </p>
 
       <div v-if="loading && upgradeCores.length === 0" class="flex justify-center py-16">
-        <svg class="animate-spin w-10 h-10 text-lightBlue" fill="none" viewBox="0 0 24 24">
+        <svg class="w-10 h-10 text-lightBlue" :class="{ 'animate-spin': settingsStore.vfxEnabled }" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor"
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c..."></path>
@@ -42,11 +42,12 @@
           </transition>
 
           <div @click="selectCore(core)"
-            class="tech-border group flex-1 w-full relative backdrop-blur-xl rounded-2xl p-8 md:p-12 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
+            class="group flex-1 w-full relative backdrop-blur-xl rounded-2xl p-8 md:p-12 cursor-pointer transition-all duration-500 flex flex-col items-center text-center overflow-hidden"
             :class="[
+              settingsStore.vfxEnabled ? 'tech-border' : 'border border-white/20',
               selectedCore?.id === core.id
-                ? 'bg-white/10 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105'
-                : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2',
+                ? (settingsStore.vfxEnabled ? 'bg-white/10 border-2 border-lightBlue shadow-[0_0_40px_rgba(59,130,246,0.5)] -translate-y-4 scale-105' : 'bg-white/20 border-2 border-lightBlue -translate-y-4 scale-105')
+                : (settingsStore.vfxEnabled ? 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2' : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 hover:-translate-y-2'),
               loading && selectedCore?.id !== core.id && upgradeCores.length > 0 ? 'opacity-40 grayscale' : ''
             ]"
             @mouseenter="showTooltip(index)"
@@ -113,12 +114,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useSettingsStore } from '../../stores/settingsStore'
 import { useGameStore } from '../../stores/gameStore'
 import { useMatchStore } from '../../stores/matchStore'
 import { getCoreIconPath } from '../../game/cores/icons'
 import CoreTooltip from './CoreTooltip.vue'
 import CoachMark from '../tutorial/CoachMark.vue'
 import { useTutorial } from '../../composables/useTutorial'
+
+const settingsStore = useSettingsStore()
 
 const emit = defineEmits<{ (e: 'selected', coreId: string): void }>()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'

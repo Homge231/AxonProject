@@ -6,7 +6,7 @@
       'exodia-shake': showMissionCelebration && isExodia,
       'chaos-shift': isChaos
     }" @click="refocusInput">
-    <PhaserBackground :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
+    <PhaserBackground v-if="settingsStore.vfxEnabled" :image-url="currentBgImage" class="transition-opacity duration-500 ease-in-out"
       :class="{ 'opacity-0': isBgFading, 'opacity-100': !isBgFading }" />
 
     <div class="absolute inset-0 bg-black/45 pointer-events-none z-0"></div>
@@ -15,7 +15,7 @@
 
     <!-- Prismatic Screen Flash -->
     <div
-      v-if="showPrismaticFlash"
+      v-if="showPrismaticFlash && settingsStore.vfxEnabled"
       class="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-cyan-500/20 to-yellow-500/20 pointer-events-none z-10 mix-blend-screen animate-pulse"
     ></div>
 
@@ -29,12 +29,12 @@
           :class="[
             popup.type === 'speedster' ? 'speedster-popup' : 
               popup.type === 'prismatic' ? 'prismatic-explosion' : 'point-popup-anim',
-            popup.type === 'typo' ? 'text-orange drop-shadow-[0_0_10px_rgba(255,165,0,0.8)]' :
-              popup.type === 'wrong' ? 'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]' :
-                popup.type === 'speedster' ? 'speedster-fast-text' :
-                  popup.type === 'shield_blocked' ? 'text-gray-300 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' :
+            popup.type === 'typo' ? (settingsStore.vfxEnabled ? 'text-orange drop-shadow-[0_0_10px_rgba(255,165,0,0.8)]' : 'text-orange') :
+              popup.type === 'wrong' ? (settingsStore.vfxEnabled ? 'text-hexred drop-shadow-[0_0_10px_rgba(230,57,70,0.8)]' : 'text-hexred') :
+                popup.type === 'speedster' ? (settingsStore.vfxEnabled ? 'speedster-fast-text' : 'text-cyan-400') :
+                  popup.type === 'shield_blocked' ? (settingsStore.vfxEnabled ? 'text-gray-300 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-gray-300') :
                     popup.type === 'prismatic' ? '' :
-                      'text-success drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]'
+                      (settingsStore.vfxEnabled ? 'text-success drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]' : 'text-success')
           ]" :style="{
             left: `${popup.x}px`,
             top: `${popup.y}px`
@@ -152,16 +152,7 @@
       </div>
 
       <div class="flex items-center gap-8">
-        <!-- Sound Toggle -->
-        <button @click="audioService.toggleSound(); refocusInput()" class="hover:opacity-80 transition-opacity focus:outline-none" title="Toggle Sound">
-          <svg v-if="audioService.isEnabled.value" class="w-6 h-6 text-lightBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"></path>
-          </svg>
-          <svg v-else class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h2.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
-          </svg>
-        </button>
+        <!-- Sound Toggle removed -->
 
         <div id="tutorial-score-area"
           class="flex items-center gap-3 bg-black/30 backdrop-blur-md border border-white/10 px-5 py-2 rounded-lg shadow-inner">
@@ -182,8 +173,9 @@
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span class="font-mono font-black text-3xl tabular-nums drop-shadow-lg" :class="[
-            timeLeft <= 10 ? 'animate-pulse' : '',
-            activeCoreModule.timerClass || ''
+            activeCoreModule.timerColor,
+            timeLeft <= 10 && settingsStore.vfxEnabled ? 'animate-pulse' : '',
+            settingsStore.vfxEnabled ? activeCoreModule.timerClass : '' || ''
           ]">
             {{ String(timeLeft ?? 0).padStart(2, '0') }}
           </span>
@@ -427,7 +419,7 @@
           </div>
 
           <p v-if="savingSession"
-            class="text-xs text-gray-400 uppercase tracking-widest mb-6 animate-pulse flex-shrink-0">
+            class="text-xs text-gray-400 uppercase tracking-widest mb-6 flex-shrink-0" :class="{ 'animate-pulse': settingsStore.vfxEnabled }">
             <span class="inline-block w-2 h-2 bg-lightBlue rounded-full mr-2"></span>
             Syncing results...
           </p>
@@ -518,6 +510,9 @@ import {
   isPandoraCore as checkPandoraCore,
   getMaxShields as checkMaxShields
 } from '../game/cores/registry'
+import { useSettingsStore } from '../stores/settingsStore'
+
+const settingsStore = useSettingsStore()
 import { getCoreIconPath } from '../game/cores/icons'
 import { fetchWithAuth } from '../services/api'
 import { audioService } from '../services/audioService'
