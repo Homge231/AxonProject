@@ -169,15 +169,22 @@ onMounted(async () => {
 
         if (currentRoom) {
             currentRoom.onStateChange((state: any) => {
-                const newParticipants: { id: string, name: string, avatar: string }[] = []
-                state.players.forEach((player: any) => {
-                    newParticipants.push({
-                        id: player.id,
-                        name: player.name,
-                        avatar: player.avatar
+                try {
+                    const newParticipants: { id: string, name: string, avatar: string }[] = []
+                    const playersObj = state.toJSON().players || {}
+                    Object.values(playersObj).forEach((player: any) => {
+                        if (player && player.name) {
+                            newParticipants.push({
+                                id: player.id,
+                                name: player.name,
+                                avatar: player.avatar
+                            })
+                        }
                     })
-                })
-                participants.value = newParticipants
+                    participants.value = newParticipants
+                } catch (e) {
+                    console.error("Error parsing room state:", e)
+                }
             })
         }
     } catch (err: any) {
