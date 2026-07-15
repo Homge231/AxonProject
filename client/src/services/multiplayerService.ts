@@ -1,10 +1,8 @@
 import { Client, Room } from "colyseus.js";
 
 // Ensure the Colyseus connection points to the correct backend host
-const host = window.document.location.host.replace(/:.*/, "");
-const port = 3000;
-const protocol = window.location.protocol.replace("http", "ws");
-const endpoint = import.meta.env.VITE_WS_URL || `${protocol}//${host}:${port}`;
+const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+const endpoint = serverUrl.replace(/^http/, "ws");
 
 export const colyseusClient = new Client(endpoint);
 export let currentRoom: Room | null = null;
