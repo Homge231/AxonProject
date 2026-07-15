@@ -169,9 +169,7 @@ function joinExistingRoom() {
   isJoiningCustom.value = true
   setTimeout(() => {
     let code = joinCode.value.toUpperCase().trim()
-    if (!code.startsWith('NRA-')) {
-      code = `NRA-${code}`
-    }
+    // NRA- prefix is no longer used, Colyseus generates its own IDs
 
     router.push(`/room/custom?id=${code}`).finally(() => {
       isJoiningCustom.value = false
