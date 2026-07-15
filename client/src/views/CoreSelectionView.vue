@@ -140,13 +140,13 @@
     <!-- Tutorial CoachMark -->
     <CoachMark 
       v-if="tutorial.isCurrentScreen('core-select')"
-      :targetId="tutorial.currentStepData.value?.targetId"
-      :message="tutorial.currentStepData.value?.message"
-      :title="tutorial.currentStepData.value?.title"
-      :icon="tutorial.currentStepData.value?.icon"
+      :targetId="tutorial.currentStepData.value?.targetId ?? ''"
+      :message="tutorial.currentStepData.value?.message ?? ''"
+      :title="tutorial.currentStepData.value?.title ?? ''"
+      :icon="tutorial.currentStepData.value?.icon ?? ''"
       :step="tutorial.currentStepNumber.value"
       :totalSteps="tutorial.totalSteps"
-      :keyHints="tutorial.currentStepData.value?.keyHints"
+      :keyHints="tutorial.currentStepData.value?.keyHints ?? []"
       :placement="tutorial.currentStepData.value?.placement"
       @next="tutorial.next"
       @skip="tutorial.complete"

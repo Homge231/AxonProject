@@ -14,10 +14,9 @@ export const useGameStore = defineStore('game', () => {
   const coreHistory    = ref<{ id: string, name: string, icon: string }[]>([])
   const sessionId      = ref<string | null>(null)
 
-  return {
+return {
     roomCode, playerName, players,
     gameState, myScore, opponentScore, kp,
-    gameState, myScore, opponentScore, kp,
     activeCoreId, activeCoreName, coreHistory, sessionId
-  }
+}
 })

@@ -8,9 +8,28 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const profile = ref<any>(null)
   const loading = ref(true)
+  const sessionInvalidated = ref(false)
 
   const isLoggedIn = computed(() => !!user.value)
   const isFirstPlay = computed(() => profile.value?.is_first_play ?? false)
+
+  // Removes #access_token=... fragment from the address bar after Supabase
+  // has already read it into its internal session storage.
+  function cleanOAuthUrlFragment() {
+    if (window.location.hash.includes('access_token')) {
+      const cleanUrl = window.location.pathname + window.location.search
+      window.history.replaceState({}, document.title, cleanUrl)
+    }
+  }
+
+  // Central place to react to any 401 with error === 'SessionInvalidated'
+  function handleSessionInvalidated() {
+    sessionInvalidated.value = true
+    localStorage.removeItem('arena_token')
+    user.value = null
+    profile.value = null
+    supabase.auth.signOut().catch(() => {})
+  }
 
   async function skipTutorial() {
     if (profile.value) {
@@ -20,10 +39,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token) return
 
     try {
-      await fetch(`${SERVER_URL}/auth/skip-tutorial`, {
+      const res = await fetch(`${SERVER_URL}/auth/skip-tutorial`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })
+      if (res.status === 401) {
+        const data = await res.json().catch(() => null)
+        if (data?.error === 'SessionInvalidated') {
+          handleSessionInvalidated()
+        }
+      }
     } catch (err) {
       console.error('Failed to skip tutorial:', err)
     }
@@ -37,6 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (session?.access_token) {
       await exchangeTokenAfterOAuth()
+      cleanOAuthUrlFragment()
     }
 
     // Email login users have no Supabase session — restore from arena JWT
@@ -56,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = session?.user ?? null
       if (event === 'SIGNED_IN' && user.value) {
         await exchangeTokenAfterOAuth()
+        cleanOAuthUrlFragment()
         await fetchProfile()
       }
       if (event === 'SIGNED_OUT') {
@@ -92,6 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await res.json()
       if (res.ok && data.token) {
         localStorage.setItem('arena_token', data.token)
+        sessionInvalidated.value = false
         await fetchProfile()
       }
     } catch (err) {
@@ -127,6 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await res.json()
       if (!res.ok) return { success: false, error: data.error }
       localStorage.setItem('arena_token', data.token)
+      sessionInvalidated.value = false
       user.value = { id: data.user.id, email: data.user.email }
       await fetchProfile()
       return { success: true }
@@ -150,6 +179,13 @@ export const useAuthStore = defineStore('auth', () => {
       const res = await fetch(`${SERVER_URL}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      if (res.status === 401) {
+        const data = await res.json().catch(() => null)
+        if (data?.error === 'SessionInvalidated') {
+          handleSessionInvalidated()
+        }
+        return
+      }
       if (!res.ok) return
       const data = await res.json()
       profile.value = data
@@ -159,7 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    user, profile, loading, isLoggedIn, isFirstPlay,
+    user, profile, loading, isLoggedIn, isFirstPlay, sessionInvalidated,
     init, loginWithGoogle, loginWithEmail,
     registerWithEmail, logout, fetchProfile,
     exchangeTokenAfterOAuth, skipTutorial
