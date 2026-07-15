@@ -1,15 +1,16 @@
 import { Client, Room } from "colyseus.js";
+import { MatchState } from "../game/schema/MatchState";
 
 // Ensure the Colyseus connection points to the correct backend host
 const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 const endpoint = serverUrl.replace(/^http/, "ws");
 
 export const colyseusClient = new Client(endpoint);
-export let currentRoom: Room | null = null;
+export let currentRoom: Room<MatchState> | null = null;
 
 export async function createMatchRoom(options: any = {}) {
   try {
-    currentRoom = await colyseusClient.create("match_room", options);
+    currentRoom = await colyseusClient.create<MatchState>("match_room", options);
     console.log("Created room successfully!", currentRoom.roomId);
     setupRoomListeners(currentRoom);
     return currentRoom;
@@ -21,7 +22,7 @@ export async function createMatchRoom(options: any = {}) {
 
 export async function joinMatchRoomById(roomId: string, options: any = {}) {
   try {
-    currentRoom = await colyseusClient.joinById(roomId, options);
+    currentRoom = await colyseusClient.joinById<MatchState>(roomId, options);
     console.log("Joined room successfully!", currentRoom.roomId);
     setupRoomListeners(currentRoom);
     return currentRoom;
