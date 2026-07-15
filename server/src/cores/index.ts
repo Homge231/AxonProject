@@ -103,7 +103,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'mission impossible': new MissionCoreStrategy('mission impossible', 5),
   'mission core': new MissionCoreStrategy('mission core', 5),
   'bounty hunter': new MissionCoreStrategy('bounty hunter', 5),
-  'exodia': new MissionCoreStrategy('exodia', 10),
+  'exodia': new MissionCoreStrategy('exodia', 5),
   'daily quest': new MissionCoreStrategy('daily quest', 3),
   'shield mission': new AegisCoreStrategy('shield mission', 3, false, false),
   'time mission': new MissionCoreStrategy('time mission', 5),

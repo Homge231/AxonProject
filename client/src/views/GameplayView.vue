@@ -541,8 +541,8 @@ import { useMatchStore } from '../stores/matchStore'
 import {
   initAudio, 
   playKeystroke, 
-  updateFireLoop, 
-  stopFireLoop, 
+  playComboTone, 
+  playComboBreak, 
   playFireBurst,
   playJackpot,
   playShieldGain,
@@ -1272,12 +1272,18 @@ async function checkAnswer() {
     }
 
     if (isMissionCore.value) {
-      const isShieldMission = effectiveCores.value.some(c => c.name.toLowerCase() === 'shield mission')
-      const targetStreak = isShieldMission ? 3 : 5
+      const activeName = effectiveCores.value[0]?.name.toLowerCase() || ''
+      let targetStreak = 5
+      if (['daily quest', 'apex predator', 'swift mission', 'mission master', 'shield mission'].includes(activeName)) {
+        targetStreak = 3
+      } else if (activeName === 'mission specialist') {
+        targetStreak = 4
+      }
+
       missionProgress.value = (missionProgress.value + 1)
       if (missionProgress.value === targetStreak) {
         showMissionCelebration.value = true
-        if (isShieldMission) {
+        if (activeName === 'shield mission') {
           aegisShieldCount.value = maxShields.value
         }
         setTimeout(() => {
@@ -1680,10 +1686,14 @@ watch(activeCoreModule, (newCore) => {
 }, { immediate: true })
 
 watch(() => currentCombo.value, (newVal) => {
+  const isComboActive = effectiveCores.value.some(c => c.name.toLowerCase().includes('combo') || c.name.toLowerCase().includes('strike') || c.name.toLowerCase().includes('power'))
+  
+  if (!isComboActive) return
+
   if (newVal >= 2) {
-    updateFireLoop(newVal)
+    playComboTone(newVal)
   } else if (newVal === 0) {
-    stopFireLoop(true)
+    playComboBreak()
   }
 })
 
@@ -1719,7 +1729,6 @@ onMounted(async () => {
 onUnmounted(() => {
   stopMatchTimer()
   stopTimeoutInterval()
-  stopCoreDrone()
   document.removeEventListener('click', handleOutsideClick)
   window.removeEventListener('beforeunload', handleBeforeUnload)
   for (const t of activeBgTimeouts) clearTimeout(t)

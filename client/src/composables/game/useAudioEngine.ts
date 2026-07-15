@@ -49,8 +49,21 @@ export function initAudio() {
       });
     }
   } catch (err) {
-    console.error('[AudioEngine] Failed to init audio:', err);
+    console.warn('[AudioEngine] init failed:', err);
   }
+}
+
+// Automatically unlock AudioContext on first user interaction
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    initAudio();
+    window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
+  };
+  window.addEventListener('click', unlockAudio);
+  window.addEventListener('keydown', unlockAudio);
+  window.addEventListener('touchstart', unlockAudio);
 }
 
 // Generate White Noise Buffer for various effects (whoosh, fire, break)
@@ -138,70 +151,63 @@ export function playTimeFreeze() {
   osc.stop(audioCtx.currentTime + 3.0);
 }
 
-// ── 3. Combo Branch (Fire Loop & Burst) ─────────────────────────────────
+// ── 3. Combo Branch (Tones & Effects) ─────────────────────────────────
 
-export function updateFireLoop(streak: number) {
+export function playComboTone(streak: number) {
   if (!audioCtx || !masterGainNode) return;
+  
+  // Play an ascending chime based on the streak
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
 
-  if (streak >= 2 && !fireLoopNode) {
-    // Start fire loop
-    const noise = getNoiseBuffer();
-    if (!noise) return;
-    
-    fireLoopNode = audioCtx.createBufferSource();
-    fireLoopNode.buffer = noise;
-    fireLoopNode.loop = true;
+  osc.type = 'triangle';
+  
+  // Base frequency increases with streak, capping at a high note
+  const baseFreq = 440; // A4
+  const multiplier = Math.min(streak, 15) * 0.1;
+  osc.frequency.setValueAtTime(baseFreq * (1 + multiplier), audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * (1 + multiplier + 0.2), audioCtx.currentTime + 0.2);
 
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 800; // Crackling low freq
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
 
-    fireGainNode = audioCtx.createGain();
-    fireGainNode.gain.value = 0.05;
+  // Add a soft ping pong delay feel by using a lowpass
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 1000;
 
-    fireLoopNode.connect(filter);
-    filter.connect(fireGainNode);
-    fireGainNode.connect(masterGainNode);
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGainNode);
 
-    fireLoopNode.start();
-  }
-
-  if (fireLoopNode && fireGainNode) {
-    // Scale volume with streak (cap at 15 for volume)
-    const targetGain = Math.min(0.05 + (streak * 0.02), 0.3);
-    fireGainNode.gain.linearRampToValueAtTime(targetGain, audioCtx.currentTime + 0.5);
-  }
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.4);
 }
 
-export function stopFireLoop(playExtinguish = false) {
-  if (fireLoopNode) {
-    fireLoopNode.stop();
-    fireLoopNode.disconnect();
-    fireLoopNode = null;
-    fireGainNode = null;
-  }
-  if (playExtinguish && audioCtx && masterGainNode) {
-    // Play a hiss sound
-    const noise = getNoiseBuffer();
-    if (!noise) return;
-    const source = audioCtx.createBufferSource();
-    source.buffer = noise;
-    
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 2000;
+export function playComboBreak() {
+  if (!audioCtx || !masterGainNode) return;
+  // A descending disappointed tone when combo drops
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
 
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
 
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterGainNode);
-    
-    source.start();
-    source.stop(audioCtx.currentTime + 0.5);
-  }
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 800;
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGainNode);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.3);
 }
 
 export function playFireBurst() {
