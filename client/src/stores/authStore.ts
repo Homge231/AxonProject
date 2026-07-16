@@ -158,9 +158,21 @@ export const useAuthStore = defineStore('auth', () => {
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user ?? null
 
+    const isFreshOAuthRedirect = window.location.hash.includes('access_token')
+
     if (session?.access_token) {
-      await exchangeTokenAfterOAuth()
-      cleanOAuthUrlFragment()
+      // Only exchange the Supabase token for an arena token when:
+      // 1. This is a fresh OAuth redirect (hash contains access_token), OR
+      // 2. We have no arena_token yet (first-time Google login from this browser).
+      // On every subsequent page load, the Supabase session persists in the
+      // browser but we already have a valid arena_token — calling exchange here
+      // would increment session_version again, instantly invalidating the stored
+      // token and causing 401 UNAUTHORIZED on the very next API call.
+      const hasArenaToken = !!localStorage.getItem('arena_token')
+      if (isFreshOAuthRedirect || !hasArenaToken) {
+        await exchangeTokenAfterOAuth()
+        cleanOAuthUrlFragment()
+      }
     }
 
     // Email login users have no Supabase session — restore from arena JWT
@@ -194,10 +206,16 @@ export const useAuthStore = defineStore('auth', () => {
     supabase.auth.onAuthStateChange(async (event, session) => {
       user.value = session?.user ?? null
       if (event === 'SIGNED_IN' && user.value) {
-        await exchangeTokenAfterOAuth()
-        cleanOAuthUrlFragment()
-        await fetchProfile()
-        startSessionPolling()
+        // Guard: only exchange/bump session_version on a real new login redirect,
+        // not on routine token refreshes (Supabase fires SIGNED_IN every ~1h).
+        const isFreshOAuthRedirect = window.location.hash.includes('access_token')
+        const hasArenaToken = !!localStorage.getItem('arena_token')
+        if (isFreshOAuthRedirect || !hasArenaToken) {
+          await exchangeTokenAfterOAuth()
+          cleanOAuthUrlFragment()
+          await fetchProfile()
+          startSessionPolling()
+        }
       }
       if (event === 'SIGNED_OUT') {
         // Suppress the SIGNED_OUT fired by the intentional supabase.auth.signOut()
