@@ -89,7 +89,7 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'speedster':  new SpeedsterCoreStrategy('speedster'),
   'time warp': new SpeedsterCoreStrategy('time warp'),
   'chronobreak': new SpeedsterCoreStrategy('chronobreak'),
-  'speed shield': new AegisCoreStrategy('speed shield', 3, false, false),
+  'speed shield': new SpeedsterCoreStrategy('speed shield'),
   'mach speed': new SpeedsterCoreStrategy('mach speed'),
   'overdrive': new SpeedsterCoreStrategy('overdrive'),
   'time freeze': new SpeedsterCoreStrategy('time freeze'),

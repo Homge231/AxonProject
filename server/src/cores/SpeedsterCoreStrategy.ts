@@ -110,4 +110,62 @@ export class SpeedsterCoreStrategy extends BaseCore {
       },
     }
   }
+
+  calculateWrong(ctx: ScoringContext): ScoringResult {
+    const oraclePenalty = this._oraclePenalty(ctx)
+
+    if (this.coreName === 'speed shield') {
+      // Calculate current shields if not explicitly provided
+      let currentShields = ctx.currentShields
+      if (currentShields === undefined) {
+        let shields = ctx.initialShieldCount || 0
+        let streak = 0
+        for (const isCorrect of ctx.answerHistory) {
+          if (isCorrect) {
+            streak++
+            shields = Math.min(shields + 1, 3)
+          } else {
+            shields = Math.max(0, shields - 1)
+            streak = 0
+          }
+        }
+        currentShields = shields
+      }
+
+      if (currentShields > 0) {
+        return {
+          pointsDelta: -oraclePenalty, // consume a shield instead of normal penalty
+          forgiveMistake: true,
+          shieldDelta: -1,
+          breakdown: {
+            base: 0,
+            combo_bonus: 0,
+            flat_buff: 0,
+            multiplier_buff: 1,
+            oracle_penalty: oraclePenalty,
+            penalty: 0,
+            shield_blocked: 1,
+            finalShieldCount: currentShields - 1
+          }
+        }
+      }
+    }
+
+    if (this.coreName === 'sonic boom') {
+      return {
+        pointsDelta: -(ctx.wrongPenalty + oraclePenalty),
+        timerDelta: -5000,
+        breakdown: {
+          base: 0,
+          combo_bonus: 0,
+          flat_buff: 0,
+          multiplier_buff: 1,
+          oracle_penalty: oraclePenalty,
+          penalty: ctx.wrongPenalty,
+        },
+      }
+    }
+
+    return super.calculateWrong(ctx)
+  }
 }

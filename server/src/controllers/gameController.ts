@@ -136,7 +136,7 @@ function generateOracleHints(word: string): string[] {
       if (len > 1) revealed.add(len - 1)
     }
     if (level >= 2) {
-      const targetReveal = Math.max(Math.min(len, revealed.size + 1), Math.ceil(len * 0.5))
+      const targetReveal = Math.min(len - 1, Math.max(Math.min(len, revealed.size + 1), Math.ceil(len * 0.5)))
       let count = revealed.size
       const interval = (len - 1) / (targetReveal - 1)
       for (let k = 1; k < targetReveal - 1 && count < targetReveal; k++) {
@@ -153,7 +153,7 @@ function generateOracleHints(word: string): string[] {
       }
     }
     if (level >= 3) {
-      const targetReveal = Math.max(Math.min(len, revealed.size + 1), Math.ceil(len * 0.7))
+      const targetReveal = Math.min(len - 1, Math.max(Math.min(len, revealed.size + 1), Math.ceil(len * 0.7)))
       let count = revealed.size
       const interval = (len - 1) / (targetReveal - 1)
       for (let k = 1; k < targetReveal - 1 && count < targetReveal; k++) {
@@ -531,6 +531,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       return strategy.constructor.name === 'AegisCoreStrategy' || 
              strategy.constructor.name === 'MissionCoreStrategy' ||
              strategy.constructor.name === 'PhoenixCoreStrategy' ||
+             strategy.constructor.name === 'ComboCoreStrategy' ||
+             name.toLowerCase() === 'speed shield' ||
              // Harmony Wave needs history to count wrong answers for its 2-miss immunity
              name.toLowerCase() === 'harmony wave'
     })

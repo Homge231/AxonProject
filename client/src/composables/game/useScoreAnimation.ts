@@ -38,6 +38,10 @@ export function useScoreAnimation(letterSlotsRef: any) {
       y = rect.top - 10
     }
 
+    // Add jitter so simultaneous popups don't overlap completely
+    x += (Math.random() - 0.5) * 40
+    y += (Math.random() - 0.5) * 40
+
     const id = popupIdCounter++
     pointPopups.value.push({ id, value, type, x, y, message })
     const duration = type === 'speedster' || type === 'prismatic' ? 1800 : 1200

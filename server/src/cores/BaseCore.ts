@@ -135,7 +135,7 @@ export abstract class BaseCore {
     if (ctx.historyCoreNames) {
       const upgradedOracleNames = [
         'clairvoyance', 'third eye', 'future sight', 'divine guidance', 'oracle blessing',
-        'omniscience', 'mind reader', 'predictive strike', 'cosmic wisdom', 'divine eye'
+        'omniscience', 'mind reader', 'predictive strike', 'cosmic wisdom', 'divine eye', 'argus eyes'
       ]
       const hasUpgradedOracle = ctx.historyCoreNames.some(name =>
         upgradedOracleNames.includes(name.toLowerCase())
