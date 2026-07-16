@@ -150,6 +150,13 @@ const player1 = computed(() => participants.value[0] || null)
 const player2 = computed(() => participants.value[1] || null)
 
 onMounted(async () => {
+    // Wait for the auth store to finish loading the profile.
+    // On first mount after OAuth redirect, profile is fetched async and may
+    // still be null here — using it immediately produces a GUEST join.
+    while (authStore.loading) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+    }
+
     const options = {
         token: localStorage.getItem('arena_token'),
         id: authStore.profile?.id || `guest_${Math.floor(Math.random() * 1000)}`,

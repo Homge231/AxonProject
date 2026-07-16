@@ -16,6 +16,11 @@ export const useAuthStore = defineStore('auth', () => {
   const currentSessionVersion = ref<number | null>(null)
   let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
 
+  // Flag to suppress the Supabase SIGNED_OUT side-effect triggered by the
+  // explicit supabase.auth.signOut() we call inside loginWithEmail before
+  // establishing the new email session.
+  let isLoggingInWithEmail = false
+
   const isLoggedIn = computed(() => !!user.value)
   const isFirstPlay = computed(() => profile.value?.is_first_play ?? false)
 
@@ -195,6 +200,9 @@ export const useAuthStore = defineStore('auth', () => {
         startSessionPolling()
       }
       if (event === 'SIGNED_OUT') {
+        // Suppress the SIGNED_OUT fired by the intentional supabase.auth.signOut()
+        // we call at the start of loginWithEmail — that's not a real logout.
+        if (isLoggingInWithEmail) return
         // Only clear if no arena token — email login users keep their session
         if (!localStorage.getItem('arena_token')) {
           profile.value = null
@@ -275,12 +283,23 @@ export const useAuthStore = defineStore('auth', () => {
   ): Promise<{ success: boolean; error?: string }> {
     // Drop any existing realtime subscription + clear session version BEFORE
     // the login request fires. The server broadcasts session_invalidated
-    // (to kick old tabs) before it sends the login response. If this tab
+    // (to kick old sessions) before it sends the login response. If this tab
     // still has an old channel subscription alive during that window, it
     // would hear its own kick event and log itself out immediately.
     unsubscribeSessionChanges()
     currentSessionVersion.value = null
 
+    // Sign out any active Supabase Auth session (e.g. a Google OAuth session).
+    // Without this, a user logged in via Google who then logs in with the same
+    // email via email/password ends up with two concurrent identities:
+    // the Supabase OAuth session stays alive in the browser and the
+    // onAuthStateChange listener can re-assert the old profile, bypassing
+    // the new session's kick logic.
+    // The isLoggingInWithEmail flag suppresses the SIGNED_OUT side-effect
+    // that would otherwise clear our in-memory state mid-login.
+    isLoggingInWithEmail = true
+    await supabase.auth.signOut()
+    isLoggingInWithEmail = false
     try {
       const res = await fetch(`${SERVER_URL}/auth/login`, {
         method: 'POST',
