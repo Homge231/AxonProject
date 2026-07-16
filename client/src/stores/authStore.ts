@@ -83,13 +83,29 @@ export const useAuthStore = defineStore('auth', () => {
   function forceLogoutDueToNewSession() {
     stopSessionPolling()
     unsubscribeSessionChanges()
-    // Do NOT remove arena_token from localStorage here.
-    // By the time this fires, the new login (on another tab) may have already
-    // written its fresh token into the shared localStorage. Removing it blindly
-    // would wipe that new session and log out the OTHER tab too.
-    // Instead, use sessionStorage (tab-scoped) to tell init() on the next load
-    // that this specific tab was force-kicked and should not auto-restore.
-    sessionStorage.setItem('arena_force_logged_out', '1')
+
+    // Smart token removal: check the version embedded in the stored token
+    // before deciding whether to remove it.
+    //
+    // • Same version as ours  → this is our own (now-invalidated) token, e.g.
+    //   we're on a different device/browser. Safe to remove — nobody else owns it.
+    //
+    // • Different version     → a new login from another tab in the SAME browser
+    //   has already stored its fresh token here. Do NOT remove it (that would
+    //   kick the new session too). Instead, use a tab-scoped sessionStorage flag
+    //   so init() on this tab skips auto-restore on the next page load.
+    const storedToken = localStorage.getItem('arena_token')
+    if (storedToken) {
+      const storedVersion = extractSessionVersionFromToken(storedToken)
+      if (storedVersion === currentSessionVersion.value) {
+        localStorage.removeItem('arena_token')
+      } else {
+        sessionStorage.setItem('arena_force_logged_out', '1')
+      }
+    } else {
+      // No token at all — nothing to preserve, nothing to flag.
+    }
+
     user.value = null
     profile.value = null
     currentSessionVersion.value = null

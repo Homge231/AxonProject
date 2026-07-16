@@ -244,7 +244,7 @@ onMounted(() => {
   // Show banner if user was force-logged-out because their account
   // logged in from another tab/device (see fetchWithAuth in services/api.ts)
   if (route.query.reason === 'session_invalidated') {
-    sessionInvalidatedMessage.value = 'Account have been Log In in Different Tab, Please Try Again.'
+    sessionInvalidatedMessage.value = 'Your account has been logged in from another device. You have been signed out.'
     router.replace({ query: {} })
   }
 })
