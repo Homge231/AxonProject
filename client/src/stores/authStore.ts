@@ -12,6 +12,10 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(true)
   let sessionPollTimer: ReturnType<typeof setInterval> | null = null
 
+  // ── Realtime session-kick state ─────────────────────────────────────────
+  const currentSessionVersion = ref<number | null>(null)
+  let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
+
   const isLoggedIn = computed(() => !!user.value)
   const isFirstPlay = computed(() => profile.value?.is_first_play ?? false)
 
@@ -37,6 +41,63 @@ export const useAuthStore = defineStore('auth', () => {
     if (sessionPollTimer) {
       clearInterval(sessionPollTimer)
       sessionPollTimer = null
+    }
+  }
+
+  // ── Realtime subscription: instant kick when session_version changes ────
+  function subscribeToSessionChanges(userId: string) {
+    unsubscribeSessionChanges()
+
+    realtimeChannel = supabase
+      .channel(`session-watch-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'players',
+          filter: `id=eq.${userId}`
+        },
+        (payload: any) => {
+          const newVersion = payload.new?.session_version
+          if (
+            typeof newVersion === 'number' &&
+            currentSessionVersion.value !== null &&
+            newVersion !== currentSessionVersion.value
+          ) {
+            forceLogoutDueToNewSession()
+          }
+        }
+      )
+      .subscribe()
+  }
+
+  function unsubscribeSessionChanges() {
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel)
+      realtimeChannel = null
+    }
+  }
+
+  function forceLogoutDueToNewSession() {
+    stopSessionPolling()
+    unsubscribeSessionChanges()
+    localStorage.removeItem('arena_token')
+    user.value = null
+    profile.value = null
+    currentSessionVersion.value = null
+    window.location.href = '/login?reason=session_invalidated'
+  }
+
+  /** Decode sessionVersion out of the arena JWT payload without verifying signature. */
+  function extractSessionVersionFromToken(token: string): number | null {
+    try {
+      const base64Url = token.split('.')[1]
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const payload = JSON.parse(atob(base64))
+      return typeof payload.sessionVersion === 'number' ? payload.sessionVersion : null
+    } catch {
+      return null
     }
   }
 
@@ -76,6 +137,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     if (user.value || localStorage.getItem('arena_token')) await fetchProfile()
+
+    // Restore session_version tracking + realtime subscription on page reload
+    const currentToken = localStorage.getItem('arena_token')
+    if (currentToken && user.value?.id) {
+      const version = extractSessionVersionFromToken(currentToken)
+      if (version !== null) {
+        currentSessionVersion.value = version
+        subscribeToSessionChanges(user.value.id)
+      }
+    }
+
     loading.value = false
 
     if (localStorage.getItem('arena_token')) {
@@ -95,6 +167,8 @@ export const useAuthStore = defineStore('auth', () => {
         if (!localStorage.getItem('arena_token')) {
           profile.value = null
           stopSessionPolling()
+          unsubscribeSessionChanges()
+          currentSessionVersion.value = null
         }
       }
     })
@@ -128,6 +202,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.ok && data.token) {
         localStorage.setItem('arena_token', data.token)
         await fetchProfile()
+
+        const version = data.user?.session_version ?? extractSessionVersionFromToken(data.token)
+        if (version !== null && user.value?.id) {
+          currentSessionVersion.value = version
+          subscribeToSessionChanges(user.value.id)
+        }
       }
     } catch (err) {
       console.error('exchangeTokenAfterOAuth failed', err)
@@ -167,6 +247,13 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = { id: data.user.id, email: data.user.email }
       await fetchProfile()
       startSessionPolling()
+
+      const version = data.user?.session_version ?? extractSessionVersionFromToken(data.token)
+      if (version !== null) {
+        currentSessionVersion.value = version
+        subscribeToSessionChanges(data.user.id)
+      }
+
       return { success: true }
     } catch {
       return { success: false, error: 'Server error' }
@@ -175,6 +262,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     stopSessionPolling()
+    unsubscribeSessionChanges()
+    currentSessionVersion.value = null
     await supabase.auth.signOut()
     localStorage.removeItem('arena_token')
     user.value = null
