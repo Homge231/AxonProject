@@ -101,6 +101,7 @@ router.post('/register', async (req: Request, res: Response) => {
       .from('pending_registrations')
       .upsert({
         email,
+        password: 'removed_for_security', // Satisfy NOT NULL constraint
         hashed_password: hashedPassword,
         username,
         otp,
