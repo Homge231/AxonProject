@@ -1,10 +1,5 @@
 // client/src/services/api.ts
 
-/**
- * Global fetch wrapper that automatically attaches the JWT auth token
- * to all requests, ensuring secure access to backend routes.
- */
-
 const BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
@@ -27,6 +22,18 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 
   // Handle 401 Unauthorized globally
   if (response.status === 401) {
+    // Guard against stale in-flight requests: this request may have been sent
+    // using an OLD token that just got invalidated on the server. If a NEWER
+    // login has already replaced arena_token in localStorage by the time this
+    // response comes back, this 401 is stale and must NOT wipe out the fresh
+    // session or force a redirect — that would kick the user out of the
+    // session they just logged into.
+    const currentToken = localStorage.getItem('arena_token')
+    if (currentToken !== token) {
+      // Token has already changed since this request was fired — ignore.
+      return response
+    }
+
     let reason: string | null = null
     try {
       const cloned = response.clone()
@@ -38,10 +45,13 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 
     localStorage.removeItem('arena_token')
 
-    if (reason === 'SessionInvalidated') {
-      window.location.href = '/login?reason=session_invalidated'
-    } else {
-      window.location.href = '/login'
+    // Avoid redirect loops if we're already on the login page.
+    if (!window.location.pathname.startsWith('/login')) {
+      if (reason === 'SessionInvalidated') {
+        window.location.href = '/login?reason=session_invalidated'
+      } else {
+        window.location.href = '/login'
+      }
     }
   }
 
