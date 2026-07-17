@@ -354,7 +354,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const { exists, hasEmailAuth, hasGoogleAuth } = await getPlayerProviderInfo(email)
 
     if (exists && hasGoogleAuth && !hasEmailAuth) {
-      res.status(401).json({ error: 'This account uses Google sign-in. Please use the Google button to log in.' })
+      res.status(401).json({ error: 'This email uses Google sign-in. To add a password, go to the Register tab first, then you can log in with either method.' })
       return
     }
 
@@ -412,6 +412,149 @@ router.post('/login', async (req: Request, res: Response) => {
 
   } catch (err) {
     console.error('login error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// In-memory brute-force protection for password reset OTP
+const resetAttempts = new Map<string, { count: number; lockedUntil: number }>()
+
+// POST /auth/forgot-password
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  const { email } = req.body
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email || !emailRegex.test(email)) {
+    res.status(400).json({ error: 'Valid email is required' })
+    return
+  }
+
+  try {
+    const { data: player } = await supabase
+      .from('players')
+      .select('id, hashed_password')
+      .eq('email', email)
+      .maybeSingle()
+
+    // Always respond with success to prevent email enumeration
+    if (!player) {
+      res.json({ message: 'If that email exists, a reset code has been sent.' })
+      return
+    }
+
+    if (!player.hashed_password) {
+      // Google-only account — cannot reset a password they don't have
+      res.status(400).json({ error: 'This account uses Google sign-in. Password reset is not available. Please use the Google button to log in.' })
+      return
+    }
+
+    // Clean up expired reset rows
+    await supabase
+      .from('pending_registrations')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
+
+    const otp = generateOTP()
+
+    const { error: upsertErr } = await supabase
+      .from('pending_registrations')
+      .upsert({
+        email,
+        password: 'reset_placeholder',
+        hashed_password: otp,        // Store OTP temporarily in hashed_password field
+        username: '__reset__',       // Sentinel to differentiate from real registrations
+        otp,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 mins
+      })
+
+    if (upsertErr) {
+      console.error('Reset OTP insert error:', upsertErr.message)
+      res.status(500).json({ error: 'Failed to generate reset code. Please try again.' })
+      return
+    }
+
+    await sendOTPEmail(email, otp)
+    res.json({ message: 'If that email exists, a reset code has been sent.' })
+  } catch (err) {
+    console.error('forgot-password error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST /auth/reset-password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body
+
+  if (!email || !otp || !newPassword) {
+    res.status(400).json({ error: 'Email, OTP, and new password are required' })
+    return
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ error: 'Password must be at least 6 characters' })
+    return
+  }
+
+  const record = resetAttempts.get(email)
+  if (record && record.lockedUntil > Date.now()) {
+    res.status(429).json({ error: 'Too many attempts. Please try again later.' })
+    return
+  }
+
+  try {
+    // Clean up expired
+    await supabase
+      .from('pending_registrations')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
+
+    const { data: pending } = await supabase
+      .from('pending_registrations')
+      .select('*')
+      .eq('email', email)
+      .eq('username', '__reset__')
+      .maybeSingle()
+
+    if (!pending) {
+      res.status(400).json({ error: 'Reset code expired or not found. Please request a new one.' })
+      return
+    }
+
+    if (pending.otp !== otp) {
+      const attempts = (record?.count || 0) + 1
+      if (attempts >= 5) {
+        resetAttempts.set(email, { count: attempts, lockedUntil: Date.now() + 10 * 60 * 1000 })
+        res.status(429).json({ error: 'Too many attempts. Please request a new reset code.' })
+      } else {
+        resetAttempts.set(email, { count: attempts, lockedUntil: 0 })
+        res.status(400).json({ error: 'Invalid reset code' })
+      }
+      return
+    }
+
+    resetAttempts.delete(email)
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    const { error: updateError } = await supabase
+      .from('players')
+      .update({ hashed_password: hashedPassword })
+      .eq('email', email)
+
+    if (updateError) {
+      console.error('Reset password update error:', updateError)
+      res.status(500).json({ error: 'Failed to update password. Please try again.' })
+      return
+    }
+
+    // Clean up the reset record
+    await supabase
+      .from('pending_registrations')
+      .delete()
+      .eq('email', email)
+      .eq('username', '__reset__')
+
+    res.json({ message: 'Password updated successfully. You can now log in.' })
+  } catch (err) {
+    console.error('reset-password error:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
 })

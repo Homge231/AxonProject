@@ -17,7 +17,7 @@
 
       <div v-if="done" class="text-center space-y-4">
         <div class="bg-success/10 border border-success/50 rounded-xl px-4 py-4 text-success text-sm font-bold tracking-wider">
-          Password updated successfully.
+          Password updated successfully!
         </div>
         <button @click="router.push('/')" class="text-xs text-lightBlue hover:text-blue transition-colors font-semibold uppercase tracking-widest">
           Go to Login
@@ -25,6 +25,30 @@
       </div>
 
       <div v-else class="space-y-4">
+        <!-- Email field (pre-filled from query param) -->
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
+          <input
+            v-model="email"
+            type="email"
+            placeholder="player@naenra.com"
+            class="w-full bg-darkNavy/50 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-colors"
+          />
+        </div>
+
+        <!-- Reset code -->
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Reset Code</label>
+          <input
+            v-model="otp"
+            type="text"
+            maxlength="6"
+            placeholder="6-digit code from email"
+            class="w-full bg-darkNavy/50 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-colors tracking-[0.3em] text-center font-mono text-lg"
+          />
+        </div>
+
+        <!-- New password -->
         <div>
           <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">New Password</label>
           <input
@@ -35,12 +59,14 @@
           />
         </div>
 
+        <!-- Confirm password -->
         <div>
           <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Confirm Password</label>
           <input
             v-model="confirmPassword"
             type="password"
             placeholder="••••••••"
+            @keyup.enter="handleReset"
             class="w-full bg-darkNavy/50 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-colors"
           />
         </div>
@@ -55,6 +81,10 @@
           <div class="absolute inset-0 bg-gradient-to-r from-orange to-hexred translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0"></div>
           <span class="relative z-10">{{ loading ? 'Updating...' : 'Update Password' }}</span>
         </button>
+
+        <button @click="router.push('/forgot-password')" class="w-full text-center text-xs text-gray-500 hover:text-white transition-colors font-semibold uppercase tracking-widest mt-1">
+          Resend code
+        </button>
       </div>
     </div>
   </div>
@@ -62,18 +92,37 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { useRouter, useRoute } from 'vue-router'
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const router = useRouter()
+const route = useRoute()
+
+const email = ref('')
+const otp = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
 const done = ref(false)
 
+onMounted(() => {
+  // Pre-fill email from query param set by ForgotPasswordView
+  if (route.query.email) {
+    email.value = String(route.query.email)
+  }
+})
+
 async function handleReset() {
   error.value = ''
+  if (!email.value) {
+    error.value = 'Email is required'
+    return
+  }
+  if (!otp.value || otp.value.length < 6) {
+    error.value = 'Please enter the 6-digit reset code'
+    return
+  }
   if (password.value.length < 6) {
     error.value = 'Password must be at least 6 characters'
     return
@@ -84,39 +133,32 @@ async function handleReset() {
   }
   loading.value = true
   try {
-    const { error: err } = await supabase.auth.updateUser({ password: password.value })
-    if (err) {
-      if (err.message === 'Auth session missing!') {
-        error.value = 'Session missing! Please make sure to open the reset link in the EXACT SAME browser (no incognito/in-app browsers) you requested it from.'
-      } else {
-        error.value = err.message
-      }
+    const res = await fetch(`${SERVER_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, otp: otp.value, newPassword: password.value })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      error.value = data.error || 'Failed to reset password'
       return
     }
     done.value = true
+  } catch {
+    error.value = 'Server error. Please try again.'
   } finally {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  supabase.auth.getSession().then(({ data }) => {
-    if (!data.session) {
-      error.value = 'Validating link...'
-      setTimeout(() => {
-        supabase.auth.getSession().then(({ data }) => {
-          if (!data.session) {
-            error.value = 'No active session. If you clicked a link from an email, ensure it opened in the SAME browser you used to request it.'
-          } else {
-            error.value = ''
-          }
-        })
-      }, 2000)
-    }
-  })
-})
-
 </script>
+
+<style scoped>
+.cyber-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+</style>
 
 <style scoped>
 .cyber-grid {

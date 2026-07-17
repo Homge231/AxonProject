@@ -15,22 +15,15 @@
         <p class="text-lightBlue font-bold tracking-[0.2em] text-[10px] uppercase">Reset Password</p>
       </div>
 
-      <div v-if="sent" class="text-center space-y-4">
-        <div class="bg-success/10 border border-success/50 rounded-xl px-4 py-4 text-success text-sm font-bold tracking-wider">
-          Reset link sent. Check your email.
-        </div>
-        <button @click="router.push('/')" class="text-xs text-lightBlue hover:text-blue transition-colors font-semibold uppercase tracking-widest">
-          Back to Login
-        </button>
-      </div>
-
-      <div v-else class="space-y-4">
+      <!-- Step 1: Enter email -->
+      <div v-if="!sent" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
           <input
             v-model="email"
             type="email"
             placeholder="player@naenra.com"
+            @keyup.enter="handleSubmit"
             class="w-full bg-darkNavy/50 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-colors"
           />
           <p v-if="error" class="text-red-400 text-xs mt-1.5 ml-1 font-semibold">{{ error }}</p>
@@ -42,10 +35,27 @@
           class="w-full mt-2 bg-white/5 border border-white/10 text-white font-black py-4 rounded-xl hover:bg-white/10 hover:border-hexred transition-all duration-300 uppercase tracking-widest text-sm disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
         >
           <div class="absolute inset-0 bg-gradient-to-r from-orange to-hexred translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0"></div>
-          <span class="relative z-10">{{ loading ? 'Sending...' : 'Send Reset Link' }}</span>
+          <span class="relative z-10">{{ loading ? 'Sending...' : 'Send Reset Code' }}</span>
         </button>
 
         <button @click="router.push('/')" class="w-full text-center text-xs text-gray-500 hover:text-white transition-colors font-semibold uppercase tracking-widest mt-2">
+          Back to Login
+        </button>
+      </div>
+
+      <!-- Step 2: Email sent confirmation -->
+      <div v-else class="text-center space-y-4">
+        <div class="bg-success/10 border border-success/50 rounded-xl px-4 py-4 text-success text-sm font-bold tracking-wider">
+          Reset code sent! Check your email inbox.
+        </div>
+        <p class="text-gray-400 text-xs">Enter the 6-digit code along with your new password on the next screen.</p>
+        <button
+          @click="goToReset"
+          class="w-full bg-gradient-to-r from-orange to-hexred text-white font-black py-4 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm"
+        >
+          Enter Reset Code →
+        </button>
+        <button @click="router.push('/')" class="text-xs text-lightBlue hover:text-blue transition-colors font-semibold uppercase tracking-widest">
           Back to Login
         </button>
       </div>
@@ -56,37 +66,42 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase'
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
 const router = useRouter()
 const email = ref('')
 const error = ref('')
 const loading = ref(false)
 const sent = ref(false)
 
-const REDIRECT_URL = import.meta.env.VITE_SITE_URL
-  ? `${import.meta.env.VITE_SITE_URL}/reset-password`
-  : `${window.location.origin}/reset-password`
-
 async function handleSubmit() {
   error.value = ''
-  if (!email.value) {
-    error.value = 'Email is required'
+  if (!email.value || !email.value.includes('@')) {
+    error.value = 'Please enter a valid email'
     return
   }
   loading.value = true
   try {
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: REDIRECT_URL
+    const res = await fetch(`${SERVER_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value })
     })
-    if (err) {
-      error.value = err.message
+    const data = await res.json()
+    if (!res.ok) {
+      error.value = data.error || 'Failed to send reset code'
       return
     }
     sent.value = true
+  } catch {
+    error.value = 'Server error. Please try again.'
   } finally {
     loading.value = false
   }
+}
+
+function goToReset() {
+  router.push(`/reset-password?email=${encodeURIComponent(email.value)}`)
 }
 </script>
 
