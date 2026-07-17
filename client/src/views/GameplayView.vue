@@ -1448,12 +1448,13 @@ function resetTypingBoard() {
   typedLetters.value = []
   currentCombo.value = 0
   missionProgress.value = 0
-  if (!isAegisMode.value) {
-    aegisShieldCount.value = 0
-  } else {
+  aegisShieldCount.value = 0
+  if (isAegisMode.value) {
     const name = gameStore.activeCoreName?.toLowerCase()
-    if (name === 'shield battery' && aegisShieldCount.value === 0) {
+    if (name === 'shield battery') {
       aegisShieldCount.value = 2
+    } else if (name === 'guardian angel') {
+      aegisShieldCount.value = 3
     }
   }
   scoreFlash.value = null
@@ -1657,9 +1658,7 @@ watch(() => currentCombo.value, (newVal) => {
 })
 
 onMounted(async () => {
-  if (isAegisMode.value && aegisShieldCount.value < maxShields.value) {
-    aegisShieldCount.value = maxShields.value
-  }
+
 
   if (!activeCoreId.value) {
     router.replace('/core')
@@ -1697,11 +1696,7 @@ onUnmounted(() => {
   activeBgTimeouts.clear()
 })
 
-watch([maxShields, isAegisMode], ([newMax, isAegis]) => {
-  if (isAegis && aegisShieldCount.value < newMax) {
-    aegisShieldCount.value = newMax
-  }
-})
+
 </script>
 
 <style scoped>
