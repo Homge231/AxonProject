@@ -27,7 +27,7 @@ import { HighRollerStrategy } from './HighRollerStrategy'
 
 const CORE_REGISTRY: Record<string, BaseCore> = {
   // Phoenix Branch
-  'phoenix': new PhoenixCoreStrategy('phoenix', 200, 1, false),
+  'phoenix': new PhoenixCoreStrategy('phoenix', 100, 1, false),
   'phoenix flame': new PhoenixCoreStrategy('phoenix flame', 400, 1, false),
   'rebirth': new PhoenixCoreStrategy('rebirth', 200, 1, true),
   'ashes to ashes': new PhoenixCoreStrategy('ashes to ashes', 800, 2, false),
