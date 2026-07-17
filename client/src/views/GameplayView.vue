@@ -1449,14 +1449,6 @@ function resetTypingBoard() {
   currentCombo.value = 0
   missionProgress.value = 0
   aegisShieldCount.value = 0
-  if (isAegisMode.value) {
-    const name = gameStore.activeCoreName?.toLowerCase()
-    if (name === 'shield battery') {
-      aegisShieldCount.value = 2
-    } else if (name === 'guardian angel') {
-      aegisShieldCount.value = 3
-    }
-  }
   scoreFlash.value = null
   pointPopups.value = []
   oracleRevealLevel.value = 0
@@ -1565,6 +1557,8 @@ function goHome() {
   stopMatchTimer()
   stopTimeoutInterval()
   abandonCurrentSession()
+  gameStore.sessionId = null
+  matchStore.resetMatch()
   router.push('/home')
 }
 

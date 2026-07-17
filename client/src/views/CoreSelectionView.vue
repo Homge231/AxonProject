@@ -158,6 +158,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/gameStore'
+import { useMatchStore } from '../stores/matchStore'
 import { useAuthStore } from '../stores/authStore'
 import PhaserBackground from '../components/game/PhaserBackground.vue'
 import CoachMark from '../components/tutorial/CoachMark.vue'
@@ -404,6 +405,10 @@ async function submitCore(core: CoreOption) {
   gameStore.activeCoreId = core.id
   gameStore.activeCoreName = core.name
   gameStore.coreHistory = [{ id: core.id, name: core.name, icon: core.icon }]
+  gameStore.sessionId = null
+  
+  const matchStore = useMatchStore()
+  matchStore.resetMatch()
 
   await createSession(core.id)
 

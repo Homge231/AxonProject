@@ -642,14 +642,8 @@ export async function submitAnswer(req: AuthRequest, res: Response): Promise<voi
       activeMultBuff *= otherCore.multiplier_buff
     }
 
-    // Check if the current core grants initial shields
+    // All Aegis cores start with 0 shields initially
     let initialShieldCount = 0
-    const activeLower = core.name.toLowerCase()
-    if (activeLower === 'guardian angel') {
-      initialShieldCount = 3
-    } else if (activeLower === 'shield battery') {
-      initialShieldCount = 2
-    }
 
     const ctx = {
       timeTaken:         serverTimeTaken,

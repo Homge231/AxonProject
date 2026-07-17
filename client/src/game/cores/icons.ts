@@ -40,6 +40,13 @@ export const DEFAULT_ICON = '/icons/cores/default.svg'
  * Prefers `icon_url` from DB if available, falls back to local path.
  */
 export function getCoreIconPath(coreName: string, iconUrl?: string | null): string {
-  if (iconUrl) return iconUrl
+  if (iconUrl) {
+    if (iconUrl.startsWith('http')) return iconUrl
+    try {
+      return new URL(`../assets${iconUrl}`, import.meta.url).href
+    } catch (e) {
+      console.warn(`Local asset not found for ${coreName}: ${iconUrl}. Falling back to default.`)
+    }
+  }
   return CORE_ICON_MAP[coreName.toLowerCase()] ?? DEFAULT_ICON
 }
