@@ -688,12 +688,6 @@ function updateOpponentData(state: any) {
   }
 }
 
-// Watch own score to update in Colyseus room state
-watch(() => score.value, (newScore) => {
-  if (isMultiplayer.value && currentRoom) {
-    currentRoom.send('update_score', { score: newScore })
-  }
-})
 
 const tutorial = useTutorial()
 
@@ -713,6 +707,13 @@ const {
   spawnPointPopup,
   updateScoreAnimated
 } = useScoreAnimation(letterSlotsRef)
+
+// Watch own score to update in Colyseus room state
+watch(() => score.value, (newScore) => {
+  if (isMultiplayer.value && currentRoom) {
+    currentRoom.send('update_score', { score: newScore })
+  }
+})
 
 const {
   timeLeft,

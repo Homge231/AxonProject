@@ -165,6 +165,7 @@ import RoomSettingsOverlay from '../components/game/RoomSettingsOverlay.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const navigatingToGame = ref(false)
 
 const roomId = ref(route.query.id as string || 'Loading...')
 const copied = ref(false)
@@ -298,6 +299,7 @@ onMounted(async () => {
             // 2. Listen for the server broadcast that the match has officially started
             // This ensures BOTH players are pushed to GameplayView simultaneously.
             currentRoom.onMessage('match_started', () => {
+                navigatingToGame.value = true
                 router.push('/core/multiplayer')
             })
         }
@@ -309,8 +311,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    const targetPath = router.currentRoute.value.path
-    if (targetPath !== '/core/multiplayer' && targetPath !== '/game/multiplayer') {
+    if (!navigatingToGame.value) {
         leaveMatchRoom()
     }
 })

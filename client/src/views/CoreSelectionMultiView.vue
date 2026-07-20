@@ -184,6 +184,7 @@ const gameStore = useGameStore()
 const authStore = useAuthStore()
 const tutorial = useTutorial()
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+const navigatingToGame = ref(false)
 
 // ── Hover & Touch-Hold Tooltip Logic ─────────────────────────────────────────
 const activeTooltipIndex = ref<number | null>(null)
@@ -444,6 +445,7 @@ onMounted(() => {
   if (currentRoom) {
     currentRoom.onMessage('start_next_round', () => {
       waitingForOpponent.value = false
+      navigatingToGame.value = true
       router.push('/game/multiplayer')
     })
     
@@ -462,8 +464,7 @@ onUnmounted(() => {
   activeTimeouts.clear()
   window.removeEventListener('beforeunload', handleBeforeUnload)
 
-  const targetPath = router.currentRoute.value.path
-  if (targetPath !== '/game/multiplayer') {
+  if (!navigatingToGame.value) {
     leaveMatchRoom()
   }
 })
