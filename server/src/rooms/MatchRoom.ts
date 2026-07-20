@@ -21,6 +21,13 @@ export class MatchRoom extends Room<{ state: MatchState }> {
       if (message.topic) this.state.metadata.topic = message.topic;
     });
 
+    this.onMessage("start_match", (client) => {
+      console.log(`Received start_match from ${client.sessionId}`);
+      if (this.state.players.size === 2) {
+        this.broadcast("match_started");
+      }
+    });
+
     console.log(`MatchRoom created: ${this.roomId}`);
   }
 
