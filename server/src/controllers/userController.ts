@@ -54,6 +54,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<a
     const elo = profile?.elo ?? 0
 
     return res.status(200).json({
+      id: req.user!.id,
       username,
       avatar_url: finalAvatar,
       elo,
