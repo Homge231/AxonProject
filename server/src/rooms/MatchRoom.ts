@@ -28,6 +28,14 @@ export class MatchRoom extends Room<{ state: MatchState }> {
       }
     });
 
+    this.onMessage("update_score", (client, message: { score: number }) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player) {
+        player.score = message.score;
+        console.log(`Updated player ${player.name} score to ${player.score}`);
+      }
+    });
+
     console.log(`MatchRoom created: ${this.roomId}`);
   }
 

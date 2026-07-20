@@ -12,6 +12,13 @@
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
+    <OpponentWidget 
+      :visible="isMultiplayer" 
+      :name="opponentName" 
+      :avatar="opponentAvatar" 
+      :score="opponentScore" 
+    />
+
     <!-- Dice Roll Shift Overlay  -->
     <transition name="fade">
       <div v-if="isShifting"
@@ -229,42 +236,45 @@
         <template v-else>
           <transition name="card-flip" mode="out-in">
             <div :key="currentQuestion.id" class="w-full flex flex-col items-center gap-10">
-
-              <div v-if="currentQuestion.hint"
-                class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+              <!-- Top-half container for Hint and Question Text -->
+              <div class="w-full flex flex-col gap-6">
+                <div v-if="currentQuestion.hint"
+                  class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
+                  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+                  </div>
+                  <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
+                    <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+                    </svg>
+                    <span class="text-[10px] font-bold text-lightBlue tracking-[0.25em] uppercase">Hint</span>
+                  </div>
+                  <h1
+                    class="text-2xl md:text-4xl font-black text-lightBlue tracking-wider drop-shadow-lg leading-tight break-words px-2 py-1">
+                    {{ currentQuestion.hint }}
+                  </h1>
                 </div>
-                <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
-                  <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-                  </svg>
-                  <span class="text-[10px] font-bold text-lightBlue tracking-[0.25em] uppercase">Hint</span>
+
+                <!-- Oracle: Click-to-reveal hint button (only for Oracle core) -->
+                <OracleCoreIndicator v-if="isOracleCore && gameState === 'playing'"
+                  :oracle-reveal-level="oracleRevealLevel" :oracle-max-allowed="oracleMaxAllowed"
+                  :oracle-hint-text="oracleHintText" :oracle-next-cost="oracleNextCost" @use-hint="useOracleHint" />
+
+                <div
+                  class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300 transform-gpu"
+                  :class="{ 'burning-edge-active': isBurningComboActive }">
+                  <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
+                    <span v-if="currentQuestion?.question_text?.split(/_+/)[0]">
+                      {{ currentQuestion.question_text?.split(/_+/)[0] }}
+                    </span>
+                    <span class="text-white/50 font-bold mx-2 tracking-widest">---</span>
+                    <span v-if="currentQuestion?.question_text?.split(/_+/)[1]">
+                      {{ currentQuestion.question_text?.split(/_+/)[1] }}
+                    </span>
+                  </p>
                 </div>
-                <h1
-                  class="text-2xl md:text-4xl font-black text-lightBlue tracking-wider drop-shadow-lg leading-tight break-words px-2 py-1">
-                  {{ currentQuestion.hint }}
-                </h1>
               </div>
-
-              <!-- Oracle: Click-to-reveal hint button (only for Oracle core) -->
-              <OracleCoreIndicator v-if="isOracleCore && gameState === 'playing'"
-                :oracle-reveal-level="oracleRevealLevel" :oracle-max-allowed="oracleMaxAllowed"
-                :oracle-hint-text="oracleHintText" :oracle-next-cost="oracleNextCost" @use-hint="useOracleHint" />
-
-              <div
-                class="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center w-full transition-all duration-300 transform-gpu"
-                :class="{ 'burning-edge-active': isBurningComboActive }">
-                <p class="text-xl md:text-3xl font-medium text-gray-200 leading-relaxed max-w-3xl">
-                  <span v-if="currentQuestion?.question_text?.split(/_+/)[0]">
-                    {{ currentQuestion.question_text?.split(/_+/)[0] }}
-                  </span>
-                  <span class="text-white/50 font-bold mx-2 tracking-widest">---</span>
-                  <span v-if="currentQuestion?.question_text?.split(/_+/)[1]">
-                    {{ currentQuestion.question_text?.split(/_+/)[1] }}
-                  </span>
-                </p>
-              </div>
+            </div>
 
               <!-- Letter slots (anchor for popup position) -->
               <div id="tutorial-typing-area" class="w-full flex flex-col items-center gap-3 overflow-hidden"
@@ -513,11 +523,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useScoreAnimation } from '../composables/game/useScoreAnimation'
 import { useMatchTimer } from '../composables/game/useMatchTimer'
 import { useQuestionQueue } from '../composables/game/useQuestionQueue'
+import { currentRoom } from '../services/multiplayerService'
+import OpponentWidget from '../components/game/OpponentWidget.vue'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
 import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
 import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
@@ -615,6 +627,38 @@ const savingSession = ref(false)
 const sessionId = ref<string | null>(null)
 const timeoutCountdown = ref(TIMEOUT_PHASE_DURATION)
 const isDev = import.meta.env.DEV
+
+// --- MULTIPLAYER CORE BINDINGS [US-51] ---
+const route = useRoute()
+const isMultiplayer = computed(() => route.path === '/game/multiplayer')
+const opponentName = ref('')
+const opponentAvatar = ref('')
+const opponentScore = ref(0)
+const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
+
+function updateOpponentData(state: any) {
+  if (!state || !state.players) return
+  let foundOpponent = false
+  state.players.forEach((player: any) => {
+    if (player.id !== currentUserId.value) {
+      opponentScore.value = player.score || 0
+      opponentName.value = player.name || 'Opponent'
+      opponentAvatar.value = player.avatar || ''
+      foundOpponent = true
+    }
+  })
+  if (!foundOpponent) {
+    opponentName.value = 'Waiting...'
+    opponentScore.value = 0
+  }
+}
+
+// Watch own score to update in Colyseus room state
+watch(() => score.value, (newScore) => {
+  if (isMultiplayer.value && currentRoom) {
+    currentRoom.send('update_score', { score: newScore })
+  }
+})
 
 const tutorial = useTutorial()
 
@@ -1652,7 +1696,12 @@ watch(() => currentCombo.value, (newVal) => {
 })
 
 onMounted(async () => {
-
+  if (isMultiplayer.value && currentRoom) {
+    updateOpponentData(currentRoom.state)
+    currentRoom.onStateChange((state) => {
+      updateOpponentData(state)
+    })
+  }
 
   if (!activeCoreId.value) {
     router.replace('/core')
