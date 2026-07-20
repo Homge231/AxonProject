@@ -680,6 +680,7 @@ function updateOpponentData(state: any) {
       opponentName.value = player.name || 'Opponent'
       opponentAvatar.value = player.avatar || ''
       foundOpponent = true
+      console.log(`[Multiplayer] Updated opponent ${player.name} score to: ${player.score}`)
     }
   })
   if (!foundOpponent) {
@@ -708,12 +709,12 @@ const {
   updateScoreAnimated
 } = useScoreAnimation(letterSlotsRef)
 
-// Watch own score to update in Colyseus room state
-watch(() => score.value, (newScore) => {
+function sendScoreUpdate(newScore: number) {
   if (isMultiplayer.value && currentRoom) {
+    console.log(`[Multiplayer] Sending score update to server: ${newScore}`)
     currentRoom.send('update_score', { score: newScore })
   }
-})
+}
 
 const {
   timeLeft,
@@ -1137,6 +1138,7 @@ async function callTimeoutEndpoint(sid: string, coreId: string | null, oracleLvl
     if (res.ok) {
       const data = await res.json()
       score.value = data.score ?? score.value
+      sendScoreUpdate(score.value)
       questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
     }
   } catch (err) {
@@ -1158,6 +1160,7 @@ async function skipQuestion() {
       spawnPointPopup(0, 'shield_blocked')
     } else {
       score.value = Math.max(0, score.value - 10)
+      sendScoreUpdate(score.value)
       spawnPointPopup(10, 'wrong')
     }
     currentCombo.value = 0
@@ -1218,6 +1221,7 @@ async function skipQuestion() {
           const data = await res.json()
 
           score.value = data.new_total_score ?? score.value
+          sendScoreUpdate(score.value)
           questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
 
           if (data.breakdown?.final_shield_count !== undefined) {
@@ -1407,7 +1411,9 @@ async function checkAnswer() {
           lockInputMs = data.lock_input_ms
         }
 
-        updateScoreAnimated(data.new_total_score ?? score.value)
+        const newScore = data.new_total_score ?? score.value
+        updateScoreAnimated(newScore)
+        sendScoreUpdate(newScore)
 
         questionsAnswered.value = data.questions_answered ?? questionsAnswered.value
         pointsEarned.value = data.points_earned ?? pointsEarned.value
@@ -1819,6 +1825,7 @@ onMounted(async () => {
   }
   await fetchBatch()
   await loadQuestion()
+  sendScoreUpdate(0)
   startMatchTimer()
   document.addEventListener('click', handleOutsideClick)
   window.addEventListener('beforeunload', handleBeforeUnload)
