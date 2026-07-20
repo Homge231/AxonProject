@@ -1,6 +1,7 @@
 // client/src/services/api.ts
 
 const BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+const appStartTime = Date.now()
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('arena_token')
@@ -47,7 +48,9 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 
     // Avoid redirect loops if we're already on the login page.
     if (!window.location.pathname.startsWith('/login')) {
-      if (reason === 'SessionInvalidated') {
+      // If the session was invalidated during the initial page load (e.g. they had a stale token from yesterday),
+      // do not show the scary red error message. Only show it if they were actively using the app.
+      if (reason === 'SessionInvalidated' && (Date.now() - appStartTime > 3000)) {
         window.location.href = '/login?reason=session_invalidated'
       } else {
         window.location.href = '/login'
