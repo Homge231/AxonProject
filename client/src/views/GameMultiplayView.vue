@@ -1705,7 +1705,23 @@ function handleOutsideClick(e: MouseEvent) {
   }
 }
 
-
+async function startFirstRound() {
+  gameState.value = 'loading'
+  if (!gameStore.sessionId) {
+    await createSession()
+  } else {
+    sessionId.value = gameStore.sessionId
+  }
+  if (isPandoraMode.value) {
+    await fetchPandoraPool()
+  }
+  await fetchBatch()
+  await loadQuestion()
+  gameState.value = 'playing'
+  startMatchTimer()
+  document.addEventListener('click', handleOutsideClick)
+  window.addEventListener('beforeunload', handleBeforeUnload)
+}
 
 function refocusInput() {
   if (gameState.value === 'timeout') return
@@ -1772,13 +1788,22 @@ onMounted(async () => {
     })
     currentRoom.onMessage('start_next_round', () => {
       isWaitingForNextRound.value = false
-      restartMatch()
+      if (matchStore.round === 1 && !gameStore.sessionId) {
+        startFirstRound()
+      } else {
+        restartMatch()
+      }
     })
   }
 
   if (!activeCoreId.value) {
-    router.replace('/core')
-    return
+    if (isMultiplayer.value) {
+      gameState.value = 'upgrade'
+      return
+    } else {
+      router.replace('/core')
+      return
+    }
   }
 
   // Ensure we start a fresh match if navigating here from outside

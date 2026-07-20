@@ -294,8 +294,10 @@ async function selectCore(core: CoreOption) {
   gameStore.activeCoreName = core.name
   gameStore.coreHistory.push({ id: core.id, name: core.name, icon: core.icon })
 
-  // Notify backend
-  await updateSessionCore(core.id)
+  // Notify backend if session exists
+  if (gameStore.sessionId) {
+    await updateSessionCore(core.id)
+  }
 
   // Brief visual feedback before closing the overlay
   if (selectTimeout) clearTimeout(selectTimeout)
