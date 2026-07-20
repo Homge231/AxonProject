@@ -144,11 +144,6 @@
                     Waiting for host to start...
                 </p>
             </div>
-            
-            <!-- DEBUG INFO -->
-            <div class="mt-8 text-xs text-gray-500 font-mono text-center">
-                User ID: {{ currentUserId || 'null' }} | Host ID: {{ roomHostId || 'null' }} | Match: {{ roomHostId === currentUserId }}
-            </div>
         </main>
 
         <RoomSettingsOverlay 
@@ -303,7 +298,7 @@ onMounted(async () => {
             // 2. Listen for the server broadcast that the match has officially started
             // This ensures BOTH players are pushed to GameplayView simultaneously.
             currentRoom.onMessage('match_started', () => {
-                router.push('/gameplay') // Adjust this route if your gameplay view uses a different path
+                router.push('/game')
             })
         }
     } catch (err: any) {
