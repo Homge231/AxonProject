@@ -195,14 +195,15 @@ const copyRoomId = async () => {
 }
 
 const participants = ref<{ id: string, name: string, avatar: string }[]>([])
+const roomHostId = ref<string>('')
 
 const player1 = computed(() => participants.value[0] || null)
 const player2 = computed(() => participants.value[1] || null)
 
 // --- NEW COMPUTED PROPERTIES FOR US-43 ---
-// Determine if the current user is the host (usually the first player in the room payload)
+// Determine if the current user is the host
 const isHost = computed(() => {
-    return player1.value?.id === currentUserId.value
+    return roomHostId.value === currentUserId.value && roomHostId.value !== ''
 })
 
 // Sub-task: FE Button Conditional Lock
@@ -269,8 +270,9 @@ onMounted(async () => {
                         }
                     })
                     // Sort participants so that the host is always player1
-                    const hostId = state.toJSON().hostId
+                    const hostId = state.hostId || state.toJSON().hostId
                     if (hostId) {
+                        roomHostId.value = hostId
                         newParticipants.sort((a, b) => {
                             if (a.id === hostId) return -1
                             if (b.id === hostId) return 1
