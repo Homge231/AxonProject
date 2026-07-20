@@ -398,7 +398,26 @@
           <div class="w-20 h-1 bg-gradient-to-r from-transparent via-hexred to-transparent mx-auto mb-10 mt-6"></div>
 
           <div
-            class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
+            v-if="isMultiplayer"
+            class="grid grid-cols-3 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0"
+          >
+            <div>
+              <p class="text-[10px] text-orange uppercase tracking-widest mb-1 font-bold">Your Score</p>
+              <p class="text-4xl font-black text-white drop-shadow-md">{{ score }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-lightBlue uppercase tracking-widest mb-1 font-bold">Opponent</p>
+              <p class="text-4xl font-black text-white drop-shadow-md">{{ opponentScore }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Questions</p>
+              <p class="text-4xl font-black text-gray-300 drop-shadow-md">{{ questionsAnswered }}</p>
+            </div>
+          </div>
+          <div
+            v-else
+            class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0"
+          >
             <div>
               <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Final Score</p>
               <p class="text-4xl font-black text-orange drop-shadow-md">{{ score }}</p>
@@ -449,16 +468,20 @@
           </p>
 
           <div class="flex gap-4 justify-center flex-shrink-0 mt-6">
-            <button @click="router.push('/home')"
+            <button v-if="!isMultiplayer" @click="router.push('/home')"
               class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors rounded-lg">Home</button>
 
             <!-- Next Round (Rounds 1 & 2) -->
-            <button v-if="!matchStore.isFinalRound()" @click="goToUpgrade"
-              class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-orange to-hexred overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow">
+            <button v-if="!matchStore.isFinalRound()" 
+              :disabled="waitingForOpponent"
+              @click="goToUpgrade"
+              class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-orange to-hexred overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed">
               <div
                 class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
               </div>
-              <span class="relative z-10 text-white">Next Round ({{ timeoutCountdown }}s)</span>
+              <span class="relative z-10 text-white">
+                {{ waitingForOpponent ? 'Waiting for opponent...' : `Next Round (${timeoutCountdown}s)` }}
+              </span>
             </button>
 
             <!-- Play Again & Feedback (Round 3) -->
@@ -507,6 +530,17 @@
               class="flex-1 px-4 py-3 bg-hexred hover:bg-red-600 text-white font-bold text-xs tracking-widest uppercase transition-colors rounded-lg shadow-lg">Quit</button>
           </div>
         </div>
+      </div>
+    </transition>
+
+    <!-- Waiting for opponent next round overlay -->
+    <transition name="fade">
+      <div v-if="isWaitingForNextRound" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md">
+        <svg class="w-16 h-16 text-lightBlue animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-xl font-black uppercase tracking-widest text-lightBlue animate-pulse">Waiting for opponent to choose upgrade...</p>
       </div>
     </transition>
 
@@ -634,6 +668,8 @@ const opponentName = ref('')
 const opponentAvatar = ref('')
 const opponentScore = ref(0)
 const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
+const waitingForOpponent = ref(false)
+const isWaitingForNextRound = ref(false)
 
 function updateOpponentData(state: any) {
   if (!state || !state.players) return
@@ -1504,21 +1540,18 @@ function resetTypingBoard() {
 // 15s window has elapsed (or immediately completes the phase if it finishes).
 function startTimeoutPhase() {
   gameState.value = 'timeout'
-  timeoutCountdown.value = TIMEOUT_PHASE_DURATION
   inputRef.value?.blur()
-
-  timeoutCountdown.value = 15
   stopTimeoutInterval()
 
-  timeoutInterval = setInterval(() => {
-    timeoutCountdown.value--
-    if (timeoutCountdown.value <= 0) {
-      stopTimeoutInterval()
-      if (!matchStore.isFinalRound()) {
-        gameState.value = 'upgrade'
-      }
+  if (isMultiplayer.value) {
+    waitingForOpponent.value = true
+    if (currentRoom) {
+      currentRoom.send("finished_round")
     }
-  }, 1000)
+  } else {
+    waitingForOpponent.value = false
+    runRecapCountdown()
+  }
 
   // Only tell the backend the session is over if it's the final round!
   // Otherwise, we keep the session alive to retain score and anti-cheat tracking.
@@ -1531,6 +1564,21 @@ function startTimeoutPhase() {
   }
 }
 
+function runRecapCountdown() {
+  timeoutCountdown.value = 15
+  stopTimeoutInterval()
+
+  timeoutInterval = setInterval(() => {
+    timeoutCountdown.value--
+    if (timeoutCountdown.value <= 0) {
+      stopTimeoutInterval()
+      if (!matchStore.isFinalRound()) {
+        gameState.value = 'upgrade'
+      }
+    }
+  }, 1000)
+}
+
 function goToUpgrade() {
   stopTimeoutInterval()
   if (!matchStore.isFinalRound()) {
@@ -1539,8 +1587,15 @@ function goToUpgrade() {
 }
 
 function handleUpgradeSelected(_newCoreId: string) {
-  // When upgrade is selected, restart match for the next round
-  restartMatch()
+  if (isMultiplayer.value) {
+    isWaitingForNextRound.value = true
+    if (currentRoom) {
+      currentRoom.send("ready_next_round")
+    }
+  } else {
+    // When upgrade is selected, restart match for the next round
+    restartMatch()
+  }
 }
 
 // ── Match control ──────────────────────────────────────────────────────────
@@ -1575,6 +1630,13 @@ async function restartMatch() {
 
 async function playAgain() {
   if (gameState.value === 'loading') return
+
+  if (isMultiplayer.value && currentRoom) {
+    const rId = currentRoom.roomId
+    leaveMatchRoom()
+    router.push(`/room/custom?id=${rId}`)
+    return
+  }
 
   // Hard reset of global state
   score.value = 0
@@ -1703,6 +1765,14 @@ onMounted(async () => {
     currentRoom.onMessage('opponent_left', () => {
       alert("Đối thủ đã thoát trận đấu! Bạn sẽ được đưa về màn hình chính.")
       goHome()
+    })
+    currentRoom.onMessage('start_recap_countdown', () => {
+      waitingForOpponent.value = false
+      runRecapCountdown()
+    })
+    currentRoom.onMessage('start_next_round', () => {
+      isWaitingForNextRound.value = false
+      restartMatch()
     })
   }
 

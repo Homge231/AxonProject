@@ -5,6 +5,8 @@ import { supabase } from "../config/supabase";
 
 export class MatchRoom extends Room<{ state: MatchState }> {
   maxClients = 2;
+  finishedPlayers = new Set<string>();
+  readyPlayers = new Set<string>();
 
   onCreate(options: any) {
     this.state = new MatchState();
@@ -34,6 +36,24 @@ export class MatchRoom extends Room<{ state: MatchState }> {
       if (player) {
         player.score = message.score;
         console.log(`Updated player ${player.name} score to ${player.score}`);
+      }
+    });
+
+    this.onMessage("finished_round", (client) => {
+      this.finishedPlayers.add(client.sessionId);
+      console.log(`Player ${client.sessionId} finished round. (${this.finishedPlayers.size}/${this.state.players.size})`);
+      if (this.finishedPlayers.size >= this.state.players.size) {
+        this.finishedPlayers.clear();
+        this.broadcast("start_recap_countdown");
+      }
+    });
+
+    this.onMessage("ready_next_round", (client) => {
+      this.readyPlayers.add(client.sessionId);
+      console.log(`Player ${client.sessionId} ready for next round. (${this.readyPlayers.size}/${this.state.players.size})`);
+      if (this.readyPlayers.size >= this.state.players.size) {
+        this.readyPlayers.clear();
+        this.broadcast("start_next_round");
       }
     });
 
@@ -96,6 +116,9 @@ export class MatchRoom extends Room<{ state: MatchState }> {
   onLeave(client: Client, code?: number) {
     console.log(`${client.sessionId} left ${this.roomId}`);
     this.state.players.delete(client.sessionId);
+    
+    this.finishedPlayers.delete(client.sessionId);
+    this.readyPlayers.delete(client.sessionId);
     
     if (this.state.status === "playing") {
       this.broadcast("opponent_left");
