@@ -527,7 +527,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useScoreAnimation } from '../composables/game/useScoreAnimation'
 import { useMatchTimer } from '../composables/game/useMatchTimer'
 import { useQuestionQueue } from '../composables/game/useQuestionQueue'
-import { currentRoom } from '../services/multiplayerService'
+import { currentRoom, leaveMatchRoom } from '../services/multiplayerService'
 import OpponentWidget from '../components/game/OpponentWidget.vue'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
 import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
@@ -1700,6 +1700,10 @@ onMounted(async () => {
     currentRoom.onStateChange((state) => {
       updateOpponentData(state)
     })
+    currentRoom.onMessage('opponent_left', () => {
+      alert("Đối thủ đã thoát trận đấu! Bạn sẽ được đưa về màn hình chính.")
+      goHome()
+    })
   }
 
   if (!activeCoreId.value) {
@@ -1729,6 +1733,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  leaveMatchRoom()
   stopMatchTimer()
   stopTimeoutInterval()
   stopCoreDrone()

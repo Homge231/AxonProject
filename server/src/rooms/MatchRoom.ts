@@ -24,6 +24,7 @@ export class MatchRoom extends Room<{ state: MatchState }> {
     this.onMessage("start_match", (client) => {
       console.log(`Received start_match from ${client.sessionId}`);
       if (this.state.players.size === 2) {
+        this.state.status = "playing";
         this.broadcast("match_started");
       }
     });
@@ -95,6 +96,10 @@ export class MatchRoom extends Room<{ state: MatchState }> {
   onLeave(client: Client, code?: number) {
     console.log(`${client.sessionId} left ${this.roomId}`);
     this.state.players.delete(client.sessionId);
+    
+    if (this.state.status === "playing") {
+      this.broadcast("opponent_left");
+    }
   }
 
   onDispose() {
