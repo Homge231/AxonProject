@@ -1651,6 +1651,14 @@ watch(() => currentCombo.value, (newVal) => {
   }
 })
 
+watch(() => gameState.value, (newState) => {
+  if (newState === 'upgrade') {
+    audioService.playBGM('/audio/core_selection.mp3')
+  } else if (newState === 'playing') {
+    audioService.playBGM(audioService.getCoreBgmPath(gameStore.activeCoreName))
+  }
+})
+
 onMounted(async () => {
 
 
@@ -1675,12 +1683,18 @@ onMounted(async () => {
   }
   await fetchBatch()
   await loadQuestion()
+  
+  if (gameState.value !== 'upgrade') {
+    audioService.playBGM(audioService.getCoreBgmPath(gameStore.activeCoreName))
+  }
+  
   startMatchTimer()
   document.addEventListener('click', handleOutsideClick)
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
+  audioService.stopBGM()
   stopMatchTimer()
   stopTimeoutInterval()
   stopCoreDrone()

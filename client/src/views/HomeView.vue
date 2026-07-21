@@ -36,7 +36,7 @@
       <div
         class="flex items-center gap-4 bg-darkNavy/60 backdrop-blur-md border border-white/10 p-2 pr-4 transform -skew-x-12">
         <div class="w-10 h-10 bg-gradient-to-br from-blue to-lightBlue p-0.5 cursor-pointer"
-          @click="router.push('/profile')" title="View Profile">
+          @click="router.push('/profile')" @mouseenter="audioService.playHover()" title="View Profile">
           <img :src="avatarUrl" :alt="username"
             class="w-full h-full bg-darkNavy object-cover hover:opacity-80 transition-opacity"
             @error="(e) => (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`" />
@@ -46,7 +46,7 @@
           <p class="text-[10px] text-lightOrange font-mono font-bold">ELO: {{ elo }}</p>
         </div>
         <div class="w-px h-6 bg-white/20 mx-2 transform skew-x-12"></div>
-        <button @click="router.push('/analytics')"
+        <button @click="router.push('/analytics'); audioService.playClick()" @mouseenter="audioService.playHover()"
           class="transform skew-x-12 text-gray-400 hover:text-lightBlue transition-colors mr-2" title="Vocab Analytics">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -54,7 +54,7 @@
             </path>
           </svg>
         </button>
-        <button @click="handleLogout" class="transform skew-x-12 text-gray-400 hover:text-hexred transition-colors"
+        <button @click="handleLogout" @mouseenter="audioService.playHover()" class="transform skew-x-12 text-gray-400 hover:text-hexred transition-colors"
           title="Disconnect">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -81,7 +81,7 @@
         </p>
 
         <div class="relative mb-6">
-          <button @click="startMatchmaking" :disabled="isSearching"
+          <button @click="startMatchmaking" @mouseenter="audioService.playHover()" :disabled="isSearching"
             class="group relative w-[320px] h-[80px] bg-darkNavy border border-white/10 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-hexred focus:outline-none">
             <div
               class="absolute inset-0 bg-gradient-to-r from-orange to-hexred translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 ease-out z-0">
@@ -112,7 +112,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-[600px]">
           
-          <button @click="goToCustomRoom" :disabled="isJoiningCustom"
+          <button @click="goToCustomRoom" @mouseenter="audioService.playHover()" :disabled="isJoiningCustom"
             class="h-12 w-full flex items-center justify-center gap-2 rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
             <svg v-if="isJoiningCustom" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -125,18 +125,18 @@
             <input v-model="joinCode" @keyup.enter="joinExistingRoom" type="text" placeholder="ENTER CODE..."
               class="bg-transparent text-white pl-5 pr-2 h-full w-full outline-none uppercase tracking-widest text-sm placeholder:text-gray-400"
               maxlength="12" />
-            <button @click="joinExistingRoom" :disabled="!joinCode || isJoiningCustom"
+            <button @click="joinExistingRoom" @mouseenter="audioService.playHover()" :disabled="!joinCode || isJoiningCustom"
               class="h-full px-5 text-gray-200 hover:text-white hover:bg-white/20 font-bold text-sm uppercase tracking-widest transition-colors border-l border-white/20 group-hover:border-lightBlue/50 focus-within:border-lightBlue/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Join
             </button>
           </div>
 
-          <button
+          <button @mouseenter="audioService.playHover()"
             class="h-12 w-full flex items-center justify-center rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase">
             Leaderboard
           </button>
 
-          <button @click="startMatchmaking"
+          <button @click="startMatchmaking" @mouseenter="audioService.playHover()"
             class="h-12 w-full flex items-center justify-center rounded-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-lightBlue hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300 font-bold text-sm tracking-widest uppercase">
             Single Player 
           </button>
@@ -154,9 +154,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { audioService } from '../services/audioService'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -165,7 +166,7 @@ const joinCode = ref('')
 
 function joinExistingRoom() {
   if (!joinCode.value) return
-  
+  audioService.playClick()
   isJoiningCustom.value = true
   setTimeout(() => {
     let code = joinCode.value.trim()
@@ -193,6 +194,7 @@ const avatarUrl = computed(() =>
 const elo = computed(() => authStore.profile?.elo ?? 0)
 const isJoiningCustom = ref(false)
 function goToCustomRoom() {
+  audioService.playClick()
   isJoiningCustom.value = true
 
 
@@ -203,17 +205,24 @@ function goToCustomRoom() {
   }, 600)
 }
 function handleLogout() {
+  audioService.playClick()
   authStore.logout()
   router.push('/')
 }
 
 function startMatchmaking() {
+  audioService.playClick()
   isSearching.value = true
   setTimeout(() => {
     isSearching.value = false
     router.push('/core')
   }, 3000)
 }
+
+onMounted(() => {
+  // Bắt đầu phát BGM cho Home
+  audioService.playBGM('/audio/daily_life.mp3')
+})
 </script>
 
 <style scoped>

@@ -72,7 +72,7 @@
               rerollingIndex === index ? 'reroll-anim pointer-events-none' : '',
               loading && selectedCore?.id !== core.id ? 'opacity-40 grayscale' : ''
             ]"
-            @mouseenter="showTooltip(index)"
+            @mouseenter="showTooltip(index); audioService.playHover()"
             @mouseleave="hideTooltip"
             @touchstart="handleTouchStart(index, $event)"
             @touchend="handleTouchEnd(core, $event)"
@@ -167,6 +167,7 @@ import { getCoreIconPath } from '../game/cores/icons'
 import CoreTooltip from '../components/game/CoreTooltip.vue'
 import { useTutorial } from '../composables/useTutorial'
 import { initAudio } from '../composables/game/useAudioEngine'
+import { audioService } from '../services/audioService'
 
 const router = useRouter()
 const gameStore = useGameStore()
@@ -260,6 +261,7 @@ const activeTimeouts = new Set<ReturnType<typeof setTimeout>>()
 function handleCardReroll(index: number) {
   if (rerolledSlots.value[index] || rerollingIndex.value !== null || loading.value) return
 
+  audioService.playReroll()
   rerolledSlots.value[index] = true
   rerollingIndex.value = index
 
@@ -398,6 +400,9 @@ async function submitCore(core: CoreOption) {
   selectedCore.value = core
   loading.value = true
   
+  audioService.playClick()
+  audioService.playCoreActivation(core.id)
+  
   // Unlock audio context on user interaction
   initAudio()
   
@@ -422,6 +427,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(() => {
+  audioService.playBGM('/audio/core_selection.mp3')
   fetchSupportCores()
   window.addEventListener('beforeunload', handleBeforeUnload)
 })

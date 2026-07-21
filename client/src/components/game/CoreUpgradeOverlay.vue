@@ -50,7 +50,7 @@
                 : (settingsStore.vfxEnabled ? 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:-translate-y-2' : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lightBlue/50 hover:-translate-y-2'),
               loading && selectedCore?.id !== core.id && upgradeCores.length > 0 ? 'opacity-40 grayscale' : ''
             ]"
-            @mouseenter="showTooltip(index)"
+            @mouseenter="showTooltip(index); audioService.playHover()"
             @mouseleave="hideTooltip"
             @touchstart="handleTouchStart(index, $event)"
             @touchend="handleTouchEnd(core, $event)"
@@ -125,6 +125,7 @@ import { getCoreIconPath } from '../../game/cores/icons'
 import CoreTooltip from './CoreTooltip.vue'
 import CoachMark from '../tutorial/CoachMark.vue'
 import { useTutorial } from '../../composables/useTutorial'
+import { audioService } from '../../services/audioService'
 
 const settingsStore = useSettingsStore()
 
@@ -287,6 +288,10 @@ async function selectCore(core: CoreOption) {
 
   selectedCore.value = core
   loading.value = true
+  
+  audioService.playClick()
+  audioService.playCoreActivation(core.id)
+  
   stopTimer()
 
   // Update Pinia state
