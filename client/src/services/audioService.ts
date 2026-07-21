@@ -81,6 +81,12 @@ class AudioService {
   // ── Background Music (BGM) ────────────────────────────────────────────────
   
   playBGM(path: string) {
+    if (!path) {
+      this.stopBGM();
+      this.currentBgmPath = '';
+      return;
+    }
+
     if (this.currentBgmPath === path && this.bgmAudio) {
       // Already playing this track
       return;
@@ -115,7 +121,7 @@ class AudioService {
   }
 
   getCoreBgmPath(coreName: string | null | undefined): string {
-    if (!coreName) return '/audio/balance.mp3';
+    if (!coreName) return '';
     
     if (isSpeedsterCore(coreName)) {
       return '/audio/speedster.mp3';
@@ -123,10 +129,12 @@ class AudioService {
     if (isOracleCore(coreName)) {
       return '/audio/Oracle.mp3';
     }
+    if (coreName.toLowerCase().includes('balance')) {
+      return '/audio/balance.mp3';
+    }
     
-    // Add more mappings here as new MP3s are added
-    // For now, default to balance.mp3
-    return '/audio/balance.mp3';
+    // Default to empty for cores that don't have music yet
+    return '';
   }
 }
 
