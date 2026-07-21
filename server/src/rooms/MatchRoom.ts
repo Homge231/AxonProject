@@ -41,9 +41,8 @@ export class MatchRoom extends Room<{ state: MatchState }> {
       }
     });
 
-    this.onMessage("player_combo", (client, message: { combo: number }) => {
-      // Broadcast to everyone EXCEPT the sender
-      this.broadcast("opponent_combo", { combo: message.combo }, { except: client });
+    this.onMessage("player_milestone", (client, message: { type: string, message: string, icon: string, color: string }) => {
+      this.broadcast("opponent_milestone", message, { except: client });
     });
 
     this.onMessage("player_skip", (client) => {

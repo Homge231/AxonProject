@@ -556,7 +556,7 @@
         <div v-for="toast in toasts" :key="toast.id" 
              class="bg-darkNavy/90 border border-white/10 shadow-lg rounded-lg px-4 py-3 flex items-center gap-3 backdrop-blur-sm min-w-[200px]">
           <span class="text-xl">{{ toast.icon }}</span>
-          <span class="text-sm font-bold tracking-widest uppercase" :class="toast.type === 'combo' ? 'text-orange' : 'text-hexred'">
+          <span class="text-sm font-bold tracking-widest uppercase" :class="toast.color">
             {{ toast.message }}
           </span>
         </div>
@@ -664,17 +664,17 @@ interface Toast {
   id: number
   message: string
   icon: string
-  type: 'combo' | 'skip'
+  color: string
 }
 const toasts = ref<Toast[]>([])
 let toastIdCounter = 0
 
-function addToast(message: string, icon: string, type: 'combo' | 'skip') {
+function addToast(message: string, icon: string, color: string) {
   const id = ++toastIdCounter
   if (toasts.value.length >= 3) {
     toasts.value.shift()
   }
-  toasts.value.push({ id, message, icon, type })
+  toasts.value.push({ id, message, icon, color })
   setTimeout(() => {
     toasts.value = toasts.value.filter(t => t.id !== id)
   }, 2000)
@@ -1375,8 +1375,18 @@ async function checkAnswer() {
     audioService.playCorrect()
     gameState.value = 'correct'
     currentCombo.value++
-    if (currentRoom && currentCombo.value > 0 && currentCombo.value % 5 === 0) {
-      currentRoom.send('player_combo', { combo: currentCombo.value })
+    
+    if (currentRoom) {
+      const family = getCoreFamily(gameStore.activeCoreName || '')
+      if (family === 'combo' && currentCombo.value > 0 && currentCombo.value % 5 === 0) {
+        currentRoom.send('player_milestone', { type: 'combo', message: 'Opponent is on fire!', icon: '🔥', color: 'text-orange' })
+      } else if (family === 'oracle' && currentQuestion.value.target_length >= 9) {
+        currentRoom.send('player_milestone', { type: 'long_word', message: 'Opponent cleared a long word!', icon: '🤯', color: 'text-purple-400' })
+      } else if (family !== 'combo' && family !== 'oracle' && family !== 'aegis') {
+        if (elapsed < 2500) {
+          currentRoom.send('player_milestone', { type: 'massive_hit', message: 'Opponent scored a massive hit!', icon: '🚀', color: 'text-lightBlue' })
+        }
+      }
     }
 
     // Core specific time modifiers
@@ -1800,6 +1810,12 @@ watch(aegisShieldCount, (newVal, oldVal) => {
     playShieldGain(newVal === maxShields.value)
   } else if (newVal < oldVal) {
     playShieldBreak()
+    if (currentRoom) {
+      const family = getCoreFamily(gameStore.activeCoreName || '')
+      if (family === 'aegis') {
+        currentRoom.send('player_milestone', { type: 'shield_break', message: "Opponent's shield broke!", icon: '🛡️', color: 'text-gray-400' })
+      }
+    }
   }
 })
 
@@ -1845,11 +1861,11 @@ onMounted(async () => {
       isWaitingForNextRound.value = false
       restartMatch()
     })
-    currentRoom.onMessage('opponent_combo', (data: { combo: number }) => {
-      addToast(`Opponent hit Combo x${data.combo}!`, '🔥', 'combo')
+    currentRoom.onMessage('opponent_milestone', (data: { type: string, message: string, icon: string, color: string }) => {
+      addToast(data.message, data.icon, data.color)
     })
     currentRoom.onMessage('opponent_skip', () => {
-      addToast('Opponent skipped a word!', '❌', 'skip')
+      addToast('Opponent skipped a word!', '❌', 'text-hexred')
     })
   }
 
