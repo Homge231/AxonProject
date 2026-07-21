@@ -13,7 +13,6 @@
       NAENRA
     </div>
 
-    <PhaserBackground image-url="/bg-daily-life.png" :vfx-enabled="true" />
     <div class="absolute inset-0 cyber-grid opacity-50 pointer-events-none z-0"></div>
 
     <header class="relative z-20 flex justify-between items-center p-8 lg:px-12">
@@ -159,7 +158,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { audioService } from '../services/audioService'
-import PhaserBackground from '../components/game/PhaserBackground.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
