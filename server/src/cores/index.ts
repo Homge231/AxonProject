@@ -30,10 +30,10 @@ const CORE_REGISTRY: Record<string, BaseCore> = {
   'phoenix': new PhoenixCoreStrategy('phoenix', 100, 1, false),
   'phoenix flame': new PhoenixCoreStrategy('phoenix flame', 400, 1, false),
   'rebirth': new PhoenixCoreStrategy('rebirth', 200, 1, true),
-  'ashes to ashes': new PhoenixCoreStrategy('ashes to ashes', 800, 2, false),
+  'ashes to ashes': new PhoenixCoreStrategy('ashes to ashes', 0, 1, false, 0.5, 3.0),
   'immortal phoenix': new PhoenixCoreStrategy('immortal phoenix', 800, 1, false),
   'eternal rebirth': new PhoenixCoreStrategy('eternal rebirth', 400, 1, true),
-  'supernova ashes': new PhoenixCoreStrategy('supernova ashes', 1500, 2, false),
+  'supernova ashes': new PhoenixCoreStrategy('supernova ashes', 0, 1, false, 1.0, 5.0),
 
   // High Roller Branch
   'high roller': new HighRollerStrategy('high roller', 0.5, 2, 0.5),

@@ -6,20 +6,24 @@ export class PhoenixCoreStrategy extends BaseCore {
   private bonusAmount: number
   private requiredMisses: number
   private nullifyPenalty: boolean
+  private scalingMultiplier: number
+  private maxMultiplier: number
 
   constructor(
     coreName: string,
     bonusAmount: number = 200,
     requiredMisses: number = 1,
     nullifyPenalty: boolean = false,
-    
+    scalingMultiplier: number = 0,
+    maxMultiplier: number = 0
   ) {
     super()
     this.coreName = coreName
     this.bonusAmount = bonusAmount
     this.requiredMisses = requiredMisses
     this.nullifyPenalty = nullifyPenalty
-    
+    this.scalingMultiplier = scalingMultiplier
+    this.maxMultiplier = maxMultiplier
   }
 
   private hasConsecutiveMisses(history: boolean[], amount: number): boolean {
@@ -33,15 +37,39 @@ export class PhoenixCoreStrategy extends BaseCore {
     return true
   }
 
+  private getConsecutiveMissCount(history: boolean[]): number {
+    let count = 0
+    // history.length - 1 is the current answer (true)
+    for (let i = 1; i < history.length; i++) {
+      if (history[history.length - 1 - i] === false) {
+        count++
+      } else {
+        break
+      }
+    }
+    return count
+  }
+
   calculateCorrect(ctx: ScoringContext): ScoringResult {
     let phoenixBonus = 0
-    if (this.hasConsecutiveMisses(ctx.answerHistory, this.requiredMisses)) {
+    if (this.bonusAmount > 0 && this.hasConsecutiveMisses(ctx.answerHistory, this.requiredMisses)) {
       phoenixBonus = this.bonusAmount
+    }
+
+    let dynamicMultiplier = ctx.multiplierBuff
+    if (this.scalingMultiplier > 0) {
+      const missCount = this.getConsecutiveMissCount(ctx.answerHistory)
+      if (missCount > 0) {
+        dynamicMultiplier += missCount * this.scalingMultiplier
+        if (this.maxMultiplier > 0 && dynamicMultiplier > this.maxMultiplier) {
+          dynamicMultiplier = this.maxMultiplier
+        }
+      }
     }
 
     const oraclePenalty = this._oraclePenalty(ctx)
     let finalScore = Math.floor(
-      (getBasePoints(ctx.targetWord) + ctx.flatBuff + phoenixBonus) * ctx.multiplierBuff
+      (getBasePoints(ctx.targetWord) + ctx.flatBuff + phoenixBonus) * dynamicMultiplier
     )
     finalScore -= oraclePenalty
 
@@ -51,7 +79,7 @@ export class PhoenixCoreStrategy extends BaseCore {
         base: getBasePoints(ctx.targetWord),
         combo_bonus: phoenixBonus,
         flat_buff: ctx.flatBuff,
-        multiplier_buff: ctx.multiplierBuff,
+        multiplier_buff: dynamicMultiplier,
         oracle_penalty: oraclePenalty,
         penalty: 0
       }
