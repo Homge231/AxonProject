@@ -20,8 +20,8 @@ class AudioService {
   private currentBgmPath: string = '';
 
   constructor() {
-    this.correctAudio = new Audio('/audio/correct.wav');
-    this.skipAudio = new Audio('/audio/skip.wav');
+    this.correctAudio = new Audio('/audio/correct.mp3');
+    this.skipAudio = new Audio('/audio/wrong.mp3');
     
     // UI Interactions
     this.hoverAudio = new Audio('/audio/ui/hover.wav');
@@ -109,7 +109,7 @@ class AudioService {
   }
 
   getCoreBgmPath(coreName: string | null | undefined): string {
-    if (!coreName) return '/audio/daily_life.mp3';
+    if (!coreName) return '/audio/balance.mp3';
     
     if (isSpeedsterCore(coreName)) {
       return '/audio/speedster.mp3';
@@ -119,8 +119,8 @@ class AudioService {
     }
     
     // Add more mappings here as new MP3s are added
-    // For now, default to daily_life.mp3
-    return '/audio/daily_life.mp3';
+    // For now, default to balance.mp3
+    return '/audio/balance.mp3';
   }
 }
 
