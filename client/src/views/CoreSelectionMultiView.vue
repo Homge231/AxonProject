@@ -177,6 +177,7 @@ import { getCoreIconPath } from '../game/cores/icons'
 import CoreTooltip from '../components/game/CoreTooltip.vue'
 import { useTutorial } from '../composables/useTutorial'
 import { initAudio } from '../composables/game/useAudioEngine'
+import { audioService } from '../services/audioService'
 import { currentRoom, leaveMatchRoom } from '../services/multiplayerService'
 
 const router = useRouter()
@@ -439,6 +440,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(() => {
+  audioService.playBGM('/audio/core_selection.mp3')
   fetchSupportCores()
   window.addEventListener('beforeunload', handleBeforeUnload)
 
