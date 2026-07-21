@@ -27,6 +27,9 @@ export const useSettingsStore = defineStore('settings', () => {
     import('../composables/game/useAudioEngine').then(({ setMasterVolume }) => {
       setMasterVolume(newVal / 100.0)
     }).catch(() => {})
+    
+    // Apply to HTML5 Audio elements
+    audioService.setMasterVolume(newVal / 100.0)
   })
 
   watch(vfxEnabled, (newVal) => {

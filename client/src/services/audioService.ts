@@ -99,6 +99,12 @@ class AudioService {
     this.bgmAudio.play().catch(e => console.warn('BGM play failed:', e));
   }
 
+  setMasterVolume(vol: number) {
+    if (this.bgmAudio) {
+      this.bgmAudio.volume = Math.max(0, vol * 0.7);
+    }
+  }
+
   stopBGM() {
     if (this.bgmAudio) {
       this.bgmAudio.pause();
