@@ -709,7 +709,7 @@ function updateOpponentData(state: any) {
   
   if (!opponentSessionId.value) {
     state.players.forEach((player: any, sId: string) => {
-      if (sId !== currentRoom.sessionId) {
+      if (sId !== currentRoom?.sessionId) {
         opponentSessionId.value = sId
       }
     })
