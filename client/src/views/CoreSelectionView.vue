@@ -98,7 +98,7 @@
               class="relative w-24 h-24 rounded-full bg-gradient-to-br from-black/60 to-black/20 flex items-center justify-center mb-8 transition-all duration-500 border shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)]"
               :class="selectedCore?.id === core.id ? 'border-lightBlue text-lightBlue shadow-[0_0_20px_rgba(59,130,246,0.6)] from-blue/30 to-lightBlue/20' : 'border-white/10 text-gray-400 group-hover:border-lightBlue group-hover:text-lightBlue group-hover:from-blue/20 group-hover:to-lightBlue/10 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'">
               <img :src="core.icon" :alt="core.name"
-                @error="$event.target.src = '/icons/cores/default.svg'"
+                @error="event => (event.currentTarget as HTMLImageElement).src = '/icons/cores/default.svg'"
                 class="w-16 h-16 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300" />
             </div>
             <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
