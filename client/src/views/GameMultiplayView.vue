@@ -352,7 +352,7 @@
     </div>
 
     <!-- Right-Side Indicators Container -->
-    <div class="absolute top-28 right-8 z-20 flex flex-col items-end gap-4 transition-all duration-300">
+    <div class="absolute top-52 right-8 z-20 flex flex-col items-end gap-4 transition-all duration-300">
 
       <!-- Combo indicator: only visible when active core is the Combo Core -->
       <transition name="fade-scale">
