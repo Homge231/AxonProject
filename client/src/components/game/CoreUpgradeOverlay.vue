@@ -19,9 +19,30 @@
         class="text-4xl md:text-5xl font-black text-white mb-3 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] tracking-widest text-center uppercase">
         Tactical Upgrade
       </h2>
-      <p class="text-lightBlue/80 mb-12 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
+      <p class="text-lightBlue/80 mb-6 text-sm md:text-base tracking-[0.2em] uppercase text-center font-bold">
         Select a Support Core for Round {{ matchStore.currentRound + 1 }}
       </p>
+
+      <!-- Current Active Cores Overview (Main Core + Upgrade Cores) -->
+      <div v-if="gameStore.coreHistory.length > 0" class="mb-8 flex flex-wrap items-center justify-center gap-3">
+        <!-- Main Core -->
+        <div v-if="gameStore.coreHistory[0]" class="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-md shadow-lg">
+          <img :src="gameStore.coreHistory[0].icon" :alt="gameStore.coreHistory[0].name" @error="$event.target.src = '/icons/cores/default.svg'" class="w-6 h-6 object-contain" />
+          <div class="text-left">
+            <p class="text-[9px] font-black uppercase text-emerald-400 tracking-wider">Main Core</p>
+            <p class="text-xs font-bold text-white">{{ gameStore.coreHistory[0].name }}</p>
+          </div>
+        </div>
+
+        <!-- Upgrade Cores -->
+        <div v-for="(uCore, uIdx) in gameStore.coreHistory.slice(1)" :key="`${uCore.id}-${uIdx}`" class="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 backdrop-blur-md shadow-lg">
+          <img :src="uCore.icon" :alt="uCore.name" @error="$event.target.src = '/icons/cores/default.svg'" class="w-6 h-6 object-contain" />
+          <div class="text-left">
+            <p class="text-[9px] font-black uppercase text-blue-400 tracking-wider">Upgrade {{ uIdx + 1 }}</p>
+            <p class="text-xs font-bold text-white">{{ uCore.name }}</p>
+          </div>
+        </div>
+      </div>
 
       <div v-if="loading && upgradeCores.length === 0" class="flex justify-center py-16">
         <svg class="w-10 h-10 text-lightBlue" :class="{ 'animate-spin': settingsStore.vfxEnabled }" fill="none" viewBox="0 0 24 24">
@@ -59,7 +80,7 @@
             <!-- Hover shimmer overlay -->
             <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            <!-- 🛡️/⚔️/🔮 Main / Power / Effect mini badge (top-left of card) -->
+            <!-- Main / Upgrade Core mini badge (top-left of card) -->
             <span
               class="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest select-none"
               :class="core.classification === 'main'
@@ -68,8 +89,7 @@
                   ? 'text-orange-400 bg-orange-500/10 border-orange-500/30'
                   : 'text-violet-400 bg-violet-500/10 border-violet-500/30'"
             >
-              {{ core.classification === 'main' ? '🛡️' : (core.classification === 'power' ? '⚔️' : '🔮') }}
-              {{ core.classification === 'main' ? 'Anchor' : (core.classification === 'power' ? 'Power' : 'Effect') }}
+              {{ core.classification === 'main' ? 'MAIN CORE' : (core.classification === 'power' ? 'UPGRADE CORE • POWER' : 'UPGRADE CORE • EFFECT') }}
             </span>
             
             <!-- Icon circle -->
@@ -80,10 +100,13 @@
                 class="w-12 h-12 lg:w-16 lg:h-16 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transform transition-transform group-hover:scale-110 duration-300" />
             </div>
 
-            <h3 class="text-3xl font-black mb-4 tracking-wide transition-colors duration-500"
+            <h3 class="text-3xl font-black mb-1 tracking-wide transition-colors duration-500"
               :class="selectedCore?.id === core.id ? 'text-lightBlue' : 'text-white group-hover:text-lightBlue'">
               {{ core.name }}
             </h3>
+            <span class="text-xs font-bold text-lightOrange/90 uppercase tracking-widest mb-4">
+              Upgrade Core (Tier {{ core.tier || 2 }})
+            </span>
 
             <p class="text-base text-gray-300/80 leading-relaxed max-w-[250px]">{{ core.description }}</p>
           </div>
@@ -311,7 +334,16 @@ async function selectCore(core: CoreOption) {
   }, 500)
 }
 
-onMounted(() => fetchUpgradeCores())
+onMounted(() => {
+  if (gameStore.coreHistory.length === 0 && gameStore.activeCoreName) {
+    gameStore.coreHistory.push({
+      id: gameStore.activeCoreId || '',
+      name: gameStore.activeCoreName,
+      icon: getCoreIconPath(gameStore.activeCoreName)
+    })
+  }
+  fetchUpgradeCores()
+})
 onUnmounted(() => {
   stopTimer()
   if (touchTimeout) clearTimeout(touchTimeout)

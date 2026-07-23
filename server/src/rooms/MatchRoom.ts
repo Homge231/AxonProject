@@ -11,11 +11,6 @@ export class MatchRoom extends Room<{ state: MatchState }> {
   onCreate(options: any) {
     this.state = new MatchState();
 
-    this.onMessage("ping", (client, message) => {
-      console.log(`Received ping from ${client.sessionId}:`, message);
-      client.send("pong", "Server acknowledges ping!");
-    });
-
     this.onMessage("updateMetadata", (client, message) => {
       console.log(`Update metadata from ${client.sessionId}:`, message);
       if (message.vocabularyLevel) this.state.metadata.vocabularyLevel = message.vocabularyLevel;
@@ -132,14 +127,33 @@ export class MatchRoom extends Room<{ state: MatchState }> {
     this.state.players.set(client.sessionId, new Player(id, name, avatar));
   }
 
-  onLeave(client: Client, code?: number) {
-    console.log(`${client.sessionId} left ${this.roomId}`);
-    this.state.players.delete(client.sessionId);
+  async onLeave(client: Client, code?: number) {
+    console.log(`${client.sessionId} left ${this.roomId}, code: ${code}`);
     
+    const isMatchActive = this.state.status === "playing" || this.state.status === "starting";
+    const isUnconsented = code !== 1000;
+
+    if (isMatchActive && isUnconsented) {
+      try {
+        console.log(`[MatchRoom] Allowing 15s reconnection for client ${client.sessionId}...`);
+        this.broadcast("opponent_reconnecting", { sessionId: client.sessionId, timeout: 15 }, { except: client });
+
+        await this.allowReconnection(client, 15);
+
+        console.log(`[MatchRoom] Client ${client.sessionId} successfully reconnected!`);
+        this.broadcast("opponent_reconnected", { sessionId: client.sessionId }, { except: client });
+        return;
+      } catch (e) {
+        console.log(`[MatchRoom] Reconnection window expired for client ${client.sessionId}`);
+        this.broadcast("opponent_forfeit", { disconnectedSessionId: client.sessionId }, { except: client });
+      }
+    }
+
+    this.state.players.delete(client.sessionId);
     this.finishedPlayers.delete(client.sessionId);
     this.readyPlayers.delete(client.sessionId);
-    
-    if (this.state.status === "playing" || this.state.status === "starting") {
+
+    if (isMatchActive) {
       this.broadcast("opponent_left");
     }
   }

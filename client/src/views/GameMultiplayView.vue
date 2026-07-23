@@ -20,6 +20,7 @@
       :score="opponentScore"
       :core-icon="opponentCoreIconUrl"
       :core-details="opponentCoreDetails"
+      :cores-history="opponentCoresHistory"
     />
     <!-- Dice Roll Shift Overlay  -->
     <transition name="fade">
@@ -107,9 +108,7 @@
             class="absolute top-full left-0 mt-3 w-56 bg-darkNavy/90 backdrop-blur-xl border border-white/10 shadow-2xl z-50 rounded-b-lg overflow-hidden">
             <div class="px-5 py-3 border-b border-white/10 bg-black/20">
               <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
-              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score
-              }}</span>
-              </p>
+              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score }}</span></p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
@@ -588,6 +587,35 @@
 
     <FeedbackOverlay :is-visible="showFeedback" @close="showFeedback = false" @success="handleFeedbackSuccess" />
 
+    <!-- Reconnecting Overlay (Self Disconnected) -->
+    <transition name="fade">
+      <div v-if="isSelfReconnecting"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md">
+        <div class="bg-darkNavy/90 border border-hexred/40 p-8 rounded-2xl shadow-2xl max-w-sm w-full flex flex-col items-center text-center gap-4">
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-4 border-hexred/20 animate-ping"></div>
+            <div class="w-16 h-16 rounded-full border-4 border-hexred border-t-transparent animate-spin"></div>
+            <span class="absolute font-mono text-2xl font-black text-white">{{ selfReconnectTimerSeconds }}s</span>
+          </div>
+          <h2 class="text-xl font-black text-white tracking-wide uppercase">Mất kết nối mạng</h2>
+          <p class="text-xs text-gray-300">Đang tự động kết nối lại vào room... (Grace period: 15s)</p>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Opponent Reconnecting Banner -->
+    <transition name="fade">
+      <div v-if="opponentReconnecting" class="fixed inset-x-0 top-20 z-40 flex justify-center px-4">
+        <div class="bg-yellow-500/20 backdrop-blur-md border border-yellow-500/40 px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
+          <span class="animate-spin text-yellow-400 text-xl">⏳</span>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Đối thủ bị ngắt kết nối</span>
+            <span class="text-xs text-gray-200">Đang chờ đối thủ kết nối lại... (<span class="font-mono font-bold text-white">{{ opponentReconnectTimerSeconds }}s</span>)</span>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Opponent Toast Notifications Stack -->
     <div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2 pointer-events-none">
       <transition-group name="toast-slide">
@@ -612,7 +640,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useScoreAnimation } from '../composables/game/useScoreAnimation'
 import { useMatchTimer } from '../composables/game/useMatchTimer'
 import { useQuestionQueue } from '../composables/game/useQuestionQueue'
-import { currentRoom, leaveMatchRoom } from '../services/multiplayerService'
+import { currentRoom, leaveMatchRoom, reconnectMatchRoom, getSavedReconnectionToken } from '../services/multiplayerService'
 import OpponentWidget from '../components/game/OpponentWidget.vue'
 import CoreTooltip from '../components/game/CoreTooltip.vue'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
@@ -751,8 +779,6 @@ const opponentScore = ref(0)
 // --- STATE CHO TOOLTIP & DATA ĐỐI THỦ ---
 const opponentActiveCoreId = ref<string | null>(null)
 const showOpponentCoreTooltip = ref(false)
-let opponentHoldTimer: ReturnType<typeof setTimeout> | null = null
-const HOLD_DELAY_MS = 500
 
 const opponentCoreDetails = computed(() => {
   if (!opponentActiveCoreId.value || allCores.value.length === 0) return null
@@ -764,50 +790,32 @@ const opponentCoreIconUrl = computed(() => {
   return getCoreIconPath(opponentCoreDetails.value.name, opponentCoreDetails.value.icon_url)
 })
 
-function handleOpponentHoldStart() {
-  if (opponentHoldTimer) clearTimeout(opponentHoldTimer)
-  opponentHoldTimer = setTimeout(() => {
-    showOpponentCoreTooltip.value = true
-  }, HOLD_DELAY_MS)
-}
+const opponentCoresHistory = ref<any[]>([])
 
-function handleOpponentHoldEnd() {
-  if (opponentHoldTimer) {
-    clearTimeout(opponentHoldTimer)
-    opponentHoldTimer = null
+watch([opponentActiveCoreId, () => allCores.value.length], ([newCoreId]) => {
+  if (!newCoreId || allCores.value.length === 0) return
+  const found = allCores.value.find((c: any) => c.id === newCoreId)
+  if (found && !opponentCoresHistory.value.some(c => c.id === found.id)) {
+    opponentCoresHistory.value.push({
+      ...found,
+      icon: getCoreIconPath(found.name, found.icon_url)
+    })
   }
-  showOpponentCoreTooltip.value = false
-}
-const opponentSessionId = ref('')
-const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
+}, { immediate: true })
+
 const waitingForOpponent = ref(false)
 const isWaitingForNextRound = ref(false)
-
-function handleOpponentTouchStart() {
-  if (opponentTouchTimer) clearTimeout(opponentTouchTimer)
-
-  // Start the timer. If they hold for 500ms, show the tooltip.
-  opponentTouchTimer = setTimeout(() => {
-    showOpponentCoreTooltip.value = true
-  }, HOLD_DELAY_MS)
-}
-
-function handleOpponentTouchEnd() {
-  // If they lift their finger before 500ms, clear the timer (counts as a tap)
-  if (opponentTouchTimer) {
-    clearTimeout(opponentTouchTimer)
-    opponentTouchTimer = null
-  }
-  showOpponentCoreTooltip.value = false
-}
 
 function updateOpponentData(state: any) {
   if (!state || !state.players || !currentRoom) return
 
+  const currentSessionId = currentRoom?.sessionId
+  if (!currentSessionId) return
+
   let foundOpponent = false
 
   state.players.forEach((player: any, sId: string) => {
-    if (sId !== currentRoom.sessionId) {
+    if (sId !== currentSessionId) {
       opponentScore.value = player.score || 0
       opponentName.value = player.name || 'Opponent'
       opponentAvatar.value = player.avatar || ''
@@ -1786,10 +1794,14 @@ function goToUpgrade() {
   }
 }
 
-function handleUpgradeSelected(_newCoreId: string) {
+function handleUpgradeSelected(newCoreId: string) {
+  const chosenCoreId = newCoreId || gameStore.activeCoreId || ''
   if (isMultiplayer.value) {
     isWaitingForNextRound.value = true
     if (currentRoom) {
+      if (chosenCoreId) {
+        currentRoom.send("update_core", { coreId: chosenCoreId })
+      }
       currentRoom.send("ready_next_round")
     }
   } else {
@@ -1811,6 +1823,10 @@ async function restartMatch() {
   currentPandoraCoreId.value = null
   matchStore.incrementRound()
   resetTypingBoard()
+
+  if (isMultiplayer.value && currentRoom && activeCoreId.value) {
+    currentRoom.send("update_core", { coreId: activeCoreId.value })
+  }
 
   // Transition to loading and fetch next batch
   // Note: We DO NOT call createSession() here so the backend continues the same session!
@@ -1851,6 +1867,7 @@ async function playAgain() {
   gameStore.coreHistory = []
   gameStore.activeCoreId = null
   gameStore.activeCoreName = null
+  opponentCoresHistory.value = []
 
   stopMatchTimer()
   resetTypingBoard()
@@ -1904,24 +1921,6 @@ function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
   }
-}
-
-async function startFirstRound() {
-  gameState.value = 'loading'
-  if (!gameStore.sessionId) {
-    await createSession()
-  } else {
-    sessionId.value = gameStore.sessionId
-  }
-  if (isPandoraMode.value || isMultiplayer.value) {
-    await fetchPandoraPool()
-  }
-  await fetchBatch()
-  await loadQuestion()
-  gameState.value = 'playing'
-  startMatchTimer()
-  document.addEventListener('click', handleOutsideClick)
-  window.addEventListener('beforeunload', handleBeforeUnload)
 }
 
 function refocusInput() {
@@ -1983,34 +1982,142 @@ watch(() => currentCombo.value, (newVal) => {
   }
 })
 
+// ── RECONNECTION STATE & HANDLERS ──
+const isSelfReconnecting = ref(false)
+const selfReconnectTimerSeconds = ref(15)
+let selfReconnectInterval: ReturnType<typeof setInterval> | null = null
+
+const opponentReconnecting = ref(false)
+const opponentReconnectTimerSeconds = ref(15)
+let opponentReconnectInterval: ReturnType<typeof setInterval> | null = null
+
+function startOpponentReconnectCountdown(timeout: number = 15) {
+  opponentReconnecting.value = true
+  opponentReconnectTimerSeconds.value = timeout
+  stopMatchTimer()
+
+  if (opponentReconnectInterval) clearInterval(opponentReconnectInterval)
+  opponentReconnectInterval = setInterval(() => {
+    if (opponentReconnectTimerSeconds.value > 1) {
+      opponentReconnectTimerSeconds.value--
+    } else {
+      if (opponentReconnectInterval) clearInterval(opponentReconnectInterval)
+    }
+  }, 1000)
+}
+
+function clearOpponentReconnectCountdown() {
+  opponentReconnecting.value = false
+  if (opponentReconnectInterval) {
+    clearInterval(opponentReconnectInterval)
+    opponentReconnectInterval = null
+  }
+}
+
+async function attemptSelfReconnect() {
+  const token = getSavedReconnectionToken()
+  if (!token) return
+
+  isSelfReconnecting.value = true
+  selfReconnectTimerSeconds.value = 15
+  stopMatchTimer()
+
+  if (selfReconnectInterval) clearInterval(selfReconnectInterval)
+  selfReconnectInterval = setInterval(() => {
+    if (selfReconnectTimerSeconds.value > 1) {
+      selfReconnectTimerSeconds.value--
+    } else {
+      if (selfReconnectInterval) clearInterval(selfReconnectInterval)
+      isSelfReconnecting.value = false
+      alert("Mất kết nối quá 15s. Bạn đã thua trận đấu (Forfeit).")
+      goHome()
+    }
+  }, 1000)
+
+  const tryConnect = async () => {
+    if (!isSelfReconnecting.value) return
+    try {
+      const room = await reconnectMatchRoom(token)
+      if (room) {
+        if (selfReconnectInterval) clearInterval(selfReconnectInterval)
+        isSelfReconnecting.value = false
+        setupRoomEventHandlers(room)
+        startMatchTimer()
+        addToast("Đã khôi phục kết nối!", "⚡", "text-emerald-400")
+      }
+    } catch (e) {
+      console.warn("Reconnecting attempt failed, retrying...", e)
+      if (isSelfReconnecting.value && selfReconnectTimerSeconds.value > 0) {
+        setTimeout(tryConnect, 2000)
+      }
+    }
+  }
+
+  tryConnect()
+}
+
+function setupRoomEventHandlers(room: any) {
+  if (!room) return
+
+  if (activeCoreId.value) {
+    room.send("update_core", { coreId: activeCoreId.value })
+  }
+  updateOpponentData(room.state)
+
+  room.onStateChange((state: any) => {
+    updateOpponentData(state)
+  })
+
+  room.onMessage('opponent_reconnecting', (data: { timeout: number }) => {
+    startOpponentReconnectCountdown(data?.timeout || 15)
+  })
+
+  room.onMessage('opponent_reconnected', () => {
+    clearOpponentReconnectCountdown()
+    startMatchTimer()
+    addToast('Đối thủ đã kết nối lại!', '⚡', 'text-emerald-400')
+  })
+
+  room.onMessage('opponent_forfeit', () => {
+    clearOpponentReconnectCountdown()
+    stopMatchTimer()
+    addToast('Đối thủ quá thời gian kết nối. Bạn thắng (Forfeit)!', '🏆', 'text-yellow-400')
+    startTimeoutPhase()
+  })
+
+  room.onMessage('opponent_left', () => {
+    alert("Your opponent has left the match! You will be returned to the main menu.")
+    goHome()
+  })
+
+  room.onMessage('start_recap_countdown', () => {
+    waitingForOpponent.value = false
+    runRecapCountdown()
+  })
+
+  room.onMessage('start_next_round', () => {
+    isWaitingForNextRound.value = false
+    restartMatch()
+  })
+
+  room.onMessage('opponent_milestone', (data: { type: string, message: string, icon: string, color: string }) => {
+    addToast(data.message, data.icon, data.color)
+  })
+
+  room.onMessage('opponent_skip', () => {
+    addToast('Opponent skipped a word!', '❌', 'text-hexred')
+  })
+
+  room.onLeave((code: number) => {
+    if (code !== 1000 && isMultiplayer.value) {
+      attemptSelfReconnect()
+    }
+  })
+}
+
 onMounted(async () => {
   if (isMultiplayer.value && currentRoom) {
-    if (activeCoreId.value) {
-      currentRoom.send("update_core", { coreId: activeCoreId.value })
-    }
-    updateOpponentData(currentRoom.state)
-    currentRoom.onStateChange((state) => {
-      updateOpponentData(state)
-    })
-    await fetchPandoraPool()
-    currentRoom.onMessage('opponent_left', () => {
-      alert("Your opponent has left the match! You will be returned to the main menu.")
-      goHome()
-    })
-    currentRoom.onMessage('start_recap_countdown', () => {
-      waitingForOpponent.value = false
-      runRecapCountdown()
-    })
-    currentRoom.onMessage('start_next_round', () => {
-      isWaitingForNextRound.value = false
-      restartMatch()
-    })
-    currentRoom.onMessage('opponent_milestone', (data: { type: string, message: string, icon: string, color: string }) => {
-      addToast(data.message, data.icon, data.color)
-    })
-    currentRoom.onMessage('opponent_skip', () => {
-      addToast('Opponent skipped a word!', '❌', 'text-hexred')
-    })
+    setupRoomEventHandlers(currentRoom)
   }
 
   if (!activeCoreId.value) {
@@ -2035,10 +2142,8 @@ onMounted(async () => {
     sessionId.value = gameStore.sessionId
   }
 
-  // 👇 [FIX QUAN TRỌNG]: Tải dữ liệu toàn bộ Core cho cả Pandora Mode và Multiplayer Mode
-  if (isPandoraMode.value || isMultiplayer.value) {
-    await fetchPandoraPool()
-  }
+  // Always fetch full cores list — needed for OpponentWidget history, core tooltips, and Pandora
+  await fetchPandoraPool()
 
   await fetchBatch()
   await loadQuestion()
@@ -2054,6 +2159,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (selfReconnectInterval) clearInterval(selfReconnectInterval)
+  if (opponentReconnectInterval) clearInterval(opponentReconnectInterval)
   leaveMatchRoom()
   stopMatchTimer()
   stopTimeoutInterval()

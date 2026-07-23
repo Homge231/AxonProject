@@ -4,6 +4,8 @@
       v-if="visible"
       ref="widgetRef"
       class="absolute top-24 right-6 md:right-10 z-30 flex flex-col items-end gap-2"
+      @mouseenter="isCorePopupOpen = true"
+      @mouseleave="isCorePopupOpen = false"
     >
       <!-- Main Opponent Floating HUD Bar (Click/Tap Wrapper) -->
       <div 
@@ -48,35 +50,49 @@
       <!-- Pop-up Container for Selection Core Icon(s) -->
       <transition name="fade">
         <div
-          v-if="isCorePopupOpen && coreDetails"
-          class="relative bg-darkNavy/90 backdrop-blur-xl border border-white/20 p-3 rounded-xl shadow-2xl flex items-center gap-3 z-40"
+          v-if="isCorePopupOpen && activeCoresList.length > 0"
+          class="relative bg-darkNavy/90 backdrop-blur-xl border border-white/20 p-3 rounded-xl shadow-2xl flex flex-col gap-2 z-40"
         >
-          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Active Core:</span>
+          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Active Cores:</span>
 
-          <!-- Opponent Active Core Icon inside Pop-up Container -->
-          <div class="relative flex items-center justify-center">
-            <img
-              :src="coreIcon"
-              :alt="coreDetails.name"
-              class="w-10 h-10 object-contain cursor-pointer drop-shadow-md transition-transform hover:scale-110 active:scale-95 bg-white/5 p-1 rounded-lg border border-white/15"
-              @mouseenter="showTooltip = true"
-              @mouseleave="hideTooltip"
-              @touchstart.passive="startHold"
+          <div class="flex items-center gap-3">
+            <div
+              v-for="(cDetails, cIdx) in activeCoresList"
+              :key="cDetails.id || cIdx"
+              class="relative flex flex-col items-center group cursor-pointer"
+              @mouseenter="hoveredCoreIdx = cIdx"
+              @mouseleave="hoveredCoreIdx = null"
+              @touchstart.passive="startHold(cIdx)"
               @touchend="hideTooltip"
               @touchcancel="hideTooltip"
-              @dragstart.prevent
-              @contextmenu.prevent="() => false"
-            />
+            >
+              <span 
+                class="text-[8px] font-bold uppercase tracking-wider mb-1"
+                :class="cIdx === 0 ? 'text-emerald-400' : 'text-blue-400'"
+              >
+                {{ cIdx === 0 ? 'MAIN' : `UPGRADE ${cIdx}` }}
+              </span>
 
-            <!-- Single-Player Tooltip Component Reuse -->
-            <transition name="fade">
-              <CoreTooltip
-                v-if="showTooltip"
-                :core="coreDetails"
-                position="bottom"
-                class="!right-0 !left-auto !translate-x-0"
+              <img
+                :src="cDetails.icon || getCoreIconPath(cDetails.name) || coreIcon || '/icons/cores/default.svg'"
+                :alt="cDetails.name"
+                @error="$event.target.src = '/icons/cores/default.svg'"
+                class="w-10 h-10 object-contain cursor-pointer drop-shadow-md transition-transform group-hover:scale-110 active:scale-95 bg-white/5 p-1 rounded-lg border"
+                :class="cIdx === 0 ? 'border-emerald-500/40' : 'border-blue-500/40'"
+                @dragstart.prevent
+                @contextmenu.prevent="() => false"
               />
-            </transition>
+
+              <!-- Tooltip Component for specific core -->
+              <transition name="fade">
+                <CoreTooltip
+                  v-if="hoveredCoreIdx === cIdx"
+                  :core="cDetails"
+                  position="bottom"
+                  class="!right-0 !left-auto !translate-x-0"
+                />
+              </transition>
+            </div>
           </div>
         </div>
       </transition>
@@ -85,8 +101,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import CoreTooltip from './CoreTooltip.vue'
+import { getCoreIconPath } from '../../game/cores/icons'
+
+interface CoreItem {
+  id: string
+  name: string
+  description: string
+  icon?: string
+  flat_buff?: number
+  multiplier_buff?: number
+  tier?: number
+  core_type?: string
+  classification?: string
+}
 
 const props = defineProps<{
   visible: boolean
@@ -94,34 +123,36 @@ const props = defineProps<{
   avatar: string
   score: number
   coreIcon?: string
-  coreDetails?: {
-    id: string
-    name: string
-    description: string
-    flat_buff?: number
-    multiplier_buff?: number
-    tier?: number
-    core_type?: string
-    classification?: string
-  } | null
+  coreDetails?: CoreItem | null
+  coresHistory?: CoreItem[]
 }>()
 
 const isScoreChanging = ref(false)
 const isCorePopupOpen = ref(false)
-const showTooltip = ref(false)
+const hoveredCoreIdx = ref<number | null>(null)
 const widgetRef = ref<HTMLElement | null>(null)
 let holdTimer: ReturnType<typeof setTimeout> | null = null
 const HOLD_DELAY_MS = 500
 
+const activeCoresList = computed(() => {
+  if (props.coresHistory && props.coresHistory.length > 0) {
+    return props.coresHistory
+  }
+  if (props.coreDetails) {
+    return [props.coreDetails]
+  }
+  return []
+})
+
 function toggleCorePopup() {
-  if (!props.coreDetails) return
+  if (activeCoresList.value.length === 0) return
   isCorePopupOpen.value = !isCorePopupOpen.value
 }
 
 function handleClickOutside(event: MouseEvent) {
   if (widgetRef.value && !widgetRef.value.contains(event.target as Node)) {
     isCorePopupOpen.value = false
-    showTooltip.value = false
+    hoveredCoreIdx.value = null
   }
 }
 
@@ -142,10 +173,10 @@ watch(() => props.score, (newVal, oldVal) => {
   }
 })
 
-function startHold() {
+function startHold(index: number) {
   if (holdTimer) clearTimeout(holdTimer)
   holdTimer = setTimeout(() => {
-    showTooltip.value = true
+    hoveredCoreIdx.value = index
   }, HOLD_DELAY_MS)
 }
 
@@ -154,7 +185,7 @@ function hideTooltip() {
     clearTimeout(holdTimer)
     holdTimer = null
   }
-  showTooltip.value = false
+  hoveredCoreIdx.value = null
 }
 </script>
 

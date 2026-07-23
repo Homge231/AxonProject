@@ -119,6 +119,7 @@ class AudioService {
 
     this.currentBgmPath = path;
     this.bgmAudio = new Audio(path);
+    this.bgmAudio.preload = 'auto';
     this.bgmAudio.loop = true;
     
     const vol = this.getVolume();
