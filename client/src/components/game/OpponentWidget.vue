@@ -70,7 +70,7 @@
                 class="text-[8px] font-bold uppercase tracking-wider mb-1"
                 :class="cIdx === 0 ? 'text-emerald-400' : 'text-blue-400'"
               >
-                {{ cIdx === 0 ? '🛡️ Main' : `⚔️ Up ${cIdx}` }}
+                {{ cIdx === 0 ? 'MAIN' : `UPGRADE ${cIdx}` }}
               </span>
 
               <img

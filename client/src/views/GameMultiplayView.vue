@@ -105,37 +105,10 @@
 
         <transition name="dropdown">
           <div v-if="menuOpen"
-            class="absolute top-full left-0 mt-3 w-64 bg-darkNavy/95 backdrop-blur-xl border border-white/10 shadow-2xl z-50 rounded-b-lg overflow-hidden">
-            <div class="px-5 py-3 border-b border-white/10 bg-black/30">
-              <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-2">Active Cores</p>
-              
-              <!-- Main Core -->
-              <div v-if="gameStore.coreHistory[0]" class="flex items-center gap-2 mb-2 p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                <span class="text-xs">🛡️</span>
-                <img :src="gameStore.coreHistory[0].icon" :alt="gameStore.coreHistory[0].name" @error="$event.target.src = '/icons/cores/default.svg'" class="w-5 h-5 object-contain" />
-                <div class="overflow-hidden text-left">
-                  <p class="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">Main Core</p>
-                  <p class="text-xs text-white font-bold truncate">{{ gameStore.coreHistory[0].name }}</p>
-                </div>
-              </div>
-
-              <!-- Upgrade Cores -->
-              <div v-if="gameStore.coreHistory.length > 1" class="flex flex-col gap-1.5 mb-2">
-                <div v-for="(uCore, uIdx) in gameStore.coreHistory.slice(1)" :key="`${uCore.id}-${uIdx}`" class="flex items-center gap-2 p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                  <span class="text-xs">⚔️</span>
-                  <img :src="uCore.icon" :alt="uCore.name" @error="$event.target.src = '/icons/cores/default.svg'" class="w-5 h-5 object-contain" />
-                  <div class="overflow-hidden text-left">
-                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Upgrade {{ uIdx + 1 }}</p>
-                    <p class="text-xs text-white font-bold truncate">{{ uCore.name }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="gameStore.coreHistory.length === 0" class="text-xs text-gray-400 italic mb-2">
-                No active core
-              </div>
-
-              <p class="text-xs text-gray-200 font-mono pt-1.5 border-t border-white/10">Score: <span class="text-white font-bold">{{ score }}</span></p>
+            class="absolute top-full left-0 mt-3 w-56 bg-darkNavy/90 backdrop-blur-xl border border-white/10 shadow-2xl z-50 rounded-b-lg overflow-hidden">
+            <div class="px-5 py-3 border-b border-white/10 bg-black/20">
+              <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Match in progress</p>
+              <p class="text-sm text-gray-200 font-mono mt-1">Score: <span class="text-white font-bold">{{ score }}</span></p>
             </div>
             <button @click.stop="goHome"
               class="w-full flex items-center gap-3 px-5 py-3.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors text-left">
