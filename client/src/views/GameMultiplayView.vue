@@ -11,18 +11,38 @@
     <div class="absolute inset-0 bg-black/45 pointer-events-none z-0"></div>
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
+    <div v-if="isMultiplayer" class="absolute top-4 left-4 z-30 flex items-center gap-3">
 
-    <!-- Opponent Widget (self-positions at top-right, includes core icon + tooltip) -->
-    <OpponentWidget
-      v-if="isMultiplayer"
-      :visible="isMultiplayer"
-      :name="opponentName"
-      :avatar="opponentAvatar"
-      :score="opponentScore"
-      :core-icon="opponentCoreIconUrl"
-      :core-details="opponentCoreDetails"
-    />
+      <OpponentWidget :visible="isMultiplayer" :name="opponentName" :avatar="opponentAvatar" :score="opponentScore" />
 
+      <div v-if="opponentCoreDetails" class="relative flex items-center justify-center">
+
+        <img :src="opponentCoreIconUrl" :alt="opponentCoreDetails.name"
+          class="w-10 h-10 object-contain cursor-help drop-shadow-md transition-transform hover:scale-110 active:scale-95 bg-black/40 p-1.5 rounded-xl border border-white/10"
+          @mouseenter="showOpponentCoreTooltip = true" @mouseleave="showOpponentCoreTooltip = false"
+          @touchstart.passive="handleOpponentTouchStart" @touchend="handleOpponentTouchEnd"
+          @touchcancel="handleOpponentTouchEnd" @contextmenu.prevent="() => false" />
+
+        <transition name="fade">
+          <div v-if="showOpponentCoreTooltip"
+            class="absolute top-full mt-3 left-0 z-50 bg-darkNavy/95 border border-white/20 p-4 rounded-xl shadow-2xl w-64 pointer-events-none backdrop-blur-xl">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange via-hexred to-transparent"></div>
+
+            <h4 class="text-sm font-black uppercase tracking-widest text-orange mb-1 drop-shadow-sm">
+              {{ opponentCoreDetails.name }}
+            </h4>
+
+            <div class="text-[10px] text-lightBlue font-mono uppercase tracking-wider mb-2">
+              Stats: {{ opponentCoreDetails.stats || 'N/A' }}
+            </div>
+
+            <p class="text-xs text-gray-300 leading-relaxed font-medium">
+              {{ opponentCoreDetails.description }}
+            </p>
+          </div>
+        </transition>
+      </div>
+    </div>
     <!-- Dice Roll Shift Overlay  -->
     <transition name="fade">
       <div v-if="isShifting"
@@ -557,8 +577,8 @@
     <!-- Opponent Toast Notifications Stack -->
     <div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2 pointer-events-none">
       <transition-group name="toast-slide">
-        <div v-for="toast in toasts" :key="toast.id" 
-             class="bg-darkNavy/90 border border-white/10 shadow-lg rounded-lg px-4 py-3 flex items-center gap-3 backdrop-blur-sm min-w-[200px]">
+        <div v-for="toast in toasts" :key="toast.id"
+          class="bg-darkNavy/90 border border-white/10 shadow-lg rounded-lg px-4 py-3 flex items-center gap-3 backdrop-blur-sm min-w-[200px]">
           <span class="text-xl">{{ toast.icon }}</span>
           <span class="text-sm font-bold tracking-widest uppercase" :class="toast.color">
             {{ toast.message }}
@@ -738,34 +758,59 @@ const opponentSessionId = ref('')
 const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
 const waitingForOpponent = ref(false)
 const isWaitingForNextRound = ref(false)
+// Lookup the core details from the master list
+const opponentCoreDetails = computed(() => {
+  if (!opponentActiveCoreId.value || allCores.value.length === 0) return null
+  return allCores.value.find(c => c.id === opponentActiveCoreId.value) || null
+})
 
+// Resolve the correct icon URL
+const opponentCoreIconUrl = computed(() => {
+  if (!opponentCoreDetails.value) return ''
+  return getCoreIconPath(opponentCoreDetails.value.name, opponentCoreDetails.value.icon_url)
+})
+function handleOpponentTouchStart() {
+  if (opponentTouchTimer) clearTimeout(opponentTouchTimer)
+
+  // Start the timer. If they hold for 500ms, show the tooltip.
+  opponentTouchTimer = setTimeout(() => {
+    showOpponentCoreTooltip.value = true
+  }, HOLD_DELAY_MS)
+}
+
+function handleOpponentTouchEnd() {
+  // If they lift their finger before 500ms, clear the timer (counts as a tap)
+  if (opponentTouchTimer) {
+    clearTimeout(opponentTouchTimer)
+    opponentTouchTimer = null
+  }
+  showOpponentCoreTooltip.value = false
+}
 
 function updateOpponentData(state: any) {
   if (!state || !state.players || !currentRoom) return
 
-  if (!opponentSessionId.value) {
-    state.players.forEach((player: any, sId: string) => {
-      if (sId !== currentRoom?.sessionId) {
-        opponentSessionId.value = sId
-      }
-    })
-  }
+  let foundOpponent = false
 
-  const opponent = opponentSessionId.value ? state.players.get(opponentSessionId.value) : null
-  if (opponent) {
-    opponentScore.value = opponent.score || 0
-    opponentName.value = opponent.name || 'Opponent'
-    opponentAvatar.value = opponent.avatar || ''
+  state.players.forEach((player: any, sId: string) => {
+    if (sId !== currentRoom.sessionId) {
+      opponentScore.value = player.score || 0
+      opponentName.value = player.name || 'Opponent'
+      opponentAvatar.value = player.avatar || ''
 
-    opponentActiveCoreId.value = opponent.activeCoreId || opponent.active_core_id || null
-  } else {
+      // Trích xuất chính xác Core ID của đối thủ cho Widget
+      opponentActiveCoreId.value = player.activeCoreId || player.active_core_id || null
+
+      foundOpponent = true
+    }
+  })
+
+  if (!foundOpponent) {
     opponentName.value = 'Waiting...'
     opponentScore.value = 0
     opponentActiveCoreId.value = null
   }
 }
-
-
 const tutorial = useTutorial()
 
 const questionsAnswered = ref(0)
@@ -1125,6 +1170,11 @@ const oracleHintText = computed(() => {
   if (level === 0) return ''
   return currentQuestion.value.oracle_hints?.[level - 1] || ''
 })
+// --- Opponent Core State ---
+const opponentActiveCoreId = ref<string | null>(null)
+const showOpponentCoreTooltip = ref(false)
+let opponentTouchTimer: ReturnType<typeof setTimeout> | null = null
+const HOLD_DELAY_MS = 500 // 500ms delay to differentiate a hold from a tap
 // ── Skip Question Logic  ───────────────────────────────────────────
 
 
@@ -1413,7 +1463,7 @@ async function checkAnswer() {
     audioService.playCorrect()
     gameState.value = 'correct'
     currentCombo.value++
-    
+
     if (currentRoom) {
       const family = getCoreFamily(gameStore.activeCoreName || '')
       if (family === 'combo' && currentCombo.value > 0 && currentCombo.value % 5 === 0) {
@@ -1887,6 +1937,7 @@ onMounted(async () => {
     currentRoom.onStateChange((state) => {
       updateOpponentData(state)
     })
+    await fetchPandoraPool()
     currentRoom.onMessage('opponent_left', () => {
       alert("Your opponent has left the match! You will be returned to the main menu.")
       goHome()
@@ -2503,13 +2554,14 @@ onUnmounted(() => {
 .toast-slide-leave-active {
   transition: all 0.3s ease;
 }
+
 .toast-slide-enter-from {
   opacity: 0;
   transform: translateX(50px);
 }
+
 .toast-slide-leave-to {
   opacity: 0;
   transform: translateY(-20px);
 }
-
 </style>

@@ -112,7 +112,7 @@
           <button @click="handleCardReroll(index)"
             :id="index === 0 ? 'tutorial-reroll' : undefined"
             :disabled="rerolledSlots[index] || rerollingIndex !== null || loading"
-            class="group relative px-6 py-2.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg disabled:cursor-not-allowed"
+            class="group relative px-6 py-2.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-lg`	 disabled:cursor-not-allowed"
             :class="rerolledSlots[index]
               ? 'bg-black/60 border border-gray-700 opacity-40 blur-[1px] grayscale'
               : 'bg-black/40 backdrop-blur-md border border-white/20 hover:border-lightBlue hover:bg-white/10 cursor-pointer'">
