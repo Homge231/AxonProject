@@ -29,21 +29,64 @@
           {{ score }}
         </span>
       </div>
+
+      <!-- Opponent Active Core Icon -->
+      <template v-if="coreDetails">
+        <div class="w-[1px] h-10 bg-white/10"></div>
+
+        <div class="relative flex items-center justify-center">
+          <img
+            :src="coreIcon"
+            :alt="coreDetails.name"
+            class="w-10 h-10 object-contain cursor-pointer drop-shadow-md transition-transform hover:scale-110 active:scale-95 bg-white/5 p-1 rounded-lg border border-white/10"
+            @mouseenter="showTooltip = true"
+            @mouseleave="hideTooltip"
+            @touchstart.passive="startHold"
+            @touchend="hideTooltip"
+            @touchcancel="hideTooltip"
+            @dragstart.prevent
+            @contextmenu.prevent="() => false"
+          />
+
+          <transition name="fade">
+            <CoreTooltip
+              v-if="showTooltip"
+              :core="coreDetails"
+              class="!absolute !top-full !bottom-auto !right-0 !left-auto !-translate-x-0 !mt-3 !mb-0"
+            />
+          </transition>
+        </div>
+      </template>
     </div>
   </transition>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import CoreTooltip from './CoreTooltip.vue'
 
 const props = defineProps<{
   visible: boolean
   name: string
   avatar: string
   score: number
+  coreIcon?: string
+  coreDetails?: {
+    id: string
+    name: string
+    description: string
+    flat_buff?: number
+    multiplier_buff?: number
+    tier?: number
+    core_type?: string
+    classification?: string
+  } | null
 }>()
 
 const isScoreChanging = ref(false)
+const showTooltip = ref(false)
+let holdTimer: ReturnType<typeof setTimeout> | null = null
+const HOLD_DELAY_MS = 500
 
 watch(() => props.score, (newVal, oldVal) => {
   if (newVal !== oldVal) {
@@ -53,6 +96,21 @@ watch(() => props.score, (newVal, oldVal) => {
     }, 300)
   }
 })
+
+function startHold() {
+  if (holdTimer) clearTimeout(holdTimer)
+  holdTimer = setTimeout(() => {
+    showTooltip.value = true
+  }, HOLD_DELAY_MS)
+}
+
+function hideTooltip() {
+  if (holdTimer) {
+    clearTimeout(holdTimer)
+    holdTimer = null
+  }
+  showTooltip.value = false
+}
 </script>
 
 <style scoped>
@@ -83,5 +141,15 @@ watch(() => props.score, (newVal, oldVal) => {
   100% {
     transform: scale(1);
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

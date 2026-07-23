@@ -12,11 +12,15 @@
 
     <div class="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0"></div>
 
-    <OpponentWidget 
-      :visible="isMultiplayer" 
-      :name="opponentName" 
-      :avatar="opponentAvatar" 
-      :score="opponentScore" 
+    <!-- Opponent Widget (self-positions at top-right, includes core icon + tooltip) -->
+    <OpponentWidget
+      v-if="isMultiplayer"
+      :visible="isMultiplayer"
+      :name="opponentName"
+      :avatar="opponentAvatar"
+      :score="opponentScore"
+      :core-icon="opponentCoreIconUrl"
+      :core-details="opponentCoreDetails"
     />
 
     <!-- Dice Roll Shift Overlay  -->
@@ -240,7 +244,8 @@
               <div class="w-full flex flex-col gap-6">
                 <div v-if="currentQuestion.hint"
                   class="relative overflow-hidden bg-blue/10 backdrop-blur-xl border border-blue/30 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(59,130,246,0.15)] text-center w-full transition-all duration-300 transform hover:-translate-y-1">
-                  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
+                  <div
+                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue to-transparent">
                   </div>
                   <div class="flex items-center justify-center gap-1.5 mb-3 opacity-90">
                     <svg class="w-4 h-4 text-lightBlue drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
@@ -397,10 +402,8 @@
           </h2>
           <div class="w-20 h-1 bg-gradient-to-r from-transparent via-hexred to-transparent mx-auto mb-10 mt-6"></div>
 
-          <div
-            v-if="isMultiplayer"
-            class="grid grid-cols-3 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0"
-          >
+          <div v-if="isMultiplayer"
+            class="grid grid-cols-3 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
             <div>
               <p class="text-[10px] text-orange uppercase tracking-widest mb-1 font-bold">Your Score</p>
               <p class="text-4xl font-black text-white drop-shadow-md">{{ score }}</p>
@@ -414,10 +417,8 @@
               <p class="text-4xl font-black text-gray-300 drop-shadow-md">{{ questionsAnswered }}</p>
             </div>
           </div>
-          <div
-            v-else
-            class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0"
-          >
+          <div v-else
+            class="grid grid-cols-2 divide-x divide-white/10 mb-6 bg-black/30 py-4 rounded-xl border border-white/5 flex-shrink-0">
             <div>
               <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Final Score</p>
               <p class="text-4xl font-black text-orange drop-shadow-md">{{ score }}</p>
@@ -472,9 +473,7 @@
               class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-bold text-sm tracking-widest uppercase transition-colors rounded-lg">Home</button>
 
             <!-- Next Round (Rounds 1 & 2) -->
-            <button v-if="!matchStore.isFinalRound()" 
-              :disabled="waitingForOpponent"
-              @click="goToUpgrade"
+            <button v-if="!matchStore.isFinalRound()" :disabled="waitingForOpponent" @click="goToUpgrade"
               class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-orange to-hexred overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed">
               <div
                 class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -535,12 +534,17 @@
 
     <!-- Waiting for opponent next round overlay -->
     <transition name="fade">
-      <div v-if="isWaitingForNextRound" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md">
+      <div v-if="isWaitingForNextRound"
+        class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md">
         <svg class="w-16 h-16 text-lightBlue animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
-        <p class="text-xl font-black uppercase tracking-widest text-lightBlue animate-pulse">Waiting for opponent to choose upgrade...</p>
+        <p class="text-xl font-black uppercase tracking-widest text-lightBlue animate-pulse">Waiting for opponent to
+          choose
+          upgrade...</p>
       </div>
     </transition>
 
@@ -563,6 +567,7 @@ import { useMatchTimer } from '../composables/game/useMatchTimer'
 import { useQuestionQueue } from '../composables/game/useQuestionQueue'
 import { currentRoom, leaveMatchRoom } from '../services/multiplayerService'
 import OpponentWidget from '../components/game/OpponentWidget.vue'
+import CoreTooltip from '../components/game/CoreTooltip.vue'
 import AegisShieldIndicator from '../components/game/AegisShieldIndicator.vue'
 import ComboCoreIndicator from '../components/game/ComboCoreIndicator.vue'
 import MissionCoreIndicator from '../components/game/MissionCoreIndicator.vue'
@@ -579,10 +584,10 @@ import { useGameStore } from '../stores/gameStore'
 import { getCoreFamily } from '../game/cores/families'
 import { useMatchStore } from '../stores/matchStore'
 import {
-  initAudio, 
-  playKeystroke, 
-  playComboTone, 
-  playComboBreak, 
+  initAudio,
+  playKeystroke,
+  playComboTone,
+  playComboBreak,
   playFireBurst,
   playJackpot,
   playShieldGain,
@@ -667,14 +672,45 @@ const isMultiplayer = computed(() => route.path === '/game/multiplayer')
 const opponentName = ref('')
 const opponentAvatar = ref('')
 const opponentScore = ref(0)
+// --- STATE CHO TOOLTIP & DATA ĐỐI THỦ ---
+const opponentActiveCoreId = ref<string | null>(null)
+const showOpponentCoreTooltip = ref(false)
+let opponentHoldTimer: ReturnType<typeof setTimeout> | null = null
+const HOLD_DELAY_MS = 500
+
+const opponentCoreDetails = computed(() => {
+  if (!opponentActiveCoreId.value || allCores.value.length === 0) return null
+  return allCores.value.find(c => c.id === opponentActiveCoreId.value) || null
+})
+
+const opponentCoreIconUrl = computed(() => {
+  if (!opponentCoreDetails.value) return ''
+  return getCoreIconPath(opponentCoreDetails.value.name, opponentCoreDetails.value.icon_url)
+})
+
+function handleOpponentHoldStart() {
+  if (opponentHoldTimer) clearTimeout(opponentHoldTimer)
+  opponentHoldTimer = setTimeout(() => {
+    showOpponentCoreTooltip.value = true
+  }, HOLD_DELAY_MS)
+}
+
+function handleOpponentHoldEnd() {
+  if (opponentHoldTimer) {
+    clearTimeout(opponentHoldTimer)
+    opponentHoldTimer = null
+  }
+  showOpponentCoreTooltip.value = false
+}
 const opponentSessionId = ref('')
 const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
 const waitingForOpponent = ref(false)
 const isWaitingForNextRound = ref(false)
 
+
 function updateOpponentData(state: any) {
   if (!state || !state.players || !currentRoom) return
-  
+
   if (!opponentSessionId.value) {
     state.players.forEach((player: any, sId: string) => {
       if (sId !== currentRoom.sessionId) {
@@ -688,10 +724,12 @@ function updateOpponentData(state: any) {
     opponentScore.value = opponent.score || 0
     opponentName.value = opponent.name || 'Opponent'
     opponentAvatar.value = opponent.avatar || ''
-    console.log(`[Multiplayer] Updated opponent ${opponent.name} score to: ${opponent.score}`)
+
+    opponentActiveCoreId.value = opponent.activeCoreId || opponent.active_core_id || null
   } else {
     opponentName.value = 'Waiting...'
     opponentScore.value = 0
+    opponentActiveCoreId.value = null
   }
 }
 
@@ -1039,7 +1077,7 @@ function triggerShapeshift() {
     setTimeout(() => {
       shiftAnnouncement.value = ''
     }, 2000)
-  }, 1200) 
+  }, 1200)
 }
 // Oracle progressive reveal: 3 levels, increasing cost
 const ORACLE_MAX_LEVEL = 3
@@ -1241,15 +1279,15 @@ async function skipQuestion() {
           if (data.timer_delta) {
             addTime(data.timer_delta)
             if (data.timer_delta > 0) {
-              spawnPointPopup(0, 'custom', `+${data.timer_delta/1000}s TIME!`)
+              spawnPointPopup(0, 'custom', `+${data.timer_delta / 1000}s TIME!`)
             }
           }
-          
+
           if (data.forgive_mistake) {
             // Restore proactive resets
             currentCombo.value = capturedCombo
             missionProgress.value = capturedMission
-            
+
             triggerScoreFlash('forgive')
             spawnPointPopup(0, 'custom', 'FORGIVEN!')
           }
@@ -1279,7 +1317,7 @@ async function skipQuestion() {
 // ── Input handling ────────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent) {
   initAudio()
-  
+
   if (gameState.value === 'timeout') return
   if (gameState.value !== 'playing') return
   if (menuOpen.value || confirmQuit.value) return
@@ -1306,10 +1344,10 @@ function handleKeydown(e: KeyboardEvent) {
     if (typedLetters.value.length >= maxLen) return
 
     typedLetters.value = [...typedLetters.value, e.key.toLowerCase()]
-    
+
     // Play keystroke sound
     playKeystroke(isSpeedsterCore.value, isSpeedsterCore.value ? 1.15 : 1.0)
-    
+
     if (typedLetters.value.length === maxLen) checkAnswer()
   }
 }
@@ -1412,7 +1450,7 @@ async function checkAnswer() {
 
       if (res.ok) {
         const data = await res.json()
-        
+
         if (data.lock_input_ms) {
           lockInputMs = data.lock_input_ms
         }
@@ -1442,7 +1480,7 @@ async function checkAnswer() {
           addTime(data.timer_delta)
           // Optional: spawn some text popup for +1s
           if (data.timer_delta > 0) {
-            spawnPointPopup(0, 'custom', `+${data.timer_delta/1000}s TIME!`)
+            spawnPointPopup(0, 'custom', `+${data.timer_delta / 1000}s TIME!`)
           }
         }
 
@@ -1450,19 +1488,19 @@ async function checkAnswer() {
           pauseTimerFor(data.pause_timer_ms)
           spawnPointPopup(0, 'custom', 'TIME FROZEN!')
         }
-        
+
         if (data.shield_delta) {
           if (data.shield_delta > 0) {
             spawnPointPopup(0, 'custom', '+1 SHIELD!')
           }
         }
-        
+
         // Handle forgive_mistake (prevent streak loss)
         if (!data.correct && data.forgive_mistake) {
           // Restore proactive resets
           currentCombo.value = capturedCombo
           missionProgress.value = capturedMission
-          
+
           triggerScoreFlash('forgive')
           spawnPointPopup(0, 'custom', 'FORGIVEN!')
         }
@@ -1518,7 +1556,7 @@ async function checkAnswer() {
     } finally {
       if (!isCorrectLocal && mySeq === submitAnswerSeq) {
         const feedbackDelay = lockInputMs > 0 ? lockInputMs : FEEDBACK_MS
-        
+
         if (lockInputMs > 0) {
           triggerScoreFlash('wrong') // Trigger a stronger flash or effect
           spawnPointPopup(0, 'custom', 'SYSTEM OVERLOAD!')
@@ -1725,7 +1763,7 @@ async function startFirstRound() {
   } else {
     sessionId.value = gameStore.sessionId
   }
-  if (isPandoraMode.value) {
+  if (isPandoraMode.value || isMultiplayer.value) {
     await fetchPandoraPool()
   }
   await fetchBatch()
@@ -1775,7 +1813,7 @@ watch(activeCoreModule, (newCore) => {
 
 watch(() => currentCombo.value, (newVal) => {
   const isComboActive = effectiveCores.value.some(c => c.name.toLowerCase().includes('combo') || c.name.toLowerCase().includes('strike') || c.name.toLowerCase().includes('power'))
-  
+
   if (!isComboActive) return
 
   if (newVal >= 2) {
@@ -1792,7 +1830,7 @@ onMounted(async () => {
       updateOpponentData(state)
     })
     currentRoom.onMessage('opponent_left', () => {
-      alert("Đối thủ đã thoát trận đấu! Bạn sẽ được đưa về màn hình chính.")
+      alert("Your opponent has left the match! You will be returned to the main menu.")
       goHome()
     })
     currentRoom.onMessage('start_recap_countdown', () => {
@@ -1826,9 +1864,12 @@ onMounted(async () => {
   } else {
     sessionId.value = gameStore.sessionId
   }
-  if (isPandoraMode.value) {
+
+  // 👇 [FIX QUAN TRỌNG]: Tải dữ liệu toàn bộ Core cho cả Pandora Mode và Multiplayer Mode
+  if (isPandoraMode.value || isMultiplayer.value) {
     await fetchPandoraPool()
   }
+
   await fetchBatch()
   await loadQuestion()
   sendScoreUpdate(0)
@@ -2323,9 +2364,11 @@ onUnmounted(() => {
   from {
     transform: rotate(0deg) scale(0.9);
   }
+
   50% {
     transform: rotate(180deg) scale(1.1);
   }
+
   to {
     transform: rotate(360deg) scale(0.9);
   }
