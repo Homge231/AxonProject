@@ -16,7 +16,7 @@ function saveReconnectionToken(room: Room) {
   }
 }
 
-export function clearReconnectionToken() {
+function clearReconnectionToken() {
   sessionStorage.removeItem('naenra_reconnection_token');
 }
 

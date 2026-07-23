@@ -71,12 +71,12 @@ export function getUpgradesForCore(coreName: string, targetTier: number): string
   return []
 }
 
-export function isPowerCore(coreName: string): boolean {
+function isPowerCore(coreName: string): boolean {
   const family = getCoreFamily(coreName)
   return family ? ['power', 'balanced', 'combo', 'speedster'].includes(family) : false
 }
 
-export function isEffectCore(coreName: string): boolean {
+function isEffectCore(coreName: string): boolean {
   const family = getCoreFamily(coreName)
   return family ? ['aegis', 'mission', 'oracle', 'pandora'].includes(family) : false
 }

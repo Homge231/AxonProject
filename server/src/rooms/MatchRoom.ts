@@ -11,11 +11,6 @@ export class MatchRoom extends Room<{ state: MatchState }> {
   onCreate(options: any) {
     this.state = new MatchState();
 
-    this.onMessage("ping", (client, message) => {
-      console.log(`Received ping from ${client.sessionId}:`, message);
-      client.send("pong", "Server acknowledges ping!");
-    });
-
     this.onMessage("updateMetadata", (client, message) => {
       console.log(`Update metadata from ${client.sessionId}:`, message);
       if (message.vocabularyLevel) this.state.metadata.vocabularyLevel = message.vocabularyLevel;

@@ -746,9 +746,6 @@ const opponentScore = ref(0)
 // --- STATE CHO TOOLTIP & DATA ĐỐI THỦ ---
 const opponentActiveCoreId = ref<string | null>(null)
 const showOpponentCoreTooltip = ref(false)
-let opponentHoldTimer: ReturnType<typeof setTimeout> | null = null
-let opponentTouchTimer: ReturnType<typeof setTimeout> | null = null
-const HOLD_DELAY_MS = 500
 
 const opponentCoreDetails = computed(() => {
   if (!opponentActiveCoreId.value || allCores.value.length === 0) return null
@@ -773,42 +770,8 @@ watch([opponentActiveCoreId, () => allCores.value.length], ([newCoreId]) => {
   }
 }, { immediate: true })
 
-function handleOpponentHoldStart() {
-  if (opponentHoldTimer) clearTimeout(opponentHoldTimer)
-  opponentHoldTimer = setTimeout(() => {
-    showOpponentCoreTooltip.value = true
-  }, HOLD_DELAY_MS)
-}
-
-function handleOpponentHoldEnd() {
-  if (opponentHoldTimer) {
-    clearTimeout(opponentHoldTimer)
-    opponentHoldTimer = null
-  }
-  showOpponentCoreTooltip.value = false
-}
-const opponentSessionId = ref('')
-const currentUserId = computed(() => authStore.user?.id || authStore.profile?.id)
 const waitingForOpponent = ref(false)
 const isWaitingForNextRound = ref(false)
-
-function handleOpponentTouchStart() {
-  if (opponentTouchTimer) clearTimeout(opponentTouchTimer)
-
-  // Start the timer. If they hold for 500ms, show the tooltip.
-  opponentTouchTimer = setTimeout(() => {
-    showOpponentCoreTooltip.value = true
-  }, HOLD_DELAY_MS)
-}
-
-function handleOpponentTouchEnd() {
-  // If they lift their finger before 500ms, clear the timer (counts as a tap)
-  if (opponentTouchTimer) {
-    clearTimeout(opponentTouchTimer)
-    opponentTouchTimer = null
-  }
-  showOpponentCoreTooltip.value = false
-}
 
 function updateOpponentData(state: any) {
   if (!state || !state.players || !currentRoom) return
@@ -1914,23 +1877,6 @@ function handleOutsideClick(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     menuOpen.value = false
   }
-}
-
-async function startFirstRound() {
-  gameState.value = 'loading'
-  if (!gameStore.sessionId) {
-    await createSession()
-  } else {
-    sessionId.value = gameStore.sessionId
-  }
-  // Always fetch full cores list
-  await fetchPandoraPool()
-  await fetchBatch()
-  await loadQuestion()
-  gameState.value = 'playing'
-  startMatchTimer()
-  document.addEventListener('click', handleOutsideClick)
-  window.addEventListener('beforeunload', handleBeforeUnload)
 }
 
 function refocusInput() {
