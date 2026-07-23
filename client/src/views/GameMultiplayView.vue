@@ -151,10 +151,15 @@
       <!-- Active Core History Badges in Center -->
       <div v-if="gameStore.coreHistory.length > 0" class="hidden md:flex flex-row items-center gap-2">
         <div v-for="(core, index) in gameStore.coreHistory" :key="`${core.id}-${index}`"
-          class="flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300"
+          class="relative flex flex-col items-center px-4 py-1.5 rounded-lg bg-black/20 shadow-md backdrop-blur-md transition-all duration-300 cursor-pointer hover:bg-black/40"
           :class="[
             index === gameStore.coreHistory.length - 1 ? 'border border-white/20 opacity-100 scale-105' : 'border border-white/5 opacity-60 scale-95'
-          ]">
+          ]"
+          @mouseenter="hoveredRoundCoreIndex = index"
+          @mouseleave="hoveredRoundCoreIndex = null"
+          @touchstart.passive="handleRoundCoreTouchStart(index)"
+          @touchend="handleRoundCoreTouchEnd"
+          @touchcancel="handleRoundCoreTouchEnd">
           <span class="text-[8px] font-bold uppercase tracking-wider mb-0.5"
             :class="[index === gameStore.coreHistory.length - 1 ? 'text-gray-300' : 'text-gray-500']">
             {{ index === gameStore.coreHistory.length - 1 && isPandoraMode ? basePandoraCoreName : `Round ${index + 1}`
@@ -169,6 +174,14 @@
             </span> {{ (index === gameStore.coreHistory.length - 1 && isPandoraMode) ? 'Shifted: ' +
               activeCoreNameDynamic : core.name }}
           </span>
+
+          <transition name="fade">
+            <CoreTooltip
+              v-if="hoveredRoundCoreIndex === index && getCoreDetailsByItem(core)"
+              :core="getCoreDetailsByItem(core)!"
+              class="!absolute !top-full !mt-2 !left-1/2 !-translate-x-1/2 z-50 pointer-events-none"
+            />
+          </transition>
         </div>
       </div>
 
@@ -1059,6 +1072,37 @@ const isShifting = ref(false)
 const shiftAnnouncement = ref('')
 const pandoraPool = ref<any[]>([])
 const allCores = ref<any[]>([])
+
+const hoveredRoundCoreIndex = ref<number | null>(null)
+let roundCoreHoldTimer: ReturnType<typeof setTimeout> | null = null
+
+function getCoreDetailsByItem(coreItem: { id: string; name: string }) {
+  if (!coreItem || allCores.value.length === 0) return null
+  const found = allCores.value.find(c => c.id === coreItem.id || c.name.toLowerCase() === coreItem.name.toLowerCase())
+  if (found) return found
+  return {
+    id: coreItem.id,
+    name: coreItem.name,
+    description: 'Core details not available.',
+    flat_buff: 0,
+    multiplier_buff: 1
+  }
+}
+
+function handleRoundCoreTouchStart(index: number) {
+  if (roundCoreHoldTimer) clearTimeout(roundCoreHoldTimer)
+  roundCoreHoldTimer = setTimeout(() => {
+    hoveredRoundCoreIndex.value = index
+  }, 500)
+}
+
+function handleRoundCoreTouchEnd() {
+  if (roundCoreHoldTimer) {
+    clearTimeout(roundCoreHoldTimer)
+    roundCoreHoldTimer = null
+  }
+  hoveredRoundCoreIndex.value = null
+}
 
 async function fetchPandoraPool() {
   try {
