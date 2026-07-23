@@ -430,6 +430,7 @@ async function submitCore(core: CoreOption) {
 
   waitingForOpponent.value = true
   if (currentRoom) {
+    currentRoom.send("update_core", { coreId: core.id })
     currentRoom.send("ready_next_round")
   }
 }

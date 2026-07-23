@@ -1933,6 +1933,9 @@ watch(() => currentCombo.value, (newVal) => {
 
 onMounted(async () => {
   if (isMultiplayer.value && currentRoom) {
+    if (activeCoreId.value) {
+      currentRoom.send("update_core", { coreId: activeCoreId.value })
+    }
     updateOpponentData(currentRoom.state)
     currentRoom.onStateChange((state) => {
       updateOpponentData(state)

@@ -41,6 +41,14 @@ export class MatchRoom extends Room<{ state: MatchState }> {
       }
     });
 
+    this.onMessage("update_core", (client, message: { coreId: string }) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player) {
+        player.activeCoreId = message.coreId;
+        console.log(`Updated player ${player.name} activeCoreId to ${player.activeCoreId}`);
+      }
+    });
+
     this.onMessage("player_milestone", (client, message: { type: string, message: string, icon: string, color: string }) => {
       this.broadcast("opponent_milestone", message, { except: client });
     });
