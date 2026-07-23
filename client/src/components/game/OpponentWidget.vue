@@ -74,8 +74,9 @@
               </span>
 
               <img
-                :src="cDetails.icon || coreIcon || '/icons/cores/default.svg'"
+                :src="cDetails.icon || getCoreIconPath(cDetails.name) || coreIcon || '/icons/cores/default.svg'"
                 :alt="cDetails.name"
+                @error="$event.target.src = '/icons/cores/default.svg'"
                 class="w-10 h-10 object-contain cursor-pointer drop-shadow-md transition-transform group-hover:scale-110 active:scale-95 bg-white/5 p-1 rounded-lg border"
                 :class="cIdx === 0 ? 'border-emerald-500/40' : 'border-blue-500/40'"
                 @dragstart.prevent
@@ -102,6 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import CoreTooltip from './CoreTooltip.vue'
+import { getCoreIconPath } from '../../game/cores/icons'
 
 interface CoreItem {
   id: string

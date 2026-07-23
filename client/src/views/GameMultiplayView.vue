@@ -732,16 +732,16 @@ const opponentCoreIconUrl = computed(() => {
 
 const opponentCoresHistory = ref<any[]>([])
 
-watch(opponentActiveCoreId, (newCoreId) => {
-  if (!newCoreId || allCores.value.length === 0) return
-  const found = allCores.value.find(c => c.id === newCoreId)
+watch([opponentActiveCoreId, () => allCores.value], ([newCoreId, coresList]) => {
+  if (!newCoreId || !coresList || coresList.length === 0) return
+  const found = coresList.find(c => c.id === newCoreId)
   if (found && !opponentCoresHistory.value.some(c => c.id === found.id)) {
     opponentCoresHistory.value.push({
       ...found,
       icon: getCoreIconPath(found.name, found.icon_url)
     })
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 function handleOpponentHoldStart() {
   if (opponentHoldTimer) clearTimeout(opponentHoldTimer)
