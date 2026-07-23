@@ -718,6 +718,7 @@ const opponentScore = ref(0)
 const opponentActiveCoreId = ref<string | null>(null)
 const showOpponentCoreTooltip = ref(false)
 let opponentHoldTimer: ReturnType<typeof setTimeout> | null = null
+let opponentTouchTimer: ReturnType<typeof setTimeout> | null = null
 const HOLD_DELAY_MS = 500
 
 const opponentCoreDetails = computed(() => {
@@ -734,14 +735,14 @@ const opponentCoresHistory = ref<any[]>([])
 
 watch([opponentActiveCoreId, () => allCores.value], ([newCoreId, coresList]) => {
   if (!newCoreId || !coresList || coresList.length === 0) return
-  const found = coresList.find(c => c.id === newCoreId)
+  const found = (coresList as any[]).find(c => c.id === newCoreId)
   if (found && !opponentCoresHistory.value.some(c => c.id === found.id)) {
     opponentCoresHistory.value.push({
       ...found,
       icon: getCoreIconPath(found.name, found.icon_url)
     })
   }
-}, { immediate: true, deep: true })
+}, { immediate: true })
 
 function handleOpponentHoldStart() {
   if (opponentHoldTimer) clearTimeout(opponentHoldTimer)
@@ -1780,8 +1781,9 @@ async function restartMatch() {
     return
   }
 
-  // Next Round
+  // Next Round — also reset opponent core history so Round 2/3 builds fresh
   currentPandoraCoreId.value = null
+  opponentCoresHistory.value = []
   matchStore.incrementRound()
   resetTypingBoard()
 
