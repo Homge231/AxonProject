@@ -733,9 +733,9 @@ const opponentCoreIconUrl = computed(() => {
 
 const opponentCoresHistory = ref<any[]>([])
 
-watch([opponentActiveCoreId, () => allCores.value], ([newCoreId, coresList]) => {
-  if (!newCoreId || !coresList || coresList.length === 0) return
-  const found = (coresList as any[]).find(c => c.id === newCoreId)
+watch([opponentActiveCoreId, () => allCores.value.length], ([newCoreId]) => {
+  if (!newCoreId || allCores.value.length === 0) return
+  const found = allCores.value.find((c: any) => c.id === newCoreId)
   if (found && !opponentCoresHistory.value.some(c => c.id === found.id)) {
     opponentCoresHistory.value.push({
       ...found,
@@ -1891,9 +1891,8 @@ async function startFirstRound() {
   } else {
     sessionId.value = gameStore.sessionId
   }
-  if (isPandoraMode.value || isMultiplayer.value) {
-    await fetchPandoraPool()
-  }
+  // Always fetch full cores list
+  await fetchPandoraPool()
   await fetchBatch()
   await loadQuestion()
   gameState.value = 'playing'
@@ -2013,10 +2012,8 @@ onMounted(async () => {
     sessionId.value = gameStore.sessionId
   }
 
-  // 👇 [FIX QUAN TRỌNG]: Tải dữ liệu toàn bộ Core cho cả Pandora Mode và Multiplayer Mode
-  if (isPandoraMode.value || isMultiplayer.value) {
-    await fetchPandoraPool()
-  }
+  // Always fetch full cores list — needed for OpponentWidget history, core tooltips, and Pandora
+  await fetchPandoraPool()
 
   await fetchBatch()
   await loadQuestion()
