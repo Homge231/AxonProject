@@ -51,7 +51,8 @@
       <transition name="fade">
         <div
           v-if="isCorePopupOpen && activeCoresList.length > 0"
-          class="relative bg-darkNavy/90 backdrop-blur-xl border border-white/20 p-3 rounded-xl shadow-2xl flex flex-col gap-2 z-40"
+          class="bg-darkNavy/90 backdrop-blur-xl border border-white/20 p-3 rounded-xl shadow-2xl flex flex-col gap-2 z-40"
+          style="position: relative; overflow: visible;"
         >
           <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Active Cores:</span>
 
@@ -59,7 +60,8 @@
             <div
               v-for="(cDetails, cIdx) in activeCoresList"
               :key="cDetails.id || cIdx"
-              class="relative flex flex-col items-center group cursor-pointer"
+              class="flex flex-col items-center group cursor-pointer"
+              style="position: relative;"
               @mouseenter="hoveredCoreIdx = cIdx"
               @mouseleave="hoveredCoreIdx = null"
               @touchstart.passive="startHold(cIdx)"
@@ -76,21 +78,24 @@
               <img
                 :src="cDetails.icon || getCoreIconPath(cDetails.name) || coreIcon || '/icons/cores/default.svg'"
                 :alt="cDetails.name"
-                @error="$event.target.src = '/icons/cores/default.svg'"
+                @error="($event.target as HTMLImageElement).src = '/icons/cores/default.svg'"
                 class="w-10 h-10 object-contain cursor-pointer drop-shadow-md transition-transform group-hover:scale-110 active:scale-95 bg-white/5 p-1 rounded-lg border"
                 :class="cIdx === 0 ? 'border-emerald-500/40' : 'border-blue-500/40'"
                 @dragstart.prevent
                 @contextmenu.prevent="() => false"
               />
 
-              <!-- Tooltip Component for specific core -->
+              <!-- Tooltip anchored to the RIGHT edge so it grows toward screen center -->
               <transition name="fade">
-                <CoreTooltip
+                <div
                   v-if="hoveredCoreIdx === cIdx"
-                  :core="cDetails"
-                  position="bottom"
-                  class="!right-0 !left-auto !translate-x-0"
-                />
+                  class="core-tooltip-anchor"
+                >
+                  <CoreTooltip
+                    :core="cDetails"
+                    position="bottom"
+                  />
+                </div>
               </transition>
             </div>
           </div>
@@ -227,5 +232,30 @@ function hideTooltip() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/*
+ * Anchor the CoreTooltip to the RIGHT edge of its icon cell.
+ * CoreTooltip itself is `absolute left-1/2 -translate-x-1/2 w-80`.
+ * We override the centering by setting `right: 0; left: auto; transform: none`
+ * so the 320px card grows leftward (toward the game board center),
+ * staying fully within the viewport instead of bleeding off-screen.
+ */
+.core-tooltip-anchor {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 0.75rem;
+  z-index: 200;
+  width: 0;              /* collapse own footprint; child is absolutely sized */
+  overflow: visible;
+}
+
+/* Override CoreTooltip's built-in centering when inside the anchor */
+.core-tooltip-anchor :deep(.absolute) {
+  left: auto !important;
+  right: 0 !important;
+  transform: none !important;
 }
 </style>

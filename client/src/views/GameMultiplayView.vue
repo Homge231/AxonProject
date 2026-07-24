@@ -597,7 +597,7 @@
             <div class="w-16 h-16 rounded-full border-4 border-hexred border-t-transparent animate-spin"></div>
             <span class="absolute font-mono text-2xl font-black text-white">{{ selfReconnectTimerSeconds }}s</span>
           </div>
-          <h2 class="text-xl font-black text-white tracking-wide uppercase">Network connection lost/h2>
+          <h2 class="text-xl font-black text-white tracking-wide uppercase">Network connection lost</h2>
           <p class="text-xs text-gray-300">Automatically reconnecting to the room... (Grace period: 15s)</p>
         </div>
       </div>
@@ -610,7 +610,7 @@
           <span class="animate-spin text-yellow-400 text-xl">⏳</span>
           <div class="flex flex-col">
             <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Opponent disconnected.</span>
-            <span class="text-xs text-gray-200">Waiting for opponent to reconnect... (<span class="font-mono font-bold text-white">{{ opponentReconnectTimerSeconds }}s</span>)</span>
+            <span class="text-xs text-gray-200">Waiting for opponent to reconnect... ({{ opponentReconnectTimerSeconds }}s)</span>
           </div>
         </div>
       </div>
