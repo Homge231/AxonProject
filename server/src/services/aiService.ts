@@ -154,7 +154,13 @@ INSTRUCTIONS:
     if (['hi', 'hello', 'hey', 'sup', 'yo', 'halo', 'chào'].some(g => qLower === g || qLower.startsWith(g + ' '))) {
       return `👋 Hey **${username}**! Ready to sharpen your typing skills today? Ask me about your weak spots, core strategies, or how to boost your ELO rank!`
     }
-    if (qLower.includes('science') || qLower.includes('sports') || qLower.includes('topic') || qLower.includes('master')) {
+    if (qLower.includes('what are you') || qLower.includes('who are you') || qLower.includes('what can you do') || qLower.includes('who r u') || qLower.includes('what r u')) {
+      return `🤖 I am **Naenra AI Coach**! I am your personal AI learning assistant in the Naenra competitive typing arena.\n\nI analyze your match history, track your vocabulary accuracy across topics, highlight your missed words, and recommend custom Core strategies to help you dominate ranked matches!`
+    }
+    if (qLower.includes('thank') || qLower.includes('thanks') || qLower.includes('cảm ơn') || qLower.includes('bye')) {
+      return `😊 You're very welcome, **${username}**! Keep practicing and climbing the leaderboard. Good luck in your next match!`
+    }
+    if (qLower.includes('science') || qLower.includes('sports') || qLower.includes('topic') || qLower.includes('master') || qLower.includes('daily')) {
       return `🎯 **Coach Advice for ${username}:**\nTo master your topics, focus on words with high error rates. For **${worstTopic ? worstTopic.topic : 'weak areas'}**, practice typing target terms repeatedly in Single Player matches. Using **Oracle Core** will grant letter hints to build muscle memory!`
     }
     if (qLower.includes('core') || qLower.includes('strategy') || qLower.includes('power') || qLower.includes('combo') || qLower.includes('oracle') || qLower.includes('speed')) {
@@ -163,7 +169,7 @@ INSTRUCTIONS:
     if (qLower.includes('weak') || qLower.includes('miss') || qLower.includes('word')) {
       return `💡 **Weak Words Focus:**\nYour top missed words are: **${topWeakWords.map(w => `\`${w.word}\` (${w.incorrect} misses)`).join(', ') || 'None'}**. Try slowing down slightly on these specific words to build accuracy before increasing speed!`
     }
-    return `💡 **Coach Advice for ${username}:**\nBased on your recent matches, your accuracy in **${bestTopic?.topic || 'top topics'}** is **${bestTopic?.accuracy || 80}%**. Keep practicing your weakest words (**${topWeakWords.map(w => w.word).join(', ') || 'missed terms'}**) to push your ELO rank higher!`
+    return `💡 **Coach Advice for ${username}:**\nBased on your recent matches, your accuracy in **${bestTopic?.topic || 'top topics'}** is **${bestTopic?.accuracy || 80}%**. Focus on practicing your weakest words (**${topWeakWords.map(w => w.word).join(', ') || 'missed terms'}**) or ask me about **Core strategies**!`
   }
 
   const weakWordsList = topWeakWords.length > 0 
