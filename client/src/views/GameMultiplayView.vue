@@ -597,8 +597,8 @@
             <div class="w-16 h-16 rounded-full border-4 border-hexred border-t-transparent animate-spin"></div>
             <span class="absolute font-mono text-2xl font-black text-white">{{ selfReconnectTimerSeconds }}s</span>
           </div>
-          <h2 class="text-xl font-black text-white tracking-wide uppercase">Mất kết nối mạng</h2>
-          <p class="text-xs text-gray-300">Đang tự động kết nối lại vào room... (Grace period: 15s)</p>
+          <h2 class="text-xl font-black text-white tracking-wide uppercase">Network connection lost/h2>
+          <p class="text-xs text-gray-300">Automatically reconnecting to the room... (Grace period: 15s)</p>
         </div>
       </div>
     </transition>
@@ -609,8 +609,8 @@
         <div class="bg-yellow-500/20 backdrop-blur-md border border-yellow-500/40 px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
           <span class="animate-spin text-yellow-400 text-xl">⏳</span>
           <div class="flex flex-col">
-            <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Đối thủ bị ngắt kết nối</span>
-            <span class="text-xs text-gray-200">Đang chờ đối thủ kết nối lại... (<span class="font-mono font-bold text-white">{{ opponentReconnectTimerSeconds }}s</span>)</span>
+            <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Opponent disconnected.</span>
+            <span class="text-xs text-gray-200">Waiting for opponent to reconnect... (<span class="font-mono font-bold text-white">{{ opponentReconnectTimerSeconds }}s</span>)</span>
           </div>
         </div>
       </div>
@@ -778,7 +778,7 @@ const opponentAvatar = ref('')
 const opponentScore = ref(0)
 const allCores = ref<any[]>([])
 
-// --- STATE CHO TOOLTIP & DATA ĐỐI THỦ ---
+// --- OPPONENT CORE DATA ---
 const opponentActiveCoreId = ref<string | null>(null)
 const showOpponentCoreTooltip = ref(false)
 
@@ -822,7 +822,6 @@ function updateOpponentData(state: any) {
       opponentName.value = player.name || 'Opponent'
       opponentAvatar.value = player.avatar || ''
 
-      // Trích xuất chính xác Core ID của đối thủ cho Widget
       opponentActiveCoreId.value = player.activeCoreId || player.active_core_id || null
 
       foundOpponent = true
@@ -2076,13 +2075,13 @@ function setupRoomEventHandlers(room: any) {
   room.onMessage('opponent_reconnected', () => {
     clearOpponentReconnectCountdown()
     startMatchTimer()
-    addToast('Đối thủ đã kết nối lại!', '⚡', 'text-emerald-400')
+    addToast('The opponent has reconnected!', '⚡', 'text-emerald-400')
   })
 
   room.onMessage('opponent_forfeit', () => {
     clearOpponentReconnectCountdown()
     stopMatchTimer()
-    addToast('Đối thủ quá thời gian kết nối. Bạn thắng (Forfeit)!', '🏆', 'text-yellow-400')
+    addToast('The opponent has timed out. You win (Forfeit)!', '🏆', 'text-yellow-400')
     startTimeoutPhase()
   })
 
