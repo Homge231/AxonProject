@@ -103,10 +103,10 @@ Vocabulary performance analytics summary:
 ${JSON.stringify(analyticsSummary, null, 2)}
 
 INSTRUCTIONS:
-1. Provide personalized feedback, encouragement, and actionable study advice.
-2. Reference specific topics, accuracy percentages, and missed words from their data.
-3. Keep responses engaging, well-formatted with markdown (bold, bullet points), concise (under 180 words), and friendly.
-4. Use 2-3 appropriate emojis (e.g. 🎯, ⚡, 💡).`
+1. If the player asks a simple greeting (e.g. "hi", "hello", "hey"), respond warmly and conversationally as their typing coach without repeating full statistical reports.
+2. For questions about typing performance, weak spots, or strategies, reference specific topics, accuracy percentages, and missed words from their data.
+3. Keep responses engaging, well-formatted with markdown (bold, bullet points), concise (under 150 words), and friendly.
+4. Use 1-2 appropriate emojis (e.g. 🎯, ⚡, 💡).`
 
       let prompt = systemContext
       if (history && history.length > 0) {
@@ -150,14 +150,20 @@ INSTRUCTIONS:
   const topWeakWords = allWeakWords.slice(0, 3)
 
   if (userMessage) {
-    const qLower = userMessage.toLowerCase()
+    const qLower = userMessage.trim().toLowerCase()
+    if (['hi', 'hello', 'hey', 'sup', 'yo', 'halo', 'chào'].some(g => qLower === g || qLower.startsWith(g + ' '))) {
+      return `👋 Hey **${username}**! Ready to sharpen your typing skills today? Ask me about your weak spots, core strategies, or how to boost your ELO rank!`
+    }
     if (qLower.includes('science') || qLower.includes('sports') || qLower.includes('topic') || qLower.includes('master')) {
       return `🎯 **Coach Advice for ${username}:**\nTo master your topics, focus on words with high error rates. For **${worstTopic ? worstTopic.topic : 'weak areas'}**, practice typing target terms repeatedly in Single Player matches. Using **Oracle Core** will grant letter hints to build muscle memory!`
     }
-    if (qLower.includes('core') || qLower.includes('strategy') || qLower.includes('power')) {
+    if (qLower.includes('core') || qLower.includes('strategy') || qLower.includes('power') || qLower.includes('combo') || qLower.includes('oracle') || qLower.includes('speed')) {
       return `⚡ **Core Selection Strategy:**\n- **Combo Core**: Great if your overall accuracy is over 70% to stack score multipliers.\n- **Oracle Core**: Best for topics like **${worstTopic?.topic || 'difficult categories'}** where you need hint reveals.\n- **Speedster**: Use on topics like **${bestTopic?.topic || 'your top category'}** where your typing speed is highest!`
     }
-    return `💡 **Coach Recommendation:**\nGreat question, **${username}**! Based on your recent matches, your accuracy in **${bestTopic?.topic || 'top topics'}** is solid at **${bestTopic?.accuracy || 80}%**. Keep practicing your weakest words (**${topWeakWords.map(w => w.word).join(', ') || 'missed terms'}**) to push your ELO rank higher!`
+    if (qLower.includes('weak') || qLower.includes('miss') || qLower.includes('word')) {
+      return `💡 **Weak Words Focus:**\nYour top missed words are: **${topWeakWords.map(w => `\`${w.word}\` (${w.incorrect} misses)`).join(', ') || 'None'}**. Try slowing down slightly on these specific words to build accuracy before increasing speed!`
+    }
+    return `💡 **Coach Advice for ${username}:**\nBased on your recent matches, your accuracy in **${bestTopic?.topic || 'top topics'}** is **${bestTopic?.accuracy || 80}%**. Keep practicing your weakest words (**${topWeakWords.map(w => w.word).join(', ') || 'missed terms'}**) to push your ELO rank higher!`
   }
 
   const weakWordsList = topWeakWords.length > 0 
@@ -178,5 +184,6 @@ ${weakWordsList}
 2. **Target Weak Spots:** Focus on **${worstTopic?.topic || 'difficult topics'}** and take extra care when typing **${topWeakWords[0]?.word || 'missed terms'}**.
 3. **Core Synergies:** Equip **Oracle Core** to reveal hints on tough words, or **Combo Core** to maximize your high accuracy streaks!`
 }
+
 
 

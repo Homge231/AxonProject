@@ -5,13 +5,13 @@
     <transition name="chat-pop">
       <div 
         v-if="isOpen" 
-        class="mb-4 w-[90vw] max-w-[380px] h-[520px] bg-darkNavy/95 backdrop-blur-2xl border border-lightBlue/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden text-white transition-all"
+        class="mb-3 w-[90vw] max-w-[380px] h-[480px] max-h-[75vh] bg-darkNavy/95 backdrop-blur-2xl border border-lightBlue/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden text-white transition-all relative z-[9995]"
       >
         <!-- Top Accent Bar -->
-        <div class="h-1 w-full bg-gradient-to-r from-orange via-lightBlue to-success"></div>
+        <div class="h-1 w-full bg-gradient-to-r from-orange via-lightBlue to-success shrink-0"></div>
 
         <!-- Chat Header -->
-        <div class="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
+        <div class="p-3.5 bg-white/5 border-b border-white/10 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3">
             <div class="relative w-9 h-9 rounded-full p-0.5 bg-gradient-to-br from-orange via-lightBlue to-blue flex items-center justify-center shadow-[0_0_12px_rgba(96,165,250,0.4)]">
               <div class="w-full h-full rounded-full bg-darkNavy flex items-center justify-center">
@@ -19,29 +19,29 @@
               </div>
             </div>
             <div>
-              <h3 class="font-black text-sm uppercase tracking-wider text-white flex items-center gap-1.5">
+              <h3 class="font-black text-sm uppercase tracking-wider text-white flex items-center gap-1.5 leading-none mb-1">
                 Naenra AI Coach
                 <span class="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-lightBlue/20 border border-lightBlue/40 text-lightBlue">
                   AI
                 </span>
               </h3>
-              <p class="text-[9px] text-gray-400 tracking-widest uppercase">Personal Learning Assistant</p>
+              <p class="text-[9px] text-gray-400 tracking-widest uppercase leading-none">Personal Learning Assistant</p>
             </div>
           </div>
 
           <!-- Close Button -->
           <button 
             @click="isOpen = false; audioService.playClick()" 
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            class="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
         </div>
 
-        <!-- Chat Content Body -->
-        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 text-xs leading-relaxed">
+        <!-- Chat Content Body (Scrollable Area) -->
+        <div ref="chatScrollRef" class="flex-1 p-3.5 overflow-y-auto custom-scrollbar flex flex-col gap-3 text-xs leading-relaxed">
           
           <!-- Sync / Loading analytics -->
           <div v-if="loadingAnalytics" class="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
@@ -87,7 +87,7 @@
             <!-- Report + Chat Messages -->
             <div v-if="aiStarted && !aiLoading" class="flex flex-col gap-3">
               <!-- Initial Report Bubble -->
-              <div class="bg-white/5 border border-white/10 rounded-xl p-3.5 text-xs text-gray-200">
+              <div class="bg-white/5 border border-white/10 rounded-xl p-3.5 text-xs text-gray-200 shadow-sm">
                 <div class="text-[9px] font-bold text-lightBlue uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1 flex items-center gap-1">
                   <span>💡 Personalized Learning Plan</span>
                 </div>
@@ -97,15 +97,15 @@
 
               <!-- Follow-up messages -->
               <div v-for="(chat, idx) in chatHistory" :key="idx" class="flex flex-col gap-1">
-                <!-- User -->
-                <div v-if="chat.role === 'user'" class="self-end bg-blue-900/50 border border-blue-500/30 rounded-xl rounded-tr-none px-3 py-2 max-w-[85%] text-xs text-white">
-                  <p class="font-bold text-[8px] text-blue-300 uppercase tracking-widest mb-0.5">You</p>
-                  <p>{{ chat.message }}</p>
+                <!-- User Speech Bubble -->
+                <div v-if="chat.role === 'user'" class="self-end bg-blue-600/30 border border-blue-400/40 rounded-2xl rounded-tr-none px-3.5 py-2 max-w-[85%] text-xs text-white shadow-sm">
+                  <span class="block font-bold text-[9px] text-blue-300 uppercase tracking-widest leading-none mb-1">You</span>
+                  <p class="whitespace-pre-wrap break-words text-gray-100 leading-normal">{{ chat.message }}</p>
                 </div>
-                <!-- AI -->
-                <div v-else class="self-start bg-white/5 border border-white/10 rounded-xl rounded-tl-none px-3 py-2.5 max-w-[90%] text-xs text-gray-200">
-                  <p class="font-bold text-[8px] text-lightBlue uppercase tracking-widest mb-1">🤖 AI Coach</p>
-                  <div class="prose prose-invert max-w-none text-xs" v-html="renderMarkdown(chat.message)"></div>
+                <!-- AI Speech Bubble -->
+                <div v-else class="self-start bg-white/5 border border-white/10 rounded-2xl rounded-tl-none px-3.5 py-2.5 max-w-[90%] text-xs text-gray-200 shadow-sm">
+                  <span class="block font-bold text-[9px] text-lightBlue uppercase tracking-widest leading-none mb-1.5">🤖 AI Coach</span>
+                  <div class="prose prose-invert max-w-none text-xs leading-normal" v-html="renderMarkdown(chat.message)"></div>
                 </div>
               </div>
             </div>
@@ -114,20 +114,20 @@
         </div>
 
         <!-- Chat Input Footer -->
-        <div v-if="aiStarted && !aiLoading && !isTyping" class="p-3 bg-black/40 border-t border-white/10 flex flex-col gap-1.5">
-          <div v-if="followUpCount < 5" class="flex gap-1.5">
+        <div v-if="aiStarted && !aiLoading && !isTyping" class="p-3 bg-black/50 border-t border-white/10 flex flex-col gap-1.5 shrink-0">
+          <div v-if="followUpCount < 5" class="flex gap-2 items-center">
             <input 
               v-model="userQuestion"
               @keyup.enter="sendFollowUp"
               type="text"
               placeholder="Ask AI Coach a question..."
-              class="flex-1 bg-black/50 border border-white/15 focus:border-lightBlue rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 outline-none"
+              class="flex-1 bg-black/60 border border-white/15 focus:border-lightBlue rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 outline-none transition-colors"
               :disabled="isSendingFollowUp"
             />
             <button 
               @click="sendFollowUp" 
               :disabled="!userQuestion.trim() || isSendingFollowUp"
-              class="px-3 py-2 bg-lightBlue/20 hover:bg-lightBlue/30 border border-lightBlue/40 disabled:opacity-40 text-lightBlue font-bold uppercase text-[10px] tracking-wider rounded-xl transition-all"
+              class="px-3.5 py-2 bg-lightBlue/20 hover:bg-lightBlue/30 border border-lightBlue/40 disabled:opacity-40 text-lightBlue font-bold uppercase text-[10px] tracking-wider rounded-xl transition-all shrink-0"
             >
               {{ isSendingFollowUp ? '...' : 'Send' }}
             </button>
@@ -144,7 +144,7 @@
     <button 
       @click="toggleWidget"
       @mouseenter="audioService.playHover()"
-      class="group relative flex items-center gap-2.5 bg-darkNavy/80 backdrop-blur-xl border border-lightBlue/40 hover:border-lightBlue px-4 py-2.5 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] hover:scale-105 active:scale-95 transition-all text-white focus:outline-none"
+      class="group relative flex items-center gap-2.5 bg-darkNavy/90 backdrop-blur-xl border border-lightBlue/40 hover:border-lightBlue px-4 py-2.5 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] hover:scale-105 active:scale-95 transition-all text-white focus:outline-none z-[9990]"
       title="AI Learning Coach"
     >
       <!-- Glowing Pulse Ring -->
@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { fetchWithAuth } from '../services/api'
 import { audioService } from '../services/audioService'
@@ -189,6 +189,7 @@ const authStore = useAuthStore()
 const isOpen = ref(false)
 const loadingAnalytics = ref(false)
 const analyticsData = ref<TopicAnalytics[]>([])
+const chatScrollRef = ref<HTMLElement | null>(null)
 
 const aiStarted = ref(false)
 const aiLoading = ref(false)
@@ -209,6 +210,14 @@ const username = computed(() =>
 )
 
 const renderedReport = computed(() => renderMarkdown(displayedReportText.value))
+
+function scrollToBottom() {
+  nextTick(() => {
+    if (chatScrollRef.value) {
+      chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight
+    }
+  })
+}
 
 function toggleWidget() {
   audioService.playClick()
@@ -273,10 +282,12 @@ function startTypewriter(fullText: string) {
     if (idx < fullText.length) {
       displayedReportText.value += fullText.charAt(idx)
       idx++
+      scrollToBottom()
     } else {
       clearInterval(typingTimer)
       typingTimer = null
       isTyping.value = false
+      scrollToBottom()
     }
   }, speedMs)
 }
@@ -291,6 +302,7 @@ async function sendFollowUp() {
 
   chatHistory.value.push({ role: 'user', message: query })
   followUpCount.value++
+  scrollToBottom()
 
   try {
     const res = await fetchWithAuth('/api/user/ai-coach', {
@@ -309,8 +321,10 @@ async function sendFollowUp() {
 
     const data = await res.json()
     chatHistory.value.push({ role: 'model', message: data.analysis })
+    scrollToBottom()
   } catch (err: any) {
     chatHistory.value.push({ role: 'model', message: '⚠️ Issue connecting to AI Coach. Try again.' })
+    scrollToBottom()
   } finally {
     isSendingFollowUp.value = false
   }
