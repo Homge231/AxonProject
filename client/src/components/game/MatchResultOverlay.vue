@@ -10,9 +10,6 @@ const props = defineProps<{
   playerName: string
   playerAvatar: string
   questionsAnswered: number
-  eloChange: number
-  newElo: number
-  oldElo: number
   matchHistory: Array<{ round: number; submitted: string; correct: string; isCorrect: boolean }>
   matchDurationMs: number
   // Opponent/Comparison data  
@@ -33,8 +30,6 @@ const settingsStore = useSettingsStore()
 
 const animatedPlayerScore = ref(0)
 const animatedOpponentScore = ref(0)
-const animatedEloChange = ref(0)
-const animatedNewElo = ref(props.oldElo)
 
 const correctCount = computed(() => props.matchHistory.filter(h => h.isCorrect).length)
 const totalCount = computed(() => props.matchHistory.length)
@@ -52,25 +47,7 @@ const avgWpm = computed(() => {
   return Math.round((totalCorrectChars / 5) / durationMinutes)
 })
 
-function getRankName(elo: number): string {
-  if (elo >= 8000) return 'Grandmaster'
-  if (elo >= 7500) return 'Master'
-  if (elo >= 7000) return 'Diamond III'
-  if (elo >= 6500) return 'Diamond II'
-  if (elo >= 6000) return 'Diamond I'
-  if (elo >= 5500) return 'Platinum III'
-  if (elo >= 5000) return 'Platinum II'
-  if (elo >= 4500) return 'Platinum I'
-  if (elo >= 4000) return 'Gold III'
-  if (elo >= 3500) return 'Gold II'
-  if (elo >= 3000) return 'Gold I'
-  if (elo >= 2500) return 'Silver III'
-  if (elo >= 2000) return 'Silver II'
-  if (elo >= 1500) return 'Silver I'
-  if (elo >= 1000) return 'Bronze III'
-  if (elo >= 500) return 'Bronze II'
-  return 'Bronze I'
-}
+
 
 let animationFrameId: number
 function animateValue(obj: any, start: number, end: number, duration: number) {
@@ -93,14 +70,10 @@ watch(() => props.isVisible, (newVal) => {
   if (newVal) {
     animatedPlayerScore.value = 0
     animatedOpponentScore.value = 0
-    animatedEloChange.value = 0
-    animatedNewElo.value = props.oldElo
     
     setTimeout(() => {
       animateValue(animatedPlayerScore, 0, props.playerScore, 1500)
       animateValue(animatedOpponentScore, 0, props.opponentScore, 1500)
-      animateValue(animatedEloChange, 0, props.eloChange, 1500)
-      animateValue(animatedNewElo, props.oldElo, props.newElo, 1500)
     }, 500)
   } else {
     if (animationFrameId) window.cancelAnimationFrame(animationFrameId)
@@ -192,7 +165,7 @@ const confettiPieces = Array.from({ length: 25 }, (_, i) => ({
         </div>
 
         <!-- Stats Breakdown Grid -->
-        <div class="w-full grid grid-cols-3 gap-4 mb-4">
+        <div class="w-full grid grid-cols-3 gap-4 mb-10">
           <div class="stat-row bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col items-center" style="animation-delay: 0.1s">
             <span class="text-[10px] tracking-widest uppercase text-white/50 mb-1">Avg WPM</span>
             <span class="text-3xl font-black text-orange">{{ avgWpm }}</span>
@@ -208,18 +181,6 @@ const confettiPieces = Array.from({ length: 25 }, (_, i) => ({
               <span class="text-white/30 text-xl mx-1">/</span>
               <span class="text-hexred">{{ totalCount - correctCount }}</span>
             </span>
-          </div>
-        </div>
-        <div class="w-full grid grid-cols-2 gap-4 mb-10">
-          <div class="stat-row bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col items-center" style="animation-delay: 0.4s">
-            <span class="text-[10px] tracking-widest uppercase text-white/50 mb-1">Rating Change</span>
-            <span class="text-3xl font-black" :class="animatedEloChange >= 0 ? 'text-success' : 'text-hexred'">
-              {{ animatedEloChange > 0 ? '+' : '' }}{{ animatedEloChange }}
-            </span>
-          </div>
-          <div class="stat-row bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col items-center" style="animation-delay: 0.5s">
-            <span class="text-[10px] tracking-widest uppercase text-white/50 mb-1">New Rank</span>
-            <span class="text-3xl font-black text-white">{{ getRankName(animatedNewElo) }}</span>
           </div>
         </div>
 

@@ -776,6 +776,8 @@ const isMultiplayer = computed(() => route.path === '/game/multiplayer')
 const opponentName = ref('')
 const opponentAvatar = ref('')
 const opponentScore = ref(0)
+const allCores = ref<any[]>([])
+
 // --- STATE CHO TOOLTIP & DATA ĐỐI THỦ ---
 const opponentActiveCoreId = ref<string | null>(null)
 const showOpponentCoreTooltip = ref(false)
@@ -1112,7 +1114,6 @@ const timerSpeedMultiplier = computed(() => {
 const isShifting = ref(false)
 const shiftAnnouncement = ref('')
 const pandoraPool = ref<any[]>([])
-const allCores = ref<any[]>([])
 
 const hoveredRoundCoreIndex = ref<number | null>(null)
 let roundCoreHoldTimer: ReturnType<typeof setTimeout> | null = null

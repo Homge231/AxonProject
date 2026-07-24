@@ -474,7 +474,7 @@
                 <span class="relative z-10 text-white">Feedback</span>
               </button>
 
-              <!-- Play Again Button -->
+              <!-- Nút Play Again giữ nguyên -->
               <button @click="playAgain"
                 class="flex-1 group relative px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 overflow-hidden font-black text-sm tracking-widest uppercase rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-shadow">
                 <div
@@ -516,7 +516,6 @@
     <input ref="inputRef" class="sr-only" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
       spellcheck="false" :disabled="gameState === 'timeout' || tutorial.isCurrentScreen('gameplay')"
       @keydown="handleKeydown" />
-    
     <FeedbackOverlay :is-visible="showFeedback" @close="showFeedback = false" @success="handleFeedbackSuccess" />
 
   </div>
