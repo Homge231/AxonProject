@@ -76,3 +76,62 @@ RULES:
     throw error
   }
 }
+
+export async function generateCoachAnalysis(
+  username: string,
+  analyticsData: any[],
+  userMessage?: string,
+  history?: { role: 'user' | 'model'; message: string }[]
+): Promise<string> {
+  try {
+    if (!ai) {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY is not set in environment variables");
+      }
+      ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+    }
+
+    const analyticsSummary = analyticsData.map(item => ({
+      topic: item.topic,
+      accuracy: item.accuracy + '%',
+      questions: `${item.correctAnswers}/${item.totalQuestions}`,
+      weakestWords: item.weakestWords?.map((w: any) => `${w.word} (${w.incorrect} misses)`).join(', ') || 'None'
+    }))
+
+    const systemContext = `You are Naenra AI Coach, a friendly, sharp, and encouraging personal tutor in the competitive typing arena Naenra.
+Player username: "${username}".
+Vocabulary performance analytics summary:
+${JSON.stringify(analyticsSummary, null, 2)}
+
+INSTRUCTIONS:
+1. Provide personalized feedback, encouragement, and actionable study advice.
+2. Reference specific topics, accuracy percentages, and missed words from their data.
+3. Keep responses engaging, well-formatted with markdown (bold, bullet points), concise (under 180 words), and friendly.
+4. Use 2-3 appropriate emojis (e.g. 🎯, ⚡, 💡).`
+
+    let prompt = systemContext
+    if (history && history.length > 0) {
+      prompt += `\n\nCONVERSATION HISTORY:\n` + history.map(h => `${h.role === 'user' ? 'Player' : 'AI Coach'}: ${h.message}`).join('\n')
+    }
+
+    if (userMessage) {
+      prompt += `\n\nPlayer question: "${userMessage}"\nRespond directly as Naenra AI Coach:`
+    } else {
+      prompt += `\n\nProvide an initial comprehensive analysis and personalized 3-step learning plan for ${username}:`
+    }
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+      }
+    })
+
+    return response.text || "I've analyzed your stats! Focus on practicing your weak spots to boost your accuracy."
+  } catch (error) {
+    console.error("Error generating AI coach analysis:", error)
+    throw error
+  }
+}
+

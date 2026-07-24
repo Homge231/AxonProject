@@ -1,6 +1,7 @@
 import { Response } from 'express'
 import { createClient } from '@supabase/supabase-js'
 import { AuthRequest } from '../middleware/authMiddleware'
+import { generateCoachAnalysis } from '../services/aiService'
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -221,5 +222,18 @@ export const getVocabAnalytics = async (req: AuthRequest, res: Response): Promis
   } catch (error) {
     console.error('getVocabAnalytics exception:', error)
     return res.status(500).json({ error: 'Internal Server Error' })
+  }
+}
+
+export const getAiCoachAnalysis = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { analyticsData, message, history } = req.body
+    const username = req.user?.username || req.user?.email?.split('@')[0] || 'Player'
+
+    const analysis = await generateCoachAnalysis(username, analyticsData || [], message, history)
+    return res.status(200).json({ analysis })
+  } catch (error: any) {
+    console.error('getAiCoachAnalysis error:', error)
+    return res.status(500).json({ error: error.message || 'Failed to generate AI analysis' })
   }
 }
