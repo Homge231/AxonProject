@@ -610,7 +610,7 @@
           <span class="animate-spin text-yellow-400 text-xl">⏳</span>
           <div class="flex flex-col">
             <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">Opponent disconnected.</span>
-            <span class="text-xs text-gray-200">Waiting for opponent to reconnect... (<span class="font-mono font-bold text-white">{{ opponentReconnectTimerSeconds }}s</span>)</span>
+            <span class="text-xs text-gray-200">Waiting for opponent to reconnect... ({{ opponentReconnectTimerSeconds }}s)</span>
           </div>
         </div>
       </div>
